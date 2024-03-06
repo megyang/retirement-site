@@ -8,46 +8,105 @@ const SocialSecurityInput = ({ inputs, onInputChange }) => {
 
     return (
         <div className="inputs-container">
-            <h2>inputs</h2>
-            <div className="label-input-container">
-                <label htmlFor="husbandAge">age by the end of this year:</label>
-                <input type="number" id="husbandAge" name="husbandAge" value={inputs.husbandAge} onChange={handleChange} />
-            </div>
-            <div className="label-input-container">
-                <label htmlFor="wifeAge">spouse's age by the end of this year:</label>
-                <input type="number" id="wifeAge" name="wifeAge" value={inputs.wifeAge} onChange={handleChange} />
-            </div>
-            <div className="label-input-container">
-                <label htmlFor="hPIA">primary insurance amount:</label>
-                <input type="number" id="hPIA" name="hPIA" value={inputs.hPIA} onChange={handleChange} />
-            </div>
-            <div className="label-input-container">
-                <label htmlFor="wPIA">spouse's primary insurance amount:</label>
-                <input type="number" id="wPIA" name="wPIA" value={inputs.wPIA} onChange={handleChange} />
-            </div>
-            <div className="label-input-container">
-                <label htmlFor="roi">return on investment:</label>
-                <input type="number" id="roi" name="roi" value={inputs.roi} onChange={handleChange} />
-            </div>
-            <div className="label-input-container">
-                <label htmlFor="hSS">age to start collecting social security:</label>
-                <input type="number" id="hSS" name="hSS" value={inputs.hSS} onChange={handleChange} />
-            </div>
-            <div className="label-input-container">
-                <label htmlFor="wSS">spouse's age to start collecting social security:</label>
-                <input type="number" id="wSS" name="wSS" value={inputs.wSS} onChange={handleChange} />
-            </div>
-
-            <div className="label-input-container">
-                <label htmlFor="hLE">life expectancy:</label>
-                <input type="number" id="hLE" name="hLE" value={inputs.hLE} onChange={handleChange} />
-            </div>
-            <div className="label-input-container">
-                <label htmlFor="wLE">spouse's life expectancy:</label>
-                <input type="number" id="wLE" name="wLE" value={inputs.wLE} onChange={handleChange} />
-            </div>
+            <h2 className="text-xl font-semibold mb-3">inputs</h2>
+            <table className="table-auto w-full">
+                <tbody>
+                <tr>
+                    <td>age by the end of this year:</td>
+                    <td>
+                        <input
+                            type="number"
+                            name="husbandAge"
+                            value={inputs.husbandAge}
+                            onChange={handleChange}
+                        />
+                    </td>
+                </tr>
+                <tr>
+                    <td>spouse's age by the end of this year:</td>
+                    <td>
+                        <input
+                            type="number"
+                            name="wifeAge"
+                            value={inputs.wifeAge}
+                            onChange={handleChange}                        />
+                    </td>
+                </tr>
+                <tr>
+                    <td>primary insurance amount:</td>
+                    <td>
+                        <input
+                            type="number"
+                            name="hPIA"
+                            value={inputs.hPIA}
+                            onChange={handleChange}                        />
+                    </td>
+                </tr>
+                <tr>
+                    <td>spouse's primary insurance amount:</td>
+                    <td>
+                        <input
+                            type="number"
+                            name="wPIA"
+                            value={inputs.wPIA}
+                            onChange={handleChange}                        />
+                    </td>
+                </tr>
+                <tr>
+                    <td>return on investment:</td>
+                    <td>
+                        <input
+                            type="number"
+                            name="roi"
+                            value={inputs.roi}
+                            onChange={handleChange}                        />
+                    </td>
+                </tr>
+                <tr>
+                    <td>age to start collecting social security:</td>
+                    <td>
+                        <input
+                            type="number"
+                            name="hSS"
+                            value={inputs.hSS}
+                            onChange={handleChange}                        />
+                    </td>
+                </tr>
+                <tr>
+                    <td>spouse's age to start collecting social security:</td>
+                    <td>
+                        <input
+                            type="number"
+                            name="wSS"
+                            value={inputs.wSS}
+                            onChange={handleChange}                        />
+                    </td>
+                </tr>
+                <tr>
+                    <td>life expectancy:</td>
+                    <td>
+                        <input
+                            type="number"
+                            name="hLE"
+                            value={inputs.hLE}
+                            onChange={handleChange}                        />
+                    </td>
+                </tr>
+                <tr>
+                    <td>spouse's life expectancy:</td>
+                    <td>
+                        <input
+                            type="number"
+                            name="wLE"
+                            value={inputs.wLE}
+                            onChange={handleChange}                        />
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     );
+
 };
 
 export default SocialSecurityInput;

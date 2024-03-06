@@ -191,34 +191,34 @@ const SocialSecurityOutput = ({ inputs }) => {
 
     return (
         <div>
-            <h2>outputs</h2>
-            <div>
-                <h3>total benefit amount</h3>
+            <h2 className="text-xl font-semibold mb-3">outputs</h2>
+            <div className="mb-6">
+                <h3 className="font-medium">total benefit amount</h3>
                 <p>total cash: ${totalCash.toFixed(2)}</p>
                 <p>net present value: ${npv.toFixed(2)}</p>
             </div>
             <div>
-                <h3>social security benefits by year</h3>
-                <table>
-                    <thead>
+                <h3 className="font-medium mb-2">social security benefits by year</h3>
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
                     <tr>
-                        <th>year</th>
-                        <th>your age</th>
-                        <th>spouse's age</th>
-                        <th>ss benefit</th>
-                        <th>spouse's ss benefit</th>
-                        <th>total ss benefit</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">year</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">your age</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">spouse's age</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">ss benefit</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">spouse's ss benefit</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">total ss benefit</th>
                     </tr>
                     </thead>
-                    <tbody>
-                    {tableData.map(({ year, husbandAge, wifeAge, husbandBenefit, wifeBenefit, totalBenefit }) => (
-                        <tr key={year}>
-                            <td>{year}</td>
-                            <td>{husbandAge}</td>
-                            <td>{wifeAge}</td>
-                            <td>{`$${husbandBenefit.toFixed(2)}`}</td>
-                            <td>{`$${wifeBenefit.toFixed(2)}`}</td>
-                            <td>{`$${totalBenefit.toFixed(2)}`}</td>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                    {tableData.map(({ year, husbandAge, wifeAge, husbandBenefit, wifeBenefit, totalBenefit }, index) => (
+                        <tr key={index}>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{year}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{husbandAge}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{wifeAge}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">${husbandBenefit.toFixed(2)}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">${wifeBenefit.toFixed(2)}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">${totalBenefit.toFixed(2)}</td>
                         </tr>
                     ))}
                     </tbody>

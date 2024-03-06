@@ -15,9 +15,6 @@ const SocialSecurityCalculator = () => {
         hSS: 70,
         wSS: 70
     });
-
-
-
     const handleInputChange = (name, value) => {
         setInputs(prevInputs => ({
             ...prevInputs,
@@ -26,10 +23,14 @@ const SocialSecurityCalculator = () => {
     };
 
     return (
-        <div>
-            <h1>social security calculator</h1>
-            <SocialSecurityInput inputs={inputs} onInputChange={handleInputChange} />
-            <SocialSecurityOutput inputs={inputs} />
+        <div className="mx-auto my-0">
+            <div>
+                <h1 className="text-2xl font-bold text-center mb-4">social security calculator</h1>
+                <SocialSecurityInput inputs={inputs} onInputChange={handleInputChange} />
+                <div className="mt-8">
+                    <SocialSecurityOutput inputs={inputs} />
+                </div>
+            </div>
         </div>
     );
 };
