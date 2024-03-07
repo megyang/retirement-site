@@ -32,11 +32,9 @@ body {
     transition: background-color 0.3s;
 }
 
-.load-inputs-button:hover {
-    background-color: #e0e0e0;
-}
 
 .load-inputs-select, .delete-inputs-select {
+    box-shadow: none;
     padding: 4px 8px;
     font-size: 14px;
     border-radius: 4px;
