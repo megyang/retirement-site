@@ -23,7 +23,7 @@ const SocialSecurityInput = ({ inputs, onInputChange }) => {
                     </td>
                 </tr>
                 <tr>
-                    <td>spouse's age by the end of this year:</td>
+                    <td>spouse&apos;s age by the end of this year:</td>
                     <td>
                         <input
                             type="number"
@@ -43,7 +43,7 @@ const SocialSecurityInput = ({ inputs, onInputChange }) => {
                     </td>
                 </tr>
                 <tr>
-                    <td>spouse's primary insurance amount:</td>
+                    <td>spouse&apos;s primary insurance amount:</td>
                     <td>
                         <input
                             type="number"
@@ -73,7 +73,7 @@ const SocialSecurityInput = ({ inputs, onInputChange }) => {
                     </td>
                 </tr>
                 <tr>
-                    <td>spouse's age to start collecting social security:</td>
+                    <td>spouse&apos;s age to start collecting social security:</td>
                     <td>
                         <input
                             type="number"
@@ -93,7 +93,7 @@ const SocialSecurityInput = ({ inputs, onInputChange }) => {
                     </td>
                 </tr>
                 <tr>
-                    <td>spouse's life expectancy:</td>
+                    <td>spouse&apos;s life expectancy:</td>
                     <td>
                         <input
                             type="number"

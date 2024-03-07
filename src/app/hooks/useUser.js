@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useSessionContext, useUser as useSupaUser } from "@supabase/auth-helpers-react";
 
 export const UserContext = createContext(undefined);
@@ -11,11 +11,17 @@ export const MyUserContextProvider = (props) => {
     const [userDetails, setUserDetails] = useState(null);
     const [subscription, setSubscription] = useState(null);
 
-    const getUserDetails = () => supabase.from('users').select('*').single();
-    const getSubscription = () => supabase.from('subscriptions')
-        .select('*, prices(*, products(*))')
-        .in('status', ['trialing', 'active'])
-        .single();
+    // Memoize getUserDetails and getSubscription using useCallback
+    const getUserDetails = useCallback(() => {
+        return supabase.from('users').select('*').single();
+    }, [supabase]); // Dependency on 'supabase' is stable and should be included
+
+    const getSubscription = useCallback(() => {
+        return supabase.from('subscriptions')
+            .select('*, prices(*, products(*))')
+            .in('status', ['trialing', 'active'])
+            .single();
+    }, [supabase]); // Dependency on 'supabase' is stable and should be included
 
     useEffect(() => {
         if (user && !isLoadingData && !userDetails && !subscription) {
@@ -36,7 +42,7 @@ export const MyUserContextProvider = (props) => {
             setUserDetails(null);
             setSubscription(null);
         }
-    }, [user, isLoadingUser, supabase]);
+    }, [user, isLoadingUser, supabase, getUserDetails, getSubscription, isLoadingData, userDetails, subscription]); // Now including all dependencies
 
     const value = {
         accessToken,

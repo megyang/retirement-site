@@ -163,7 +163,7 @@ const SocialSecurityOutput = ({ inputs }) => {
             lastYearWifeBenefit = wifeBenefit;
 
             return { year, husbandAge, wifeAge, husbandBenefit, wifeBenefit, totalBenefit };
-        });
+        }, [tableData1, inputs.hSS, inputs.wSS]);
         //social security end
 
         setTableData(newTableData);
@@ -204,9 +204,9 @@ const SocialSecurityOutput = ({ inputs }) => {
                     <tr>
                         <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">year</th>
                         <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">your age</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">spouse's age</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">spouse&apos;s age</th>
                         <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">ss benefit</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">spouse's ss benefit</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">spouse&apos;s ss benefit</th>
                         <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">total ss benefit</th>
                     </tr>
                     </thead>
