@@ -12,6 +12,7 @@ const AuthModal = ({ view = "sign_in" }) => {
     const { session } = useSessionContext();
     const { onClose, isOpen } = useAuthModal();
 
+
     useEffect(() => {
         if (session) {
             router.refresh();
@@ -24,7 +25,7 @@ const AuthModal = ({ view = "sign_in" }) => {
             title="welcome back"
             description="login to your account"
             isOpen={isOpen}
-            onChange={() => {}}>
+            onChange={onClose}>
             <Auth
                 providers={[]}
                 magicLink

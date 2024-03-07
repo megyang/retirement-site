@@ -75,8 +75,9 @@ const Modal = ({ isOpen, onChange, title, description, children }) => {
                                 items-center
                                 justify-center
                                 rounded-full
-                                focus:outline-none">
-                            <IoMdClose />
+                                focus:outline-none"
+                            aria-label="Close">
+                        <IoMdClose />
                         </button>
                     </Dialog.Close>
                 </Dialog.Content>

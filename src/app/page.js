@@ -5,7 +5,6 @@ import Header from "@/app/Header";
 import ModalProviders from "@/app/providers/ModalProviders";
 
 
-
 export default function Page() {
 
     return (
