@@ -52,7 +52,7 @@ const LoadInputs = ({ onLoad, onDelete }) => {
             return;
         }
 
-        if (window.confirm('Are you sure you want to delete this version?')) {
+        if (window.confirm('are you sure you want to delete this version?')) {
             const { error } = await supabase
                 .from('inputs')
                 .delete()
@@ -73,7 +73,7 @@ const LoadInputs = ({ onLoad, onDelete }) => {
             <select className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                     value={selectedVersion}
                     onChange={(e) => setSelectedVersion(e.target.value)}>
-                <option value="">Select a version</option>
+                <option value="">select a version</option>
                 {versions.map((v) => (
                     <option key={v.inputsId} value={v.inputsId}>
                         {v.version || v.inputsId}
