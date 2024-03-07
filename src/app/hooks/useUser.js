@@ -1,3 +1,4 @@
+"use client"
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useSessionContext, useUser as useSupaUser } from "@supabase/auth-helpers-react";
 
