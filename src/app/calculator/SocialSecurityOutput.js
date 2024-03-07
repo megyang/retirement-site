@@ -171,7 +171,6 @@ const SocialSecurityOutput = ({ inputs }) => {
         const roi = inputs.roi / 100;
         const cashFlows = newTableData.map(({ totalBenefit }) => new Decimal(totalBenefit));
         const dates = newTableData.map(({ year }) => new Date(year, 0, 1));
-        const npvValue = calculateXNPV(roi, cashFlows, dates);
 
         const calculateXNPV = (rate, cashFlows, dates) => {
             let xnpv = 0.0;
@@ -181,6 +180,8 @@ const SocialSecurityOutput = ({ inputs }) => {
             }
             return xnpv;
         };
+
+        const npvValue = calculateXNPV(roi, cashFlows, dates);
 
         setNpv(npvValue);
         setTotalCash(cumulativeTotal); // Update totalCash with cumulative total
@@ -214,9 +215,9 @@ const SocialSecurityOutput = ({ inputs }) => {
                             <td className="px-3 py-2 text-center whitespace-nowrap">{year}</td>
                             <td className="px-3 py-2 text-center whitespace-nowrap">{husbandAge}</td>
                             <td className="px-3 py-2 text-center whitespace-nowrap">{wifeAge}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${husbandBenefit.toFixed(2)}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${wifeBenefit.toFixed(2)}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${totalBenefit.toFixed(2)}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">${husbandBenefit}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">${wifeBenefit}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">${totalBenefit}</td>
                         </tr>
                     ))}
                     </tbody>
