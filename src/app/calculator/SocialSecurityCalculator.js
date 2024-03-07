@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import SocialSecurityInput from './SocialSecurityInput';
 import SocialSecurityOutput from './SocialSecurityOutput';
+import Decimal from 'decimal.js';
 
 const SocialSecurityCalculator = () => {
     const [inputs, setInputs] = useState({

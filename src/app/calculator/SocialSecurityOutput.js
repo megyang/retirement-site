@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Decimal from "decimal.js";
 
 const SocialSecurityOutput = ({ inputs }) => {
     //REFERENCE TABLE
@@ -14,23 +15,21 @@ const SocialSecurityOutput = ({ inputs }) => {
             for (let age = 62; age <= 70; age++) {
                 const percentageOfPIA = getPercentageOfPIAForAge(age);
                 const spousePIA = getSpouse(age);
-                const hBenefit = (inputs.hPIA * (percentageOfPIA / 100));
-                const wBenefit = (inputs.wPIA * spousePIA / 100);
-                const husbandMonthly = Math.max(hBenefit, wBenefit);
-                const hBenefit1 = (inputs.hPIA * (spousePIA / 100));
-                const wBenefit1 = (inputs.wPIA * percentageOfPIA / 100);
-                const wifeMonthly = Math.max(hBenefit1, wBenefit1);
-                const husbandYearly = husbandMonthly * 12;
-                const wifeYearly = wifeMonthly * 12;
+                const hBenefit = new Decimal(inputs.hPIA).times(percentageOfPIA).dividedBy(100);
+                const wBenefit = new Decimal(inputs.wPIA).times(spousePIA).dividedBy(100);
+                const husbandMonthly = Decimal.max(hBenefit, wBenefit);
+                const hBenefit1 = new Decimal(inputs.hPIA).times(spousePIA).dividedBy(100);
+                const wBenefit1 = new Decimal(inputs.wPIA).times(percentageOfPIA).dividedBy(100);
+                const wifeMonthly = Decimal.max(hBenefit1, wBenefit1);
 
                 newData.push({
                     age,
                     percentageOfPIA,
                     spousePIA,
-                    husbandMonthly,
-                    wifeMonthly,
-                    husbandYearly,
-                    wifeYearly,
+                    husbandMonthly: husbandMonthly.toNumber(),
+                    wifeMonthly: wifeMonthly.toNumber(),
+                    husbandYearly: husbandMonthly.times(12).toNumber(),
+                    wifeYearly: wifeMonthly.times(12).toNumber(),
                 });
             }
 
@@ -43,29 +42,30 @@ const SocialSecurityOutput = ({ inputs }) => {
     console.log(benefitsBasedOnAge)
     const getSpouse = (age) => {
         const referenceTable = {
-            62: 32.5,
-            63: 35.0,
-            64: 37.5,
-            65: 41.7,
-            66: 45.8
+            62: new Decimal(32.5),
+            63: new Decimal(35.0),
+            64: new Decimal(37.5),
+            65: new Decimal(41.7),
+            66: new Decimal(45.8),
+            // Assuming default as 50 for ages not listed in the table
         };
-        return referenceTable[age] | 50.0;
+        return referenceTable[age] || new Decimal(50.0);
     };
+
     const getPercentageOfPIAForAge = (age) => {
         const referenceTable = {
-            62: 70.0,
-            63: 75.0,
-            64: 80.0,
-            65: 86.7,
-            66: 93.3,
-            67: 100.0,
-            68: 108.0,
-            69: 116.0,
-            70: 124.0,
+            62: new Decimal(70.0),
+            63: new Decimal(75.0),
+            64: new Decimal(80.0),
+            65: new Decimal(86.7),
+            66: new Decimal(93.3),
+            67: new Decimal(100.0),
+            68: new Decimal(108.0),
+            69: new Decimal(116.0),
+            70: new Decimal(124.0),
         };
         return referenceTable[age];
     };
-
     useEffect(() => {
         // After tableData1 is set, find the entries for the husband's and wife's start ages
         const husbandStartAgeData = tableData1.find(data => data.age === inputs.hSS);
@@ -88,8 +88,7 @@ const SocialSecurityOutput = ({ inputs }) => {
     const [tableData, setTableData] = useState([]);
     const [totalCash, setTotalCash] = useState(0); // State to hold the sum of all total benefits
     const [npv, setNpv] = useState(0);
-
-    function calculateBenefitForYear({
+    const calculateBenefitForYear = ({
                                          age,
                                          spouseAge,
                                          lifeExpectancy,
@@ -100,45 +99,48 @@ const SocialSecurityOutput = ({ inputs }) => {
                                          spouseBenefitAgeOfWithdraw,
                                          lastYearBenefit,
                                          lastYearSpouseBenefit
-                                     }) {
-        if (age > lifeExpectancy) {
-            return 0;
+                                     }) => {
+        const ageDecimal = new Decimal(age);
+        const spouseAgeDecimal = new Decimal(spouseAge);
+        const lifeExpectancyDecimal = new Decimal(lifeExpectancy);
+        const spouseLifeExpectancyDecimal = new Decimal(spouseLifeExpectancy);
+
+        if (ageDecimal > (lifeExpectancyDecimal)) {
+            return new Decimal(0);
         }
-        if (spouseAge > spouseLifeExpectancy && lastYearSpouseBenefit > lastYearBenefit) {
+        if (spouseAgeDecimal > (spouseLifeExpectancyDecimal) && lastYearSpouseBenefit > (lastYearBenefit)) {
             return lastYearSpouseBenefit;
         }
-        if (age < startAge) {
-            return 0;
+        if (ageDecimal.lessThan(startAge)) {
+            return new Decimal(0);
         }
-        if (age === startAge) {
+        if (ageDecimal.equals(startAge)) {
             return benefitAgeOfWithdraw;
         }
         return lastYearBenefit;
-    }
+    };
 
     useEffect(() => {
         const maxLifeExpectancy = Math.max(inputs.hLE, inputs.wLE);
         const yearsToCover = maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge) + 1;
 
-
         let lastYearHusbandBenefit = 0;
         let lastYearWifeBenefit = 0;
-        let cumulativeTotal = 0;
+        let cumulativeTotal = new Decimal(0); // Initialize cumulative total
 
         const newTableData = Array.from({ length: yearsToCover }, (_, i) => {
             const year = currentYear + i;
             const husbandAge = inputs.husbandAge + i;
             const wifeAge = inputs.wifeAge + i;
 
+            // Calculate husband and wife benefits for the year
             const husbandBenefit = calculateBenefitForYear({
                 age: husbandAge,
                 spouseAge: wifeAge,
                 lifeExpectancy: inputs.hLE,
                 spouseLifeExpectancy: inputs.wLE,
-                currentAge: inputs.husbandAge,
                 startAge: inputs.hSS,
                 benefitAgeOfWithdraw: benefitsBasedOnAge.husbandYearly,
-                benefitAgeOfWithdrawSpouse: benefitsBasedOnAge.wifeYearly,
                 lastYearBenefit: lastYearHusbandBenefit,
                 lastYearSpouseBenefit: lastYearWifeBenefit
             });
@@ -148,28 +150,28 @@ const SocialSecurityOutput = ({ inputs }) => {
                 spouseAge: husbandAge,
                 lifeExpectancy: inputs.wLE,
                 spouseLifeExpectancy: inputs.hLE,
-                currentAge: inputs.wifeAge,
                 startAge: inputs.wSS,
                 benefitAgeOfWithdraw: benefitsBasedOnAge.wifeYearly,
-                benefitAgeOfWithdrawSpouse: benefitsBasedOnAge.husbandYearly,
                 lastYearBenefit: lastYearWifeBenefit,
                 lastYearSpouseBenefit: lastYearHusbandBenefit
             });
 
-            const totalBenefit = husbandBenefit + wifeBenefit;
-            cumulativeTotal += totalBenefit;
+            const totalBenefit = new Decimal(husbandBenefit).add(new Decimal(wifeBenefit));
+            cumulativeTotal = cumulativeTotal.add(totalBenefit); // Add current year's total benefit to cumulative total
 
             lastYearHusbandBenefit = husbandBenefit;
             lastYearWifeBenefit = wifeBenefit;
 
-            return { year, husbandAge, wifeAge, husbandBenefit, wifeBenefit, totalBenefit };
-        }, [tableData1, inputs.hSS, inputs.wSS]);
-        //social security end
+            return { year, husbandAge, wifeAge, husbandBenefit: husbandBenefit.toFixed(2), wifeBenefit: wifeBenefit.toFixed(2), totalBenefit: totalBenefit.toFixed(2) };
+        });
 
         setTableData(newTableData);
+
+        // Calculate NPV
         const roi = inputs.roi / 100;
-        const cashFlows = newTableData.map(({ totalBenefit }) => totalBenefit);
+        const cashFlows = newTableData.map(({ totalBenefit }) => new Decimal(totalBenefit));
         const dates = newTableData.map(({ year }) => new Date(year, 0, 1));
+        const npvValue = calculateXNPV(roi, cashFlows, dates);
 
         const calculateXNPV = (rate, cashFlows, dates) => {
             let xnpv = 0.0;
@@ -180,13 +182,9 @@ const SocialSecurityOutput = ({ inputs }) => {
             return xnpv;
         };
 
-        const adjustedRate = inputs.roi / 100;
-        const npvValue = calculateXNPV(adjustedRate, cashFlows, dates);
         setNpv(npvValue);
-        setTotalCash(cumulativeTotal);
-    }, [inputs, currentYear]);
-
-
+        setTotalCash(cumulativeTotal); // Update totalCash with cumulative total
+    }, [inputs, currentYear, benefitsBasedOnAge.husbandYearly, benefitsBasedOnAge.wifeYearly]);
 
 
     return (
