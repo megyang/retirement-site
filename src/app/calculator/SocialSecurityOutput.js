@@ -39,7 +39,6 @@ const SocialSecurityOutput = ({ inputs }) => {
         calculateTableData1();
     }, [inputs]);
 
-    console.log(benefitsBasedOnAge)
     const getSpouse = (age) => {
         const referenceTable = {
             62: new Decimal(32.5),

@@ -64,7 +64,7 @@ const Modal = ({ isOpen, onChange, title, description, children }) => {
                         <button
                             className="
                                 text-neutral-400
-                                hover:text-white
+                                hover:text-black
                                 absolute
                                 top-[10px]
                                 right-[10px]
