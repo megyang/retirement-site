@@ -1,10 +1,9 @@
-/* Assuming this is in your global.css or equivalent */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-    background-color: white; /* This sets the background to white */
-    color: rgb(var(--foreground-rgb)); /* Preserves the color styling */
+    background-color: white;
+    color: rgb(var(--foreground-rgb));
 }
 
