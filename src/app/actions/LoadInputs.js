@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
+import useAuthModal from "@/app/hooks/useAuthModal";
 
 const LoadInputs = ({ onLoad, onDelete }) => {
     const [versions, setVersions] = useState([]);
     const [selectedVersion, setSelectedVersion] = useState('');
     const supabase = useSupabaseClient();
     const { user } = useUser();
+    const authModal = useAuthModal();
 
     useEffect(() => {
         const fetchVersions = async () => {
@@ -28,6 +30,11 @@ const LoadInputs = ({ onLoad, onDelete }) => {
     }, [user, supabase]);
 
     const handleLoad = async () => {
+        if (!user) {
+            authModal.onOpen(); // Open the authentication modal if user is not logged in
+            return;
+        }
+
         if (!selectedVersion) {
             alert('Please select a version to load.');
             return;
@@ -47,6 +54,11 @@ const LoadInputs = ({ onLoad, onDelete }) => {
     };
 
     const handleDelete = async () => {
+        if (!user) {
+            authModal.onOpen(); // Open the authentication modal if user is not logged in
+            return;
+        }
+
         if (!selectedVersion) {
             alert('Please select a version to delete.');
             return;

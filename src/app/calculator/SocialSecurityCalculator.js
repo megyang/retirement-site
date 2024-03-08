@@ -5,6 +5,7 @@ import SocialSecurityOutput from './SocialSecurityOutput';
 import Decimal from 'decimal.js';
 import SaveInputs from "@/app/actions/SaveInputs";
 import LoadInputs from "@/app/actions/LoadInputs";
+import {MyUserContextProvider} from "@/app/hooks/useUser";
 
 const SocialSecurityCalculator = () => {
     const [inputs, setInputs] = useState({
@@ -47,6 +48,7 @@ const SocialSecurityCalculator = () => {
     return (
         <div className="mx-auto my-0">
             <div>
+                <MyUserContextProvider>
                 <h1 className="text-2xl font-bold text-center mb-4">social security calculator</h1>
                 <SocialSecurityInput inputs={inputs} onInputChange={handleInputChange} />
                 <div className="mt-8">
@@ -58,6 +60,7 @@ const SocialSecurityCalculator = () => {
                 <div className="mt-8">
                     <SocialSecurityOutput inputs={inputs} />
                 </div>
+                </MyUserContextProvider>
             </div>
         </div>
     );

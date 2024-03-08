@@ -1,11 +1,9 @@
-// Header.js
 "use client";
 import React from 'react';
 import useAuthModal from "@/app/hooks/useAuthModal";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {useUser} from "@/app/hooks/useUser";
 import {useRouter} from "next/navigation";
-import {FaUserAlt} from "react-icons/fa";
 
 const Header = ({ children }) => {
     const { isOpen, onOpen } = useAuthModal();
