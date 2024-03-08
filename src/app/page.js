@@ -12,15 +12,13 @@ export default function Page() {
     return (
     <main className="flex min-h-screen flex-col items-center justify-between">
       <div>
-          <MyUserContextProvider>
-              <SupabaseProvider>
-                  <UserProvider>
-                      <ModalProviders />
-                        <Header />
-                        <SocialSecurityCalculator />
-                    </UserProvider>
-              </SupabaseProvider>
-          </MyUserContextProvider>
+          <SupabaseProvider>
+              <UserProvider>
+                  <ModalProviders />
+                    <Header />
+                    <SocialSecurityCalculator />
+                </UserProvider>
+          </SupabaseProvider>
       </div>
     </main>
   );
