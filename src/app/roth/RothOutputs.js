@@ -3,10 +3,10 @@ import React, { useEffect, useState } from 'react';
 import Decimal from 'decimal.js';
 
 const RothOutputs = ({ inputs, inputs1 }) => {
-    //SS calculator
-    const { hLE, wLE, hPIA, wPIA, hSS, wSS } = inputs;
-    const [ssBenefits, setSsBenefits] = useState({});
-
+    const findRmdByYear = (details, year) => {
+        const detail = details.find((detail) => detail.year === year);
+        return detail ? detail.rmd : "0.00"; // Default to "0.00" if no detail found for that year
+    };
     //RMD calculations
     const { age1, age2, le1, le2, ira1, ira2, roi } = inputs1;
 
@@ -78,7 +78,6 @@ const RothOutputs = ({ inputs, inputs1 }) => {
     };
 
     useEffect(() => {
-        //rmd
         const calculateIraDetails = (startingAge, lifeExpectancy, currentIraValue) => {
             let year = new Date().getFullYear();
             let age = startingAge;
@@ -126,7 +125,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
             inheritedIRAHusband,
             inheritedIRAWife
         });
-//ss benefit
+
 
     }, [age1, age2, le1, le2, ira1, ira2, roi]); // Recalculate when inputs change
 // RMD CALCULATIONS END ----------------
@@ -210,6 +209,9 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                     <th className="p-2 border border-slate-300">Interest / Dividend</th>
                     <th className="p-2 border border-slate-300">Capital Gains</th>
                     <th className="p-2 border border-slate-300">Pension</th>
+                    <th className="p-2 border border-slate-300">RMD Spouse 1</th>
+                    <th className="p-2 border border-slate-300">RMD Spouse 2</th>
+
                 </tr>
                 </thead>
                 <tbody>
@@ -226,6 +228,9 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                         <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'interest')}</td>
                         <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'capitalGains')}</td>
                         <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'pension')}</td>
+                        <td className="p-2 border border-slate-300 text-right">{findRmdByYear(iraDetails.spouse1, parseInt(year))}</td>
+                        <td className="p-2 border border-slate-300 text-right">{findRmdByYear(iraDetails.spouse2, parseInt(year))}</td>
+
                     </tr>
                 ))}
                 </tbody>

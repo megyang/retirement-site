@@ -21,27 +21,6 @@ const RothInputs = ({ inputs, onInputChange, inputs1, onInputChange1 }) => {
             <table className="table-auto w-full">
                 <tbody>
                 <tr>
-                    <td>age by the end of this year:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="husbandAge"
-                            value={inputs.husbandAge}
-                            onChange={handleChange}
-                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>spouse&apos;s age by the end of this year:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="wifeAge"
-                            value={inputs.wifeAge}
-                            onChange={handleChange}                        />
-                    </td>
-                </tr>
-                <tr>
                     <td>primary insurance amount:</td>
                     <td>
                         <input
@@ -58,16 +37,6 @@ const RothInputs = ({ inputs, onInputChange, inputs1, onInputChange1 }) => {
                             type="number"
                             name="wPIA"
                             value={inputs.wPIA}
-                            onChange={handleChange}                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>return on investment:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="roi"
-                            value={inputs.roi}
                             onChange={handleChange}                        />
                     </td>
                 </tr>
