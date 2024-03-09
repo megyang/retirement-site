@@ -145,8 +145,6 @@ const RothInputs = ({ inputs, onInputChange, inputs1, onInputChange1 }) => {
 
 
 
-
-
             {/*rmd inputs*/}
             <h2 className="text-xl font-semibold mb-3">rmd inputs</h2>
             <table className="table-auto w-full">

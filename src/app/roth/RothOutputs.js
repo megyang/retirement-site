@@ -4,16 +4,20 @@ import Decimal from 'decimal.js';
 
 const RothOutputs = ({ inputs, inputs1 }) => {
     //RMD calculations
-    // Destructure inputs for easy access
     const { age1, age2, le1, le2, ira1, ira2, roi } = inputs1;
 
-    // State to hold the IRA calculation results
     const [iraDetails, setIraDetails] = useState({
         spouse1: [],
         spouse2: []
     });
 
-    // RMD Distribution Period by Age table as an object for quick lookup
+    const [totals, setTotals] = useState({
+        totalRMDsHusband: new Decimal(0),
+        totalRMDsWife: new Decimal(0),
+        inheritedIRAHusband: new Decimal(0),
+        inheritedIRAWife: new Decimal(0)
+    });
+
     const rmdDistributionTable = {
         75: 24.6,
         76: 23.7,
@@ -63,7 +67,6 @@ const RothOutputs = ({ inputs, inputs1 }) => {
         120: 2.0
     };
 
-    // Function to calculate RMD
     const calculateRMD = (age, startingValue) => {
         if (age < 75) return new Decimal(0); // RMD is 0 for ages below 75
         const distributionPeriod = rmdDistributionTable[age];
@@ -80,7 +83,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
             while (age <= lifeExpectancy) {
                 const investmentReturns = startingValue.times(Decimal(roi).dividedBy(100));
                 const rmd = calculateRMD(age, startingValue);
-                const endingValue = startingValue.plus(investmentReturns).minus(rmd); // Assuming Roth conversion is 0
+                const endingValue = startingValue.plus(investmentReturns).minus(rmd); // SUBTRACT ROTH LATER
 
                 details.push({
                     year,
@@ -90,8 +93,6 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                     rmd: rmd.toFixed(2),
                     endingValue: endingValue.toFixed(2)
                 });
-
-                // Prepare for next iteration
                 startingValue = endingValue;
                 age++;
                 year++;
@@ -100,21 +101,51 @@ const RothOutputs = ({ inputs, inputs1 }) => {
             return details;
         };
 
-        // Calculate IRA details for both spouses
         const spouse1Details = calculateIraDetails(age1, le1, ira1);
         const spouse2Details = calculateIraDetails(age2, le2, ira2);
 
-        // Update state
         setIraDetails({
             spouse1: spouse1Details,
             spouse2: spouse2Details
         });
 
+        const totalRMDsHusband = spouse1Details.reduce((total, detail) => total.plus(new Decimal(detail.rmd)), new Decimal(0));
+        const totalRMDsWife = spouse2Details.reduce((total, detail) => total.plus(new Decimal(detail.rmd)), new Decimal(0));
+
+        const inheritedIRAHusband = new Decimal(spouse1Details[spouse1Details.length - 1]?.endingValue || 0);
+        const inheritedIRAWife = new Decimal(spouse2Details[spouse2Details.length - 1]?.endingValue || 0);
+
+        setTotals({
+            totalRMDsHusband,
+            totalRMDsWife,
+            inheritedIRAHusband,
+            inheritedIRAWife
+        });
+
+
     }, [age1, age2, le1, le2, ira1, ira2, roi]); // Recalculate when inputs change
+// RMD CALCULATIONS END ----------------
+// ROTH CALCULATIONS START -----------
 
 
     return (
         <div>
+            <div className="totals-display">
+                <div className="total-rmds">
+                    <h2>Total RMDs</h2>
+                    <div>Husband: ${totals.totalRMDsHusband.toFixed(2)}</div>
+                    <div>Wife: ${totals.totalRMDsWife.toFixed(2)}</div>
+                    <div>Total: ${(totals.totalRMDsHusband.plus(totals.totalRMDsWife)).toFixed(2)}</div>
+                </div>
+                <div className="inherited-iras">
+                    <h2>Inherited Pre-Tax IRA</h2>
+                    <div>Husband: ${totals.inheritedIRAHusband.toFixed(2)}</div>
+                    <div>Wife: ${totals.inheritedIRAWife.toFixed(2)}</div>
+                    <div>Total: ${(totals.inheritedIRAHusband.plus(totals.inheritedIRAWife)).toFixed(2)}</div>
+                </div>
+            </div>
+
+            {/*RMD TABLES */}
             <h2 className="text-xl font-semibold mb-3">Spouse 1 IRA Details</h2>
             <table className="min-w-full table-auto border-collapse border border-slate-400">
                 <thead>
