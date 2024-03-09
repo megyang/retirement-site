@@ -42,7 +42,6 @@ const SocialSecurityCalculator = () => {
 
     const handleDeleteInputs = (inputsId) => {
         console.log('Deleted version with ID:', inputsId);
-        // You can also implement further state updates if needed
     };
 
     return (

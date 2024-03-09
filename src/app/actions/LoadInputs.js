@@ -36,7 +36,7 @@ const LoadInputs = ({ onLoad, onDelete }) => {
         }
 
         if (!selectedVersion) {
-            alert('Please select a version to load.');
+            alert('please select a version to load.');
             return;
         }
 
