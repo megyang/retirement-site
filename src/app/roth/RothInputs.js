@@ -2,6 +2,8 @@
 import React from 'react';
 
 const RothInputs = ({ inputs, onInputChange, inputs1, onInputChange1 }) => {
+
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         onInputChange(name, value);
@@ -14,135 +16,103 @@ const RothInputs = ({ inputs, onInputChange, inputs1, onInputChange1 }) => {
 
     return (
         <div className="inputs-container">
-            <h2 className="text-xl font-semibold mb-3">roth inputs</h2>
+            {/*social security inputs*/}
+            <h2 className="text-xl font-semibold mb-3">inputs</h2>
             <table className="table-auto w-full">
                 <tbody>
                 <tr>
-                    <td>roth 1:</td>
+                    <td>age by the end of this year:</td>
                     <td>
                         <input
                             type="number"
-                            name="Roth1"
-                            value={inputs.Roth1}
+                            name="husbandAge"
+                            value={inputs.husbandAge}
                             onChange={handleChange}
                         />
                     </td>
                 </tr>
                 <tr>
-                    <td>roth 2: </td>
+                    <td>spouse&apos;s age by the end of this year:</td>
                     <td>
                         <input
                             type="number"
-                            name="Roth2"
-                            value={inputs.Roth2}
+                            name="wifeAge"
+                            value={inputs.wifeAge}
                             onChange={handleChange}                        />
                     </td>
                 </tr>
                 <tr>
-                    <td>salary 1:</td>
+                    <td>primary insurance amount:</td>
                     <td>
                         <input
                             type="number"
-                            name="salary1"
-                            value={inputs.salary1}
+                            name="hPIA"
+                            value={inputs.hPIA}
                             onChange={handleChange}                        />
                     </td>
                 </tr>
                 <tr>
-                    <td>salary 2:</td>
+                    <td>spouse&apos;s primary insurance amount:</td>
                     <td>
                         <input
                             type="number"
-                            name="salary2"
-                            value={inputs.salary2}
+                            name="wPIA"
+                            value={inputs.wPIA}
                             onChange={handleChange}                        />
                     </td>
                 </tr>
                 <tr>
-                    <td>rental income:</td>
+                    <td>return on investment:</td>
                     <td>
                         <input
                             type="number"
-                            name="rentalIncome"
-                            value={inputs.rentalIncome}
+                            name="roi"
+                            value={inputs.roi}
                             onChange={handleChange}                        />
                     </td>
                 </tr>
                 <tr>
-                    <td>interest:</td>
+                    <td>age to start collecting social security:</td>
                     <td>
                         <input
                             type="number"
-                            name="interest"
-                            value={inputs.interest}
+                            name="hSS"
+                            value={inputs.hSS}
                             onChange={handleChange}                        />
                     </td>
                 </tr>
                 <tr>
-                    <td>capitalGains:</td>
+                    <td>spouse&apos;s age to start collecting social security:</td>
                     <td>
                         <input
                             type="number"
-                            name="capitalGains"
-                            value={inputs.capitalGains}
+                            name="wSS"
+                            value={inputs.wSS}
                             onChange={handleChange}                        />
                     </td>
                 </tr>
                 <tr>
-                    <td>pension:</td>
+                    <td>life expectancy:</td>
                     <td>
                         <input
                             type="number"
-                            name="pension"
-                            value={inputs.pension}
+                            name="hLE"
+                            value={inputs.hLE}
                             onChange={handleChange}                        />
                     </td>
                 </tr>
                 <tr>
-                    <td>ss1: </td>
+                    <td>spouse&apos;s life expectancy:</td>
                     <td>
                         <input
                             type="number"
-                            name="ss1"
-                            value={inputs.ss1}
-                            onChange={handleChange}                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>ss2: </td>
-                    <td>
-                        <input
-                            type="number"
-                            name="ss2"
-                            value={inputs.ss2}
-                            onChange={handleChange}                        />
-                    </td>
-                </tr>                <tr>
-                    <td>rmd1: </td>
-                    <td>
-                        <input
-                            type="number"
-                            name="rmd1"
-                            value={inputs.rmd1}
-                            onChange={handleChange}                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>rmd2: </td>
-                    <td>
-                        <input
-                            type="number"
-                            name="rmd2"
-                            value={inputs.rmd2}
+                            name="wLE"
+                            value={inputs.wLE}
                             onChange={handleChange}                        />
                     </td>
                 </tr>
                 </tbody>
             </table>
-
-
-
-
 
 
             {/*rmd inputs*/}

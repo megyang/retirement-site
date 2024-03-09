@@ -69,8 +69,6 @@ const SocialSecurityOutput = ({ inputs }) => {
         // After tableData1 is set, find the entries for the husband's and wife's start ages
         const husbandStartAgeData = tableData1.find(data => data.age === inputs.hSS);
         const wifeStartAgeData = tableData1.find(data => data.age === inputs.wSS);
-        console.log(husbandStartAgeData)
-        console.log(wifeStartAgeData)
         // Update benefitsBasedOnAge with the yearly values found for both husband and wife
         // If no data is found for the start age (in case of incorrect inputs or data not available),
         // keep the benefits as 0 (or you could set them to a default value if preferred)

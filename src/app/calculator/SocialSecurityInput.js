@@ -8,7 +8,7 @@ const SocialSecurityInput = ({ inputs, onInputChange }) => {
 
     return (
         <div className="inputs-container">
-            <h2 className="text-xl font-semibold mb-3">inputs</h2>
+            <h2 className="text-xl font-semibold mb-3">ss inputs</h2>
             <table className="table-auto w-full">
                 <tbody>
                 <tr>

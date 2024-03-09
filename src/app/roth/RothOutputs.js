@@ -3,6 +3,10 @@ import React, { useEffect, useState } from 'react';
 import Decimal from 'decimal.js';
 
 const RothOutputs = ({ inputs, inputs1 }) => {
+    //SS calculator
+    const { hLE, wLE, hPIA, wPIA, hSS, wSS } = inputs;
+    const [ssBenefits, setSsBenefits] = useState({});
+
     //RMD calculations
     const { age1, age2, le1, le2, ira1, ira2, roi } = inputs1;
 
@@ -74,6 +78,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
     };
 
     useEffect(() => {
+        //rmd
         const calculateIraDetails = (startingAge, lifeExpectancy, currentIraValue) => {
             let year = new Date().getFullYear();
             let age = startingAge;
@@ -121,15 +126,117 @@ const RothOutputs = ({ inputs, inputs1 }) => {
             inheritedIRAHusband,
             inheritedIRAWife
         });
-
+//ss benefit
 
     }, [age1, age2, le1, le2, ira1, ira2, roi]); // Recalculate when inputs change
 // RMD CALCULATIONS END ----------------
+
 // ROTH CALCULATIONS START -----------
+    const currentYear = new Date().getFullYear();
+    const maxLifeExpectancy = Math.max(le1, le2);
+
+    // Initial state setup for editable fields.
+    // You can also use inputs to pre-populate this state if they should start with values.
+    const [editableFields, setEditableFields] = useState(() => {
+        const fields = {};
+        for (let year = currentYear; year <= currentYear + (maxLifeExpectancy - Math.min(age1, age2)); year++) {
+            fields[year] = {
+                rothSpouse1: 0,
+                rothSpouse2: 0,
+                salarySpouse1: 0,
+                salarySpouse2: 0,
+                rentalIncome: 0,
+                interestDividendIncome: 0,
+                shortTermCapitalGains: 0,
+                pension: 0
+            };
+        }
+        return fields;
+    });
+
+    // Static fields calculated once based on life expectancies
+    const staticFields = {};
+    for (let year = currentYear, ageSpouse1 = age1, ageSpouse2 = age2;
+         year <= currentYear + maxLifeExpectancy - Math.min(age1, age2);
+         year++, ageSpouse1++, ageSpouse2++) {
+        staticFields[year] = {
+            year: year,
+            ageSpouse1: ageSpouse1,
+            ageSpouse2: ageSpouse2,
+            // Add other static calculations here if needed, such as RMDs, Social Security, etc.
+        };
+    }
+
+    // Handler for changes in the editable fields
+    const handleEditableFieldChange = (year, field, value) => {
+        setEditableFields(prev => ({
+            ...prev,
+            [year]: {
+                ...prev[year],
+                [field]: Decimal(value) // Convert input value to a Decimal
+            }
+        }));
+    };
+
+    // Function to render editable field inputs with improved styling
+    const renderEditableFieldInput = (year, field) => {
+        return (
+            <input
+                type="text"
+                className="w-full p-1 border border-gray-300 rounded text-right"
+                value={editableFields[year][field]} // Show values as fixed-point notation
+                onChange={(e) => handleEditableFieldChange(year, field, e.target.value)}
+            />
+        );
+    };
+
 
 
     return (
         <div>
+
+            <h2 className="text-xl font-semibold mb-3">Financial Plan Details</h2>
+            <table className="min-w-full table-fixed border-collapse border border-slate-400">
+                <thead className="bg-gray-100">
+                <tr>
+                    <th className="p-2 border border-slate-300">Year</th>
+                    <th className="p-2 border border-slate-300">Age Spouse 1</th>
+                    <th className="p-2 border border-slate-300">Age Spouse 2</th>
+                    <th className="p-2 border border-slate-300">Roth Conversion 1</th>
+                    <th className="p-2 border border-slate-300">Roth Conversion 2</th>
+                    <th className="p-2 border border-slate-300">Salary 1</th>
+                    <th className="p-2 border border-slate-300">Salary 2</th>
+                    <th className="p-2 border border-slate-300">Rental Income</th>
+                    <th className="p-2 border border-slate-300">Interest / Dividend</th>
+                    <th className="p-2 border border-slate-300">Capital Gains</th>
+                    <th className="p-2 border border-slate-300">Pension</th>
+                </tr>
+                </thead>
+                <tbody>
+                {Object.keys(staticFields).map((year) => (
+                    <tr key={year}>
+                        <td className="p-2 border border-slate-300 text-center">{year}</td>
+                        <td className="p-2 border border-slate-300 text-center">{staticFields[year].ageSpouse1}</td>
+                        <td className="p-2 border border-slate-300 text-center">{staticFields[year].ageSpouse2}</td>
+                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'rothSpouse1')}</td>
+                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'rothSpouse2')}</td>
+                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'salary1')}</td>
+                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'salary2')}</td>
+                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'rentalIncome')}</td>
+                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'interest')}</td>
+                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'capitalGains')}</td>
+                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'pension')}</td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+
+
+
+
+
+            {/*RMD TABLES */}
+
             <div className="totals-display">
                 <div className="total-rmds">
                     <h2>Total RMDs</h2>
@@ -145,7 +252,6 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                 </div>
             </div>
 
-            {/*RMD TABLES */}
             <h2 className="text-xl font-semibold mb-3">Spouse 1 IRA Details</h2>
             <table className="min-w-full table-auto border-collapse border border-slate-400">
                 <thead>

@@ -5,18 +5,12 @@ import RothOutputs from "@/app/roth/RothOutputs";
 
 const RothConversionCalculator = () => {
     const [inputs, setInputs] = useState({
-        Roth1: 0,
-        Roth2: 0,
-        salary1: 0,
-        salary2: 0,
-        rentalIncome: 0,
-        interest: 0,
-        capitalGains: 0,
-        pension: 0,
-        ss1: 0,
-        ss2: 0,
-        rmd1: 0,
-        rmd2: 0,
+        hLE: 90,
+        wLE: 95,
+        hPIA: 2500,
+        wPIA: 2000,
+        hSS: 70,
+        wSS: 70
     });
 
     const [inputs1, setInputs1] = useState({
