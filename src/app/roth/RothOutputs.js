@@ -7,6 +7,13 @@ const RothOutputs = ({ inputs, inputs1 }) => {
         const detail = details.find((detail) => detail.year === year);
         return detail ? detail.rmd : "0.00"; // Default to "0.00" if no detail found for that year
     };
+    const findSsBenefitsByYear = (year) => {
+        const benefitsForYear = tableData.find(data => data.year === year);
+        return {
+            spouse1Benefit: benefitsForYear ? benefitsForYear.husbandBenefit : "0.00",
+            spouse2Benefit: benefitsForYear ? benefitsForYear.wifeBenefit : "0.00",
+        };
+    };
 
 
     //RMD calculations
@@ -378,45 +385,6 @@ const RothOutputs = ({ inputs, inputs1 }) => {
 
     return (
         <div>
-
-            <h2 className="text-xl font-semibold mb-3">outputs</h2>
-            <div className="mb-6">
-                <h3 className="font-medium">total benefit amount</h3>
-                <p>total cash: ${totalCash.toFixed(2)}</p>
-                <p>net present value: ${npv.toFixed(2)}</p>
-            </div>
-            <div>
-                <h3 className="font-medium mb-2">social security benefits by year</h3>
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                    <tr>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">year</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">your age</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">spouse&apos;s age</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">ss benefit</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">spouse&apos;s ss benefit</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">total ss benefit</th>
-                    </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                    {tableData.map(({ year, husbandAge, wifeAge, husbandBenefit, wifeBenefit, totalBenefit }, index) => (
-                        <tr key={index}>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{year}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{husbandAge}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{wifeAge}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${husbandBenefit}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${wifeBenefit}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${totalBenefit}</td>
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
-            </div>
-
-
-
-
-
             <h2 className="text-xl font-semibold mb-3">Financial Plan Details</h2>
             <table className="min-w-full table-fixed border-collapse border border-slate-400">
                 <thead className="bg-gray-100">
@@ -441,25 +409,29 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                 </tr>
                 </thead>
                 <tbody>
-                {Object.keys(staticFields).map((year) => (
-                    <tr key={year}>
-                        <td className="p-2 border border-slate-300 text-center">{year}</td>
-                        <td className="p-2 border border-slate-300 text-center">{staticFields[year].ageSpouse1}</td>
-                        <td className="p-2 border border-slate-300 text-center">{staticFields[year].ageSpouse2}</td>
-                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'rothSpouse1')}</td>
-                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'rothSpouse2')}</td>
-                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'salary1')}</td>
-                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'salary2')}</td>
-                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'rentalIncome')}</td>
-                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'interest')}</td>
-                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'capitalGains')}</td>
-                        <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'pension')}</td>
-                        <td className="p-2 border border-slate-300 text-right">{findRmdByYear(iraDetails.spouse1, parseInt(year))}</td>
-                        <td className="p-2 border border-slate-300 text-right">{findRmdByYear(iraDetails.spouse2, parseInt(year))}</td>
+                {Object.keys(staticFields).map((year, index) => {
+                    const ssBenefits = findSsBenefitsByYear(parseInt(year));
+                    return (
+                        <tr key={year}>
+                            <td className="p-2 border border-slate-300 text-center">{year}</td>
+                            <td className="p-2 border border-slate-300 text-center">{staticFields[year].ageSpouse1}</td>
+                            <td className="p-2 border border-slate-300 text-center">{staticFields[year].ageSpouse2}</td>
+                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'rothSpouse1')}</td>
+                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'rothSpouse2')}</td>
+                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'salary1')}</td>
+                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'salary2')}</td>
+                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'rentalIncome')}</td>
+                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'interest')}</td>
+                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'capitalGains')}</td>
+                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'pension')}</td>
+                            <td className="p-2 border border-slate-300 text-right">{findRmdByYear(iraDetails.spouse1, parseInt(year))}</td>
+                            <td className="p-2 border border-slate-300 text-right">{findRmdByYear(iraDetails.spouse2, parseInt(year))}</td>
+                            <td className="p-2 border border-slate-300 text-right">{ssBenefits.spouse1Benefit}</td>
+                            <td className="p-2 border border-slate-300 text-right">{ssBenefits.spouse2Benefit}</td>
 
-
-                    </tr>
-                ))}
+                        </tr>
+                    )
+                })}
                 </tbody>
             </table>
 
