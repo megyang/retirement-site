@@ -184,7 +184,7 @@ const SocialSecurityOutput = ({ inputs }) => {
         setTotalCash(cumulativeTotal); // Update totalCash with cumulative total
     }, [inputs, currentYear, benefitsBasedOnAge.husbandYearly, benefitsBasedOnAge.wifeYearly]);
 
-
+console.log(tableData1)
     return (
         <div>
             <h2 className="text-xl font-semibold mb-3">outputs</h2>
