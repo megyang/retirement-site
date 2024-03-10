@@ -386,7 +386,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
 
     const startingStandardDeduction = 29200;
 
-    const [annualInflationRate, setAnnualInflationRate] = useState(inputs1.inflation);
+    const [annualInflationRate, setAnnualInflationRate] = useState(inputs1.inflation/100);
 
     const calculateStandardDeductionForYear = (year) => {
         const yearsDifference = year - currentYear; // Assuming 'currentYear' is the base year
@@ -494,9 +494,44 @@ const RothOutputs = ({ inputs, inputs1 }) => {
     const totalInheritedIRA = totals.inheritedIRAHusband.plus(totals.inheritedIRAWife);
     const beneficiaryTaxPaid = totalInheritedIRA.times(beneficiaryTaxRate).toFixed(2);
 
+    const calculateXNPV = (rate, cashFlows, dates) => {
+        let xnpv = 0.0;
+        for (let i = 0; i < cashFlows.length; i++) {
+            const xnpvTerm = (dates[i] - dates[0]) / (365 * 24 * 3600 * 1000);
+            xnpv += cashFlows[i] / Math.pow(1 + rate, xnpvTerm);
+        }
+        return xnpv;
+    };
+
+// Compute Total Cash for Lifetime Tax Paid
+    const totalLifetimeTaxPaid = Object.keys(taxableIncomes).reduce(
+        (total, year) => total.plus(new Decimal(taxableIncomes[year])),
+        new Decimal(0)
+    );
+
+    const [npvLifetimeTax, setNpvLifetimeTax] = useState(0);
+    const [npvBeneficiaryTax, setNpvBeneficiaryTax] = useState(0);
 
 
-    return (
+    useEffect(() => {
+        // For Lifetime Tax Paid NPV
+        const cashFlowsLifetimeTax = Object.keys(taxableIncomes).map(year => new Decimal(taxableIncomes[year]));
+        const datesLifetimeTax = Object.keys(taxableIncomes).map(year => new Date(parseInt(year), 0, 1));
+        const npvLifetimeTaxValue = calculateXNPV(inputs.roi / 100, cashFlowsLifetimeTax, datesLifetimeTax);
+
+        setNpvLifetimeTax(npvLifetimeTaxValue);
+
+        // For Beneficiary Tax Paid NPV
+        const futureYear = currentYear + Math.max(le1 - age1, le2 - age2);
+        const cashFlowBeneficiaryTax = new Decimal(beneficiaryTaxPaid);
+        const dateBeneficiaryTax = new Date(futureYear, 0, 1);
+        const npvBeneficiaryTaxValue = calculateXNPV(inputs.roi / 100, [cashFlowBeneficiaryTax], [dateBeneficiaryTax]);
+        setNpvBeneficiaryTax(npvBeneficiaryTaxValue);
+
+    }, [inputs.roi, taxableIncomes, beneficiaryTaxPaid, inputs1, currentYear, age1, le1, age2, le2]);
+
+
+return (
         <div>
             <div className="totals-display" style={{ display: 'flex', justifyContent: 'space-around', marginTop: '20px', marginBottom: '20px' }}>
                 <div className="total-rmds" style={{ textAlign: 'center', padding: '10px' }}>
@@ -505,6 +540,17 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                     <div style={{ marginBottom: '10px' }}>Wife: <strong>${totals.totalRMDsWife.toFixed(2)}</strong></div>
                     <div>Total: <strong>${totals.totalRMDsHusband.plus(totals.totalRMDsWife).toFixed(2)}</strong></div>
                 </div>
+                <div className="total-taxes-paid" style={{ textAlign: 'center', padding: '10px' }}>
+                    <h2 style={{ marginBottom: '15px', color: '#333', fontSize: '18px', fontWeight: 'bold' }}>Total Taxes Paid </h2>
+                    <h1>Total Cash</h1>
+                    <div>Lifetime Tax Paid: <strong>${totalLifetimeTaxPaid.toFixed(2)}</strong></div>
+                    <div>Beneficiary Tax Paid: <strong>${beneficiaryTaxPaid}</strong></div>
+                    <h1>Net Present Value</h1>
+                    <div>Lifetime Tax NPV: <strong>${npvLifetimeTax.toFixed(2)}</strong></div>
+                    <div>Beneficiary Tax NPV: <strong>${npvBeneficiaryTax.toFixed(2)}</strong></div>
+
+                </div>
+
                 <div className="inherited-iras" style={{ textAlign: 'center', padding: '10px', width: '30%'}}>
                     <h2 style={{ marginBottom: '15px', color: '#333', fontSize: '18px', fontWeight: 'bold' }}>Inherited Pre-Tax IRA</h2>
                     <div style={{ marginBottom: '10px' }}>Husband: <strong>${totals.inheritedIRAHusband.toFixed(2)}</strong></div>
@@ -515,7 +561,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                         <input
                             id="beneficiaryTaxRate"
                             type="number"
-                            value={beneficiaryTaxRate * 100} // Display as percentage
+                            value={beneficiaryTaxRate * 100}
                             onChange={handleTaxRateChange}
                             style={{ flex: '1', textAlign: 'right', padding: '5px', border: '1px solid #ddd', borderRadius: '5px' }}
                         />%
@@ -621,7 +667,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
             </table>
 
             {/*RMD TABLES */}
-
+            {/*
             <h2 className="text-xl font-semibold mb-3">Spouse 1 IRA Details</h2>
             <table className="min-w-full table-auto border-collapse border border-slate-400">
                 <thead>
@@ -702,7 +748,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                 })}
                 </tbody>
             </table>
-
+*/}
         </div>
     );
 
