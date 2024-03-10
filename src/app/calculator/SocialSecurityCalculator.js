@@ -9,7 +9,7 @@ import {MyUserContextProvider} from "@/app/hooks/useUser";
 
 const SocialSecurityCalculator = () => {
     const [inputs, setInputs] = useState({
-        husbandAge: 62,
+        husbandAge: 60,
         wifeAge: 60,
         hLE: 90,
         wLE: 95,
@@ -48,7 +48,7 @@ const SocialSecurityCalculator = () => {
         <div className="mx-auto my-0">
             <div>
                 <MyUserContextProvider>
-                <h1 className="text-2xl font-bold text-center mb-4">social security calculator</h1>
+                <h1 className="text-2xl font-bold text-center mb-4">Social Security Calculator</h1>
                 <SocialSecurityInput inputs={inputs} onInputChange={handleInputChange} />
                 <div className="mt-8">
                     <SaveInputs inputs={inputs}/>

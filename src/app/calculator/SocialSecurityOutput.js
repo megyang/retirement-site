@@ -159,7 +159,7 @@ const SocialSecurityOutput = ({ inputs }) => {
             lastYearHusbandBenefit = husbandBenefit;
             lastYearWifeBenefit = wifeBenefit;
 
-            return { year, husbandAge, wifeAge, husbandBenefit: husbandBenefit.toFixed(2), wifeBenefit: wifeBenefit.toFixed(2), totalBenefit: totalBenefit.toFixed(2) };
+            return { year, husbandAge, wifeAge, husbandBenefit: husbandBenefit.toFixed(0), wifeBenefit: wifeBenefit.toFixed(0), totalBenefit: totalBenefit.toFixed(0) };
         });
 
         setTableData(newTableData);
@@ -187,23 +187,23 @@ const SocialSecurityOutput = ({ inputs }) => {
 console.log(tableData1)
     return (
         <div>
-            <h2 className="text-xl font-semibold mb-3">outputs</h2>
+            <h2 className="text-xl font-semibold mb-3">Outputs</h2>
             <div className="mb-6">
-                <h3 className="font-medium">total benefit amount</h3>
-                <p>total cash: ${totalCash.toFixed(2)}</p>
-                <p>net present value: ${npv.toFixed(2)}</p>
+                <h3 className="font-medium">Total Social Security Collected</h3>
+                <p>Cash Collected: ${Number(totalCash.toFixed(0)).toLocaleString()}</p>
+                <p>Net Present Value: ${Number(npv.toFixed(0)).toLocaleString()}</p>
             </div>
             <div>
-                <h3 className="font-medium mb-2">social security benefits by year</h3>
+                <h3 className="font-medium mb-2">Social Security Benefits Table</h3>
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                     <tr>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">year</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">your age</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">spouse&apos;s age</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">ss benefit</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">spouse&apos;s ss benefit</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">total ss benefit</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Year</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Husband&apos;s Age</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Wife&apos;s Age</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Husband SS Benefit</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Wife SS Benefit</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Total SS Benefit</th>
                     </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -212,9 +212,9 @@ console.log(tableData1)
                             <td className="px-3 py-2 text-center whitespace-nowrap">{year}</td>
                             <td className="px-3 py-2 text-center whitespace-nowrap">{husbandAge}</td>
                             <td className="px-3 py-2 text-center whitespace-nowrap">{wifeAge}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${husbandBenefit}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${wifeBenefit}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${totalBenefit}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">${Number(husbandBenefit).toLocaleString()}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">${Number(wifeBenefit).toLocaleString()}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">${Number(totalBenefit).toLocaleString()}</td>
                         </tr>
                     ))}
                     </tbody>
