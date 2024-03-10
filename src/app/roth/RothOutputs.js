@@ -386,7 +386,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
 
     const startingStandardDeduction = 29200;
 
-    const [annualInflationRate, setAnnualInflationRate] = useState(0.02); // Example: 2%
+    const [annualInflationRate, setAnnualInflationRate] = useState(inputs1.inflation);
 
     const calculateStandardDeductionForYear = (year) => {
         const yearsDifference = year - currentYear; // Assuming 'currentYear' is the base year
@@ -484,20 +484,45 @@ const RothOutputs = ({ inputs, inputs1 }) => {
         spouse2: {},
     });
 
+    const [beneficiaryTaxRate, setBeneficiaryTaxRate] = useState(0.24); // Default to 24%
+
+    const handleTaxRateChange = (e) => {
+        const newRate = parseFloat(e.target.value) / 100; // Convert percentage to a decimal for calculation
+        setBeneficiaryTaxRate(newRate);
+    };
+
+    const totalInheritedIRA = totals.inheritedIRAHusband.plus(totals.inheritedIRAWife);
+    const beneficiaryTaxPaid = totalInheritedIRA.times(beneficiaryTaxRate).toFixed(2);
+
+
+
     return (
         <div>
             <div className="totals-display" style={{ display: 'flex', justifyContent: 'space-around', marginTop: '20px', marginBottom: '20px' }}>
-                <div className="total-rmds" style={{ textAlign: 'center', padding: '10px', border: '1px solid #ddd', borderRadius: '5px', width: '30%', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                <div className="total-rmds" style={{ textAlign: 'center', padding: '10px' }}>
                     <h2 style={{ marginBottom: '15px', color: '#333', fontSize: '18px', fontWeight: 'bold' }}>Total RMDs</h2>
                     <div style={{ marginBottom: '10px' }}>Husband: <strong>${totals.totalRMDsHusband.toFixed(2)}</strong></div>
                     <div style={{ marginBottom: '10px' }}>Wife: <strong>${totals.totalRMDsWife.toFixed(2)}</strong></div>
                     <div>Total: <strong>${totals.totalRMDsHusband.plus(totals.totalRMDsWife).toFixed(2)}</strong></div>
                 </div>
-                <div className="inherited-iras" style={{ textAlign: 'center', padding: '10px', border: '1px solid #ddd', borderRadius: '5px', width: '30%', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                <div className="inherited-iras" style={{ textAlign: 'center', padding: '10px', width: '30%'}}>
                     <h2 style={{ marginBottom: '15px', color: '#333', fontSize: '18px', fontWeight: 'bold' }}>Inherited Pre-Tax IRA</h2>
                     <div style={{ marginBottom: '10px' }}>Husband: <strong>${totals.inheritedIRAHusband.toFixed(2)}</strong></div>
                     <div style={{ marginBottom: '10px' }}>Wife: <strong>${totals.inheritedIRAWife.toFixed(2)}</strong></div>
-                    <div>Total: <strong>${totals.inheritedIRAHusband.plus(totals.inheritedIRAWife).toFixed(2)}</strong></div>
+                    <div>Total: <strong>${totalInheritedIRA.toFixed(2)}</strong></div>
+                    <div>
+                        <label htmlFor="beneficiaryTaxRate" style={{ fontWeight: 'normal', color: '#333', fontSize: '16px', marginRight: '10px' }}>Beneficiary Tax Rate:</label>
+                        <input
+                            id="beneficiaryTaxRate"
+                            type="number"
+                            value={beneficiaryTaxRate * 100} // Display as percentage
+                            onChange={handleTaxRateChange}
+                            style={{ flex: '1', textAlign: 'right', padding: '5px', border: '1px solid #ddd', borderRadius: '5px' }}
+                        />%
+                    </div>
+                    <div style={{ marginTop: '10px' }}>
+                        Beneficiary Tax Paid: <strong>${beneficiaryTaxPaid}</strong>
+                    </div>
                 </div>
             </div>
 

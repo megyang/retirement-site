@@ -26,6 +26,7 @@ const RothInputs = ({ inputs, onInputChange, inputs1, onInputChange1 }) => {
                         { label: "Spouse's age to start collecting Social Security:", name: "wSS", value: inputs.wSS },
                         { label: "Life Expectancy:", name: "hLE", value: inputs.hLE },
                         { label: "Spouse's Life Expectancy:", name: "wLE", value: inputs.wLE },
+
                     ].map((input) => (
                         <div key={input.name} className="flex items-center">
                             <label className="w-1/2 mr-4 text-right">{input.label}</label>
@@ -52,6 +53,8 @@ const RothInputs = ({ inputs, onInputChange, inputs1, onInputChange1 }) => {
                         { label: "Current IRA Value 1:", name: "ira1", value: inputs1.ira1 },
                         { label: "Current IRA Value 2:", name: "ira2", value: inputs1.ira2 },
                         { label: "ROI:", name: "roi", value: inputs1.roi },
+                        { label: "Inflation Rate:", name: "inflation", value: inputs1.inflation }
+
                     ].map((input) => (
                         <div key={input.name} className="flex items-center">
                             <label className="w-1/2 mr-4 text-right">{input.label}</label>

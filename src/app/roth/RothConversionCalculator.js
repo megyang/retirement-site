@@ -21,6 +21,7 @@ const RothConversionCalculator = () => {
         ira1: 800000,
         ira2: 1000000,
         roi: 3.0,
+        inflation: 0.02
     });
 
     const handleInputChange = (name, value) => {
