@@ -380,30 +380,78 @@ const RothOutputs = ({ inputs, inputs1 }) => {
         setNpv(npvValue);
         setTotalCash(cumulativeTotal); // Update totalCash with cumulative total
     }, [inputs, currentYear1, benefitsBasedOnAge.husbandYearly, benefitsBasedOnAge.wifeYearly]);
+    const startingStandardDeduction = 29200;
+// Define the annual inflation rate
+    const annualIncreaseRate = 0.02;
 
-    console.log(tableData1)
+// Function to calculate the standard deduction for a given year
+    const calculateStandardDeductionForYear = (year) => {
+        const yearsDifference = year - currentYear; // Assuming 'currentYear' is the base year
+        return startingStandardDeduction * Math.pow(1 + annualIncreaseRate, yearsDifference);
+    };
+
+    const calculateTotalIncomeForYear = (year) => {
+        const ssBenefits = findSsBenefitsByYear(parseInt(year));
+        const editableFieldsForYear = editableFields[year];
+        const rmdSpouse1 = findRmdByYear(iraDetails.spouse1, parseInt(year));
+        const rmdSpouse2 = findRmdByYear(iraDetails.spouse2, parseInt(year));
+
+        const totalIncome = new Decimal(editableFieldsForYear.rothSpouse1)
+            .plus(editableFieldsForYear.rothSpouse2)
+            .plus(editableFieldsForYear.salarySpouse1)
+            .plus(editableFieldsForYear.salarySpouse2)
+            .plus(editableFieldsForYear.rentalIncome)
+            .plus(editableFieldsForYear.interestDividendIncome)
+            .plus(editableFieldsForYear.shortTermCapitalGains)
+            .plus(editableFieldsForYear.pension)
+            .plus(rmdSpouse1)
+            .plus(rmdSpouse2)
+            .plus(ssBenefits.spouse1Benefit)
+            .plus(ssBenefits.spouse2Benefit);
+
+        return totalIncome.toFixed(2); // Adjust the precision as needed
+    };
+
 
     return (
         <div>
+            <div className="totals-display" style={{ display: 'flex', justifyContent: 'space-around', marginTop: '20px', marginBottom: '20px' }}>
+                <div className="total-rmds" style={{ textAlign: 'center', padding: '10px', border: '1px solid #ddd', borderRadius: '5px', width: '30%', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                    <h2 style={{ marginBottom: '15px', color: '#333', fontSize: '18px', fontWeight: 'bold' }}>Total RMDs</h2>
+                    <div style={{ marginBottom: '10px' }}>Husband: <strong>${totals.totalRMDsHusband.toFixed(2)}</strong></div>
+                    <div style={{ marginBottom: '10px' }}>Wife: <strong>${totals.totalRMDsWife.toFixed(2)}</strong></div>
+                    <div>Total: <strong>${totals.totalRMDsHusband.plus(totals.totalRMDsWife).toFixed(2)}</strong></div>
+                </div>
+                <div className="inherited-iras" style={{ textAlign: 'center', padding: '10px', border: '1px solid #ddd', borderRadius: '5px', width: '30%', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                    <h2 style={{ marginBottom: '15px', color: '#333', fontSize: '18px', fontWeight: 'bold' }}>Inherited Pre-Tax IRA</h2>
+                    <div style={{ marginBottom: '10px' }}>Husband: <strong>${totals.inheritedIRAHusband.toFixed(2)}</strong></div>
+                    <div style={{ marginBottom: '10px' }}>Wife: <strong>${totals.inheritedIRAWife.toFixed(2)}</strong></div>
+                    <div>Total: <strong>${totals.inheritedIRAHusband.plus(totals.inheritedIRAWife).toFixed(2)}</strong></div>
+                </div>
+            </div>
+
             <h2 className="text-xl font-semibold mb-3">Financial Plan Details</h2>
             <table className="min-w-full table-fixed border-collapse border border-slate-400">
                 <thead className="bg-gray-100">
                 <tr>
-                    <th className="p-2 border border-slate-300">Year</th>
-                    <th className="p-2 border border-slate-300">Age Spouse 1</th>
-                    <th className="p-2 border border-slate-300">Age Spouse 2</th>
-                    <th className="p-2 border border-slate-300">Roth Conversion 1</th>
-                    <th className="p-2 border border-slate-300">Roth Conversion 2</th>
-                    <th className="p-2 border border-slate-300">Salary 1</th>
-                    <th className="p-2 border border-slate-300">Salary 2</th>
-                    <th className="p-2 border border-slate-300">Rental Income</th>
-                    <th className="p-2 border border-slate-300">Interest / Dividend</th>
-                    <th className="p-2 border border-slate-300">Capital Gains</th>
-                    <th className="p-2 border border-slate-300">Pension</th>
-                    <th className="p-2 border border-slate-300">RMD Spouse 1</th>
-                    <th className="p-2 border border-slate-300">RMD Spouse 2</th>
-                    <th className="p-2 border border-slate-300">SS Spouse 1</th>
-                    <th className="p-2 border border-slate-300">SS Spouse 2</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Year</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Age Spouse 1</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Age Spouse 2</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Roth Conversion 1</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Roth Conversion 2</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Salary 1</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Salary 2</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Rental Income</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Interest / Dividend</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Capital Gains</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Pension</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">RMD Spouse 1</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">RMD Spouse 2</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">ss spouse 1</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">ss spouse 2</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">total ordinary income</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">standard deductions</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">taxable ordinary income</th>
 
 
                 </tr>
@@ -411,23 +459,31 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                 <tbody>
                 {Object.keys(staticFields).map((year, index) => {
                     const ssBenefits = findSsBenefitsByYear(parseInt(year));
+                    const totalIncomeForYear = calculateTotalIncomeForYear(year);
+                    const standardDeductionForYear = calculateStandardDeductionForYear(parseInt(year));
+                    const taxableIncomeForYear = totalIncomeForYear - standardDeductionForYear;
+
                     return (
                         <tr key={year}>
-                            <td className="p-2 border border-slate-300 text-center">{year}</td>
-                            <td className="p-2 border border-slate-300 text-center">{staticFields[year].ageSpouse1}</td>
-                            <td className="p-2 border border-slate-300 text-center">{staticFields[year].ageSpouse2}</td>
-                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'rothSpouse1')}</td>
-                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'rothSpouse2')}</td>
-                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'salary1')}</td>
-                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'salary2')}</td>
-                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'rentalIncome')}</td>
-                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'interest')}</td>
-                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'capitalGains')}</td>
-                            <td className="p-2 border border-slate-300">{renderEditableFieldInput(year, 'pension')}</td>
-                            <td className="p-2 border border-slate-300 text-right">{findRmdByYear(iraDetails.spouse1, parseInt(year))}</td>
-                            <td className="p-2 border border-slate-300 text-right">{findRmdByYear(iraDetails.spouse2, parseInt(year))}</td>
-                            <td className="p-2 border border-slate-300 text-right">{ssBenefits.spouse1Benefit}</td>
-                            <td className="p-2 border border-slate-300 text-right">{ssBenefits.spouse2Benefit}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{year}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{staticFields[year].ageSpouse1}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{staticFields[year].ageSpouse2}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rothSpouse1')}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rothSpouse2')}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'salary1')}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'salary2')}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rentalIncome')}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'interest')}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'capitalGains')}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'pension')}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{findRmdByYear(iraDetails.spouse1, parseInt(year))}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{findRmdByYear(iraDetails.spouse2, parseInt(year))}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{ssBenefits.spouse1Benefit}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{ssBenefits.spouse2Benefit}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">${totalIncomeForYear}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">-${standardDeductionForYear.toFixed(2)}</td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">${taxableIncomeForYear.toFixed(2)}</td>
+
 
                         </tr>
                     )
@@ -437,21 +493,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
 
             {/*RMD TABLES */}
 
-            <div className="totals-display">
-                <div className="total-rmds">
-                    <h2>Total RMDs</h2>
-                    <div>Husband: ${totals.totalRMDsHusband.toFixed(2)}</div>
-                    <div>Wife: ${totals.totalRMDsWife.toFixed(2)}</div>
-                    <div>Total: ${(totals.totalRMDsHusband.plus(totals.totalRMDsWife)).toFixed(2)}</div>
-                </div>
-                <div className="inherited-iras">
-                    <h2>Inherited Pre-Tax IRA</h2>
-                    <div>Husband: ${totals.inheritedIRAHusband.toFixed(2)}</div>
-                    <div>Wife: ${totals.inheritedIRAWife.toFixed(2)}</div>
-                    <div>Total: ${(totals.inheritedIRAHusband.plus(totals.inheritedIRAWife)).toFixed(2)}</div>
-                </div>
-            </div>
-
+            {/*
             <h2 className="text-xl font-semibold mb-3">Spouse 1 IRA Details</h2>
             <table className="min-w-full table-auto border-collapse border border-slate-400">
                 <thead>
@@ -503,8 +545,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                 ))}
                 </tbody>
             </table>
-
-
+*/}
         </div>
     );
 
