@@ -175,6 +175,19 @@ const RothOutputs = ({ inputs, inputs1 }) => {
 
     // Handler for changes in the editable fields
     const handleEditableFieldChange = (year, field, value) => {
+        if (field.startsWith('rothSpouse')) {
+            const spouseKey = field === 'rothSpouse1' ? 'spouse1' : 'spouse2';
+            setRothConversions(prev => ({
+                ...prev,
+                [spouseKey]: {
+                    ...prev[spouseKey],
+                    [year]: value
+                }
+            }));
+        }
+
+
+
         // Check if the input is empty or if it's not a valid number
         if (value.trim() === '') {
             // If empty, default the value to 0
@@ -465,6 +478,12 @@ const RothOutputs = ({ inputs, inputs1 }) => {
     const years = Object.keys(taxableIncomes).map(year => parseInt(year, 10));
     const startYear = currentYear
 
+    //// so that roth automatically shows up in rmd
+    const [rothConversions, setRothConversions] = useState({
+        spouse1: {},
+        spouse2: {},
+    });
+
     return (
         <div>
             <div className="totals-display" style={{ display: 'flex', justifyContent: 'space-around', marginTop: '20px', marginBottom: '20px' }}>
@@ -578,7 +597,6 @@ const RothOutputs = ({ inputs, inputs1 }) => {
 
             {/*RMD TABLES */}
 
-
             <h2 className="text-xl font-semibold mb-3">Spouse 1 IRA Details</h2>
             <table className="min-w-full table-auto border-collapse border border-slate-400">
                 <thead>
@@ -588,22 +606,36 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                     <th className="border border-slate-300">Starting Value</th>
                     <th className="border border-slate-300">Investment Returns</th>
                     <th className="border border-slate-300">RMD</th>
+                    <th className="border border-slate-300">Roth Conversion</th>
                     <th className="border border-slate-300">Ending Value</th>
                 </tr>
                 </thead>
                 <tbody>
-                {iraDetails.spouse1.map((detail, index) => (
-                    <tr key={index}>
-                        <td className="border border-slate-300 text-center">{detail.year}</td>
-                        <td className="border border-slate-300 text-center">{detail.age}</td>
-                        <td className="border border-slate-300 text-right">${detail.startingValue}</td>
-                        <td className="border border-slate-300 text-right">${detail.investmentReturns}</td>
-                        <td className="border border-slate-300 text-right">${detail.rmd}</td>
-                        <td className="border border-slate-300 text-right">${detail.endingValue}</td>
-                    </tr>
-                ))}
+                {iraDetails.spouse1.map((detail, index) => {
+                    // Fetch the Roth conversion value for the specific year
+                    const rothConversion = rothConversions.spouse1[detail.year] ? new Decimal(rothConversions.spouse1[detail.year]) : new Decimal(0);
+
+                    // Adjust the ending value calculation
+                    const adjustedEndingValue = new Decimal(detail.startingValue)
+                        .plus(detail.investmentReturns)
+                        .minus(detail.rmd)
+                        .minus(rothConversion); // Subtracting Roth conversion
+
+                    return (
+                        <tr key={index}>
+                            <td className="border border-slate-300 text-center">{detail.year}</td>
+                            <td className="border border-slate-300 text-center">{detail.age}</td>
+                            <td className="border border-slate-300 text-right">${detail.startingValue}</td>
+                            <td className="border border-slate-300 text-right">${detail.investmentReturns}</td>
+                            <td className="border border-slate-300 text-right">${detail.rmd}</td>
+                            <td className="border border-slate-300 text-right">${rothConversion.toFixed(2)}</td>
+                            <td className="border border-slate-300 text-right">${adjustedEndingValue.toFixed(2)}</td>
+                        </tr>
+                    );
+                })}
                 </tbody>
             </table>
+
 
             <h2 className="text-xl font-semibold mb-3 mt-5">Spouse 2 IRA Details</h2>
             <table className="min-w-full table-auto border-collapse border border-slate-400">
@@ -614,20 +646,35 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                     <th className="border border-slate-300">Starting Value</th>
                     <th className="border border-slate-300">Investment Returns</th>
                     <th className="border border-slate-300">RMD</th>
+                    <th className="border border-slate-300">roth conversion</th>
                     <th className="border border-slate-300">Ending Value</th>
+
+
                 </tr>
                 </thead>
                 <tbody>
-                {iraDetails.spouse2.map((detail, index) => (
-                    <tr key={index}>
-                        <td className="border border-slate-300 text-center">{detail.year}</td>
-                        <td className="border border-slate-300 text-center">{detail.age}</td>
-                        <td className="border border-slate-300 text-right">${detail.startingValue}</td>
-                        <td className="border border-slate-300 text-right">${detail.investmentReturns}</td>
-                        <td className="border border-slate-300 text-right">${detail.rmd}</td>
-                        <td className="border border-slate-300 text-right">${detail.endingValue}</td>
-                    </tr>
-                ))}
+                {iraDetails.spouse2.map((detail, index) => {
+                    // Fetch the Roth conversion value for the specific year
+                    const rothConversion = rothConversions.spouse2[detail.year] ? new Decimal(rothConversions.spouse2[detail.year]) : new Decimal(0);
+
+                    // Adjust the ending value calculation
+                    const adjustedEndingValue = new Decimal(detail.startingValue)
+                        .plus(detail.investmentReturns)
+                        .minus(detail.rmd)
+                        .minus(rothConversion); // Subtracting Roth conversion
+
+                    return (
+                        <tr key={index}>
+                            <td className="border border-slate-300 text-center">{detail.year}</td>
+                            <td className="border border-slate-300 text-center">{detail.age}</td>
+                            <td className="border border-slate-300 text-right">${detail.startingValue}</td>
+                            <td className="border border-slate-300 text-right">${detail.investmentReturns}</td>
+                            <td className="border border-slate-300 text-right">${detail.rmd}</td>
+                            <td className="border border-slate-300 text-right">${rothConversion.toFixed(2)}</td>
+                            <td className="border border-slate-300 text-right">${adjustedEndingValue.toFixed(2)}</td>
+                        </tr>
+                    );
+                })}
                 </tbody>
             </table>
 
