@@ -15,152 +15,59 @@ const RothInputs = ({ inputs, onInputChange, inputs1, onInputChange1 }) => {
     };
 
     return (
-        <div className="inputs-container">
-            {/*social security inputs*/}
-            <h2 className="text-xl font-semibold mb-3">inputs</h2>
-            <table className="table-auto w-full">
-                <tbody>
-                <tr>
-                    <td>primary insurance amount:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="hPIA"
-                            value={inputs.hPIA}
-                            onChange={handleChange}                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>spouse&apos;s primary insurance amount:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="wPIA"
-                            value={inputs.wPIA}
-                            onChange={handleChange}                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>age to start collecting social security:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="hSS"
-                            value={inputs.hSS}
-                            onChange={handleChange}                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>spouse&apos;s age to start collecting social security:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="wSS"
-                            value={inputs.wSS}
-                            onChange={handleChange}                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>life expectancy:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="hLE"
-                            value={inputs.hLE}
-                            onChange={handleChange}                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>spouse&apos;s life expectancy:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="wLE"
-                            value={inputs.wLE}
-                            onChange={handleChange}                        />
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+        <div className="inputs-container max-w-4xl mx-auto py-8 px-4">
+            <h2 className="text-xl font-semibold mb-6">Social Security Inputs</h2>
+            <div className="mb-8">
+                <div className="grid gap-4 grid-cols-2">
+                    {[
+                        { label: "Primary Insurance Amount:", name: "hPIA", value: inputs.hPIA },
+                        { label: "Spouse's Primary Insurance Amount:", name: "wPIA", value: inputs.wPIA },
+                        { label: "Age to start collecting Social Security:", name: "hSS", value: inputs.hSS },
+                        { label: "Spouse's age to start collecting Social Security:", name: "wSS", value: inputs.wSS },
+                        { label: "Life Expectancy:", name: "hLE", value: inputs.hLE },
+                        { label: "Spouse's Life Expectancy:", name: "wLE", value: inputs.wLE },
+                    ].map((input) => (
+                        <div key={input.name} className="flex items-center">
+                            <label className="w-1/2 mr-4 text-right">{input.label}</label>
+                            <input
+                                type="number"
+                                name={input.name}
+                                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                value={input.value}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    ))}
+                </div>
+            </div>
 
-
-            {/*rmd inputs*/}
-            <h2 className="text-xl font-semibold mb-3">rmd inputs</h2>
-            <table className="table-auto w-full">
-                <tbody>
-                <tr>
-                    <td>age 1:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="age1"
-                            value={inputs1.age1}
-                            onChange={handleChange1}                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>age 2:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="age2"
-                            value={inputs1.age2}
-                            onChange={handleChange1}                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>life expectancy 1:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="le1"
-                            value={inputs1.le1}
-                            onChange={handleChange1}                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>life expectancy 2:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="le2"
-                            value={inputs1.le2}
-                            onChange={handleChange1}                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>current ira value 1:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="ira1"
-                            value={inputs1.ira1}
-                            onChange={handleChange1}                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>current ira value 2:</td>
-                    <td>
-                        <input
-                            type="number"
-                            name="ira2"
-                            value={inputs1.ira2}
-                            onChange={handleChange1}                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>roi: </td>
-                    <td>
-                        <input
-                            type="number"
-                            name="roi"
-                            value={inputs1.roi}
-                            onChange={handleChange1}                        />
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+            <h2 className="text-xl font-semibold mb-6">RMD Inputs</h2>
+            <div className="mb-8">
+                <div className="grid gap-4 grid-cols-2">
+                    {[
+                        { label: "Age 1:", name: "age1", value: inputs1.age1 },
+                        { label: "Age 2:", name: "age2", value: inputs1.age2 },
+                        { label: "Life Expectancy 1:", name: "le1", value: inputs1.le1 },
+                        { label: "Life Expectancy 2:", name: "le2", value: inputs1.le2 },
+                        { label: "Current IRA Value 1:", name: "ira1", value: inputs1.ira1 },
+                        { label: "Current IRA Value 2:", name: "ira2", value: inputs1.ira2 },
+                        { label: "ROI:", name: "roi", value: inputs1.roi },
+                    ].map((input) => (
+                        <div key={input.name} className="flex items-center">
+                            <label className="w-1/2 mr-4 text-right">{input.label}</label>
+                            <input
+                                type="number"
+                                name={input.name}
+                                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                value={input.value}
+                                onChange={handleChange1}
+                            />
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
+
     );
 
 };

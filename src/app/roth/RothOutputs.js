@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import Decimal from 'decimal.js';
 
 const RothOutputs = ({ inputs, inputs1 }) => {
@@ -136,7 +136,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
         });
 
 
-    }, [age1, age2, le1, le2, ira1, ira2, roi]); // Recalculate when inputs change
+    }, [age1, age2, le1, le2, ira1, ira2, roi]);
 // RMD CALCULATIONS END ----------------
 
 // ROTH CALCULATIONS START -----------
@@ -151,18 +151,17 @@ const RothOutputs = ({ inputs, inputs1 }) => {
             fields[year] = {
                 rothSpouse1: 0,
                 rothSpouse2: 0,
-                salarySpouse1: 0,
-                salarySpouse2: 0,
+                salary1: 0,
+                salary2: 0,
                 rentalIncome: 0,
-                interestDividendIncome: 0,
-                shortTermCapitalGains: 0,
+                interest: 0,
+                capitalGains: 0,
                 pension: 0
             };
         }
         return fields;
     });
 
-    // Static fields calculated once based on life expectancies
     const staticFields = {};
     for (let year = currentYear, ageSpouse1 = age1, ageSpouse2 = age2;
          year <= currentYear + maxLifeExpectancy - Math.min(age1, age2);
@@ -171,20 +170,36 @@ const RothOutputs = ({ inputs, inputs1 }) => {
             year: year,
             ageSpouse1: ageSpouse1,
             ageSpouse2: ageSpouse2,
-            // Add other static calculations here if needed, such as RMDs, Social Security, etc.
         };
     }
 
     // Handler for changes in the editable fields
     const handleEditableFieldChange = (year, field, value) => {
-        setEditableFields(prev => ({
-            ...prev,
-            [year]: {
-                ...prev[year],
-                [field]: Decimal(value) // Convert input value to a Decimal
-            }
-        }));
+        // Check if the input is empty or if it's not a valid number
+        if (value.trim() === '') {
+            // If empty, default the value to 0
+            setEditableFields(prev => ({
+                ...prev,
+                [year]: {
+                    ...prev[year],
+                    [field]: 0 // Default to 0
+                }
+            }));
+        } else if (isNaN(value) || value.trim() === '') {
+            // If not a valid number, display an error message
+            alert('Please enter a number'); // Simple alert, consider using a more user-friendly approach
+        } else {
+            // If valid, update the state with the Decimal value
+            setEditableFields(prev => ({
+                ...prev,
+                [year]: {
+                    ...prev[year],
+                    [field]: new Decimal(value)
+                }
+            }));
+        }
     };
+
 
     // Function to render editable field inputs with improved styling
     const renderEditableFieldInput = (year, field) => {
@@ -198,7 +213,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
         );
     };
 
-//social security:
+//social security -----------------
     //REFERENCE TABLE
     const [tableData1, setTableData1] = useState([]);
     const [benefitsBasedOnAge, setBenefitsBasedOnAge] = useState({
@@ -280,8 +295,6 @@ const RothOutputs = ({ inputs, inputs1 }) => {
 /////social security benefits
     const currentYear1 = new Date().getFullYear();
     const [tableData, setTableData] = useState([]);
-    const [totalCash, setTotalCash] = useState(0); // State to hold the sum of all total benefits
-    const [npv, setNpv] = useState(0);
     const calculateBenefitForYear = ({
                                          age,
                                          spouseAge,
@@ -320,7 +333,6 @@ const RothOutputs = ({ inputs, inputs1 }) => {
 
         let lastYearHusbandBenefit = 0;
         let lastYearWifeBenefit = 0;
-        let cumulativeTotal = new Decimal(0); // Initialize cumulative total
 
         const newTableData = Array.from({ length: yearsToCover }, (_, i) => {
             const year = currentYear1 + i;
@@ -349,45 +361,23 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                 lastYearBenefit: lastYearWifeBenefit,
                 lastYearSpouseBenefit: lastYearHusbandBenefit
             });
-
-            const totalBenefit = new Decimal(husbandBenefit).add(new Decimal(wifeBenefit));
-            cumulativeTotal = cumulativeTotal.add(totalBenefit); // Add current year's total benefit to cumulative total
-
             lastYearHusbandBenefit = husbandBenefit;
             lastYearWifeBenefit = wifeBenefit;
 
-            return { year, husbandAge, wifeAge, husbandBenefit: husbandBenefit.toFixed(2), wifeBenefit: wifeBenefit.toFixed(2), totalBenefit: totalBenefit.toFixed(2) };
+            return { year, husbandAge, wifeAge, husbandBenefit: husbandBenefit.toFixed(2), wifeBenefit: wifeBenefit.toFixed(2) };
         });
 
         setTableData(newTableData);
 
-        // Calculate NPV
-        const roi = inputs.roi / 100;
-        const cashFlows = newTableData.map(({ totalBenefit }) => new Decimal(totalBenefit));
-        const dates = newTableData.map(({ year }) => new Date(year, 0, 1));
-
-        const calculateXNPV = (rate, cashFlows, dates) => {
-            let xnpv = 0.0;
-            for (let i = 0; i < cashFlows.length; i++) {
-                const xnpvTerm = (dates[i] - dates[0]) / (365 * 24 * 3600 * 1000);
-                xnpv += cashFlows[i] / Math.pow(1 + rate, xnpvTerm);
-            }
-            return xnpv;
-        };
-
-        const npvValue = calculateXNPV(roi, cashFlows, dates);
-
-        setNpv(npvValue);
-        setTotalCash(cumulativeTotal); // Update totalCash with cumulative total
     }, [inputs, currentYear1, benefitsBasedOnAge.husbandYearly, benefitsBasedOnAge.wifeYearly]);
-    const startingStandardDeduction = 29200;
-// Define the annual inflation rate
-    const annualIncreaseRate = 0.02;
 
-// Function to calculate the standard deduction for a given year
+    const startingStandardDeduction = 29200;
+
+    const [annualInflationRate, setAnnualInflationRate] = useState(0.02); // Example: 2%
+
     const calculateStandardDeductionForYear = (year) => {
         const yearsDifference = year - currentYear; // Assuming 'currentYear' is the base year
-        return startingStandardDeduction * Math.pow(1 + annualIncreaseRate, yearsDifference);
+        return startingStandardDeduction * Math.pow(1 + annualInflationRate, yearsDifference);
     };
 
     const calculateTotalIncomeForYear = (year) => {
@@ -398,20 +388,82 @@ const RothOutputs = ({ inputs, inputs1 }) => {
 
         const totalIncome = new Decimal(editableFieldsForYear.rothSpouse1)
             .plus(editableFieldsForYear.rothSpouse2)
-            .plus(editableFieldsForYear.salarySpouse1)
-            .plus(editableFieldsForYear.salarySpouse2)
+            .plus(editableFieldsForYear.salary1)
+            .plus(editableFieldsForYear.salary2)
             .plus(editableFieldsForYear.rentalIncome)
-            .plus(editableFieldsForYear.interestDividendIncome)
-            .plus(editableFieldsForYear.shortTermCapitalGains)
+            .plus(editableFieldsForYear.interest)
+            .plus(editableFieldsForYear.capitalGains)
             .plus(editableFieldsForYear.pension)
             .plus(rmdSpouse1)
             .plus(rmdSpouse2)
             .plus(ssBenefits.spouse1Benefit)
             .plus(ssBenefits.spouse2Benefit);
 
-        return totalIncome.toFixed(2); // Adjust the precision as needed
+        return totalIncome.toFixed(2);
+    };
+    //ordinary income tax calc -------
+    const calculateTaxesForBrackets = (taxableIncome) => {
+        // Define the thresholds for each bracket
+        const brackets = [
+            { threshold: 23200, rate: 0.10 },
+            { threshold: 94300, rate: 0.12 },
+            { threshold: 201050, rate: 0.22 },
+            { threshold: 383900, rate: 0.24 },
+            { threshold: 487450, rate: 0.32 },
+            { threshold: 731200, rate: 0.35 },
+            { threshold: Infinity, rate: 0.37 }
+        ];
+
+        let taxesForBrackets = {
+            '10%': 0,
+            '12%': 0,
+            '22%': 0,
+            '24%': 0,
+            '32%': 0,
+            '35%': 0,
+            '37%': 0
+        };
+
+        let remainingIncome = taxableIncome;
+        brackets.forEach((bracket, index) => {
+            if (index === 0) {
+                const amountInBracket = Math.min(remainingIncome, bracket.threshold);
+                taxesForBrackets['10%'] = amountInBracket * bracket.rate;
+                remainingIncome -= amountInBracket;
+            } else {
+                const prevThreshold = brackets[index - 1].threshold;
+                const amountInBracket = Math.min(remainingIncome, bracket.threshold - prevThreshold);
+                taxesForBrackets[`${bracket.rate * 100}%`] = amountInBracket * bracket.rate;
+                remainingIncome -= amountInBracket;
+            }
+        });
+
+        return taxesForBrackets;
+    };
+    const calculateTaxableIncomes = (staticFields, iraDetails, findSsBenefitsByYear, calculateTotalIncomeForYear, calculateStandardDeductionForYear) => {
+        let taxableIncomes = {};
+
+        Object.keys(staticFields).forEach(year => {
+            const totalIncomeForYear = calculateTotalIncomeForYear(year);
+            const standardDeductionForYear = calculateStandardDeductionForYear(parseInt(year));
+
+            taxableIncomes[year] = totalIncomeForYear - standardDeductionForYear;
+        });
+
+        return taxableIncomes;
     };
 
+    const taxableIncomes = calculateTaxableIncomes(
+        staticFields,
+        iraDetails,
+        findSsBenefitsByYear,
+        calculateTotalIncomeForYear,
+        calculateStandardDeductionForYear
+    );
+
+    const bracketTitles = ['10%', '12%', '22%', '24%', '32%', '35%', '37%'];
+    const years = Object.keys(taxableIncomes).map(year => parseInt(year, 10));
+    const startYear = currentYear
 
     return (
         <div>
@@ -462,7 +514,6 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                     const totalIncomeForYear = calculateTotalIncomeForYear(year);
                     const standardDeductionForYear = calculateStandardDeductionForYear(parseInt(year));
                     const taxableIncomeForYear = totalIncomeForYear - standardDeductionForYear;
-
                     return (
                         <tr key={year}>
                             <td className="px-3 py-2 text-center whitespace-nowrap">{year}</td>
@@ -488,12 +539,46 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                         </tr>
                     )
                 })}
+
+                </tbody>
+            </table>
+
+            {/*ORDINARY INCOME TAX BRACKET*/}
+            {/* Ordinary Income Tax Brackets Table */}
+            <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                <tr>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Year</th>
+                    {bracketTitles.map((title) => (
+                        <th key={title} className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">{title}</th>
+                    ))}
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Total Income Tax</th>
+                </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                {Object.keys(taxableIncomes).map((year) => {
+                    const taxesForBrackets = calculateTaxesForBrackets(taxableIncomes[year]);
+                    // Calculate the total tax by summing up all values in the taxesForBrackets object
+                    const totalTax = Object.values(taxesForBrackets).reduce((sum, tax) => sum + tax, 0);
+
+                    return (
+                        <tr key={year}>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">{year}</td>
+                            {bracketTitles.map((title) => (
+                                <td key={`${year}-${title}`} className="px-3 py-2 text-center whitespace-nowrap">
+                                    ${taxesForBrackets[title].toFixed(2)}
+                                </td>
+                            ))}
+                            <td className="px-3 py-2 text-center whitespace-nowrap">${totalTax.toFixed(2)}</td>
+                        </tr>
+                    );
+                })}
                 </tbody>
             </table>
 
             {/*RMD TABLES */}
 
-            {/*
+
             <h2 className="text-xl font-semibold mb-3">Spouse 1 IRA Details</h2>
             <table className="min-w-full table-auto border-collapse border border-slate-400">
                 <thead>
@@ -545,10 +630,11 @@ const RothOutputs = ({ inputs, inputs1 }) => {
                 ))}
                 </tbody>
             </table>
-*/}
+
         </div>
     );
 
 };
+
 
 export default RothOutputs;
