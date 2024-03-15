@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import Decimal from "decimal.js";
+import BarChart from "../components/BarChart";
+import { Bar } from "react-chartjs-2";
 
 const SocialSecurityOutput = ({ inputs }) => {
     //REFERENCE TABLE
@@ -15,11 +17,19 @@ const SocialSecurityOutput = ({ inputs }) => {
             for (let age = 62; age <= 70; age++) {
                 const percentageOfPIA = getPercentageOfPIAForAge(age);
                 const spousePIA = getSpouse(age);
-                const hBenefit = new Decimal(inputs.hPIA).times(percentageOfPIA).dividedBy(100);
-                const wBenefit = new Decimal(inputs.wPIA).times(spousePIA).dividedBy(100);
+                const hBenefit = new Decimal(inputs.hPIA)
+                    .times(percentageOfPIA)
+                    .dividedBy(100);
+                const wBenefit = new Decimal(inputs.wPIA)
+                    .times(spousePIA)
+                    .dividedBy(100);
                 const husbandMonthly = Decimal.max(hBenefit, wBenefit);
-                const hBenefit1 = new Decimal(inputs.hPIA).times(spousePIA).dividedBy(100);
-                const wBenefit1 = new Decimal(inputs.wPIA).times(percentageOfPIA).dividedBy(100);
+                const hBenefit1 = new Decimal(inputs.hPIA)
+                    .times(spousePIA)
+                    .dividedBy(100);
+                const wBenefit1 = new Decimal(inputs.wPIA)
+                    .times(percentageOfPIA)
+                    .dividedBy(100);
                 const wifeMonthly = Decimal.max(hBenefit1, wBenefit1);
 
                 newData.push({
@@ -67,45 +77,54 @@ const SocialSecurityOutput = ({ inputs }) => {
     };
     useEffect(() => {
         // After tableData1 is set, find the entries for the husband's and wife's start ages
-        const husbandStartAgeData = tableData1.find(data => data.age === inputs.hSS);
-        const wifeStartAgeData = tableData1.find(data => data.age === inputs.wSS);
+        const husbandStartAgeData = tableData1.find(
+            (data) => data.age === inputs.hSS
+        );
+        const wifeStartAgeData = tableData1.find(
+            (data) => data.age === inputs.wSS
+        );
         // Update benefitsBasedOnAge with the yearly values found for both husband and wife
         // If no data is found for the start age (in case of incorrect inputs or data not available),
         // keep the benefits as 0 (or you could set them to a default value if preferred)
         setBenefitsBasedOnAge({
-            husbandYearly: husbandStartAgeData ? husbandStartAgeData.husbandYearly : 0,
+            husbandYearly: husbandStartAgeData
+                ? husbandStartAgeData.husbandYearly
+                : 0,
             wifeYearly: wifeStartAgeData ? wifeStartAgeData.wifeYearly : 0,
         });
     }, [tableData1, inputs.hSS, inputs.wSS]); // Depend on tableData1 and the start ages to trigger this effect
 
-////REFERENCE TABLE END
+    ////REFERENCE TABLE END
 
-/////social security benefits
+    /////social security benefits
     const currentYear = new Date().getFullYear();
     const [tableData, setTableData] = useState([]);
     const [totalCash, setTotalCash] = useState(0); // State to hold the sum of all total benefits
     const [npv, setNpv] = useState(0);
     const calculateBenefitForYear = ({
-                                         age,
-                                         spouseAge,
-                                         lifeExpectancy,
-                                         spouseLifeExpectancy,
-                                         startAge,
-                                         spouseStartAge,
-                                         benefitAgeOfWithdraw,
-                                         spouseBenefitAgeOfWithdraw,
-                                         lastYearBenefit,
-                                         lastYearSpouseBenefit
-                                     }) => {
+        age,
+        spouseAge,
+        lifeExpectancy,
+        spouseLifeExpectancy,
+        startAge,
+        spouseStartAge,
+        benefitAgeOfWithdraw,
+        spouseBenefitAgeOfWithdraw,
+        lastYearBenefit,
+        lastYearSpouseBenefit,
+    }) => {
         const ageDecimal = new Decimal(age);
         const spouseAgeDecimal = new Decimal(spouseAge);
         const lifeExpectancyDecimal = new Decimal(lifeExpectancy);
         const spouseLifeExpectancyDecimal = new Decimal(spouseLifeExpectancy);
 
-        if (ageDecimal > (lifeExpectancyDecimal)) {
+        if (ageDecimal > lifeExpectancyDecimal) {
             return new Decimal(0);
         }
-        if (spouseAgeDecimal > (spouseLifeExpectancyDecimal) && lastYearSpouseBenefit > (lastYearBenefit)) {
+        if (
+            spouseAgeDecimal > spouseLifeExpectancyDecimal &&
+            lastYearSpouseBenefit > lastYearBenefit
+        ) {
             return lastYearSpouseBenefit;
         }
         if (ageDecimal.lessThan(startAge)) {
@@ -119,7 +138,8 @@ const SocialSecurityOutput = ({ inputs }) => {
 
     useEffect(() => {
         const maxLifeExpectancy = Math.max(inputs.hLE, inputs.wLE);
-        const yearsToCover = maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge) + 1;
+        const yearsToCover =
+            maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge) + 1;
 
         let lastYearHusbandBenefit = 0;
         let lastYearWifeBenefit = 0;
@@ -139,7 +159,7 @@ const SocialSecurityOutput = ({ inputs }) => {
                 startAge: inputs.hSS,
                 benefitAgeOfWithdraw: benefitsBasedOnAge.husbandYearly,
                 lastYearBenefit: lastYearHusbandBenefit,
-                lastYearSpouseBenefit: lastYearWifeBenefit
+                lastYearSpouseBenefit: lastYearWifeBenefit,
             });
 
             const wifeBenefit = calculateBenefitForYear({
@@ -150,29 +170,41 @@ const SocialSecurityOutput = ({ inputs }) => {
                 startAge: inputs.wSS,
                 benefitAgeOfWithdraw: benefitsBasedOnAge.wifeYearly,
                 lastYearBenefit: lastYearWifeBenefit,
-                lastYearSpouseBenefit: lastYearHusbandBenefit
+                lastYearSpouseBenefit: lastYearHusbandBenefit,
             });
 
-            const totalBenefit = new Decimal(husbandBenefit).add(new Decimal(wifeBenefit));
+            const totalBenefit = new Decimal(husbandBenefit).add(
+                new Decimal(wifeBenefit)
+            );
             cumulativeTotal = cumulativeTotal.add(totalBenefit); // Add current year's total benefit to cumulative total
 
             lastYearHusbandBenefit = husbandBenefit;
             lastYearWifeBenefit = wifeBenefit;
 
-            return { year, husbandAge, wifeAge, husbandBenefit: husbandBenefit.toFixed(0), wifeBenefit: wifeBenefit.toFixed(0), totalBenefit: totalBenefit.toFixed(0) };
+            return {
+                year,
+                husbandAge,
+                wifeAge,
+                husbandBenefit: husbandBenefit.toFixed(0),
+                wifeBenefit: wifeBenefit.toFixed(0),
+                totalBenefit: totalBenefit.toFixed(0),
+            };
         });
 
         setTableData(newTableData);
 
         // Calculate NPV
         const roi = inputs.roi / 100;
-        const cashFlows = newTableData.map(({ totalBenefit }) => new Decimal(totalBenefit));
+        const cashFlows = newTableData.map(
+            ({ totalBenefit }) => new Decimal(totalBenefit)
+        );
         const dates = newTableData.map(({ year }) => new Date(year, 0, 1));
 
         const calculateXNPV = (rate, cashFlows, dates) => {
             let xnpv = 0.0;
             for (let i = 0; i < cashFlows.length; i++) {
-                const xnpvTerm = (dates[i] - dates[0]) / (365 * 24 * 3600 * 1000);
+                const xnpvTerm =
+                    (dates[i] - dates[0]) / (365 * 24 * 3600 * 1000);
                 xnpv += cashFlows[i] / Math.pow(1 + rate, xnpvTerm);
             }
             return xnpv;
@@ -182,44 +214,192 @@ const SocialSecurityOutput = ({ inputs }) => {
 
         setNpv(npvValue);
         setTotalCash(cumulativeTotal); // Update totalCash with cumulative total
-    }, [inputs, currentYear, benefitsBasedOnAge.husbandYearly, benefitsBasedOnAge.wifeYearly]);
+    }, [
+        inputs,
+        currentYear,
+        benefitsBasedOnAge.husbandYearly,
+        benefitsBasedOnAge.wifeYearly,
+    ]);
 
-console.log(tableData1)
+    // Creating Bar Chart Data
+    const [userData, setUserData] = useState({
+        labels: [],
+        datasets: [
+            {
+                label: "Husband Benefit",
+                data: [],
+            },
+            {
+                label: "Wife Benefit",
+                data: [],
+            },
+        ],
+    });
+
+    useEffect(() => {
+        const yearArray = tableData.map(({ year }) => year.toString());
+        const husbandBenefitArray = tableData.map(({ husbandBenefit }) =>
+            parseInt(husbandBenefit)
+        );
+        const wifeBenefitArray = tableData.map(({ wifeBenefit }) =>
+            parseInt(wifeBenefit)
+        );
+
+        setUserData({
+            labels: yearArray,
+            datasets: [
+                {
+                    label: "Husband Benefit",
+                    data: husbandBenefitArray,
+                    backgroundColor: "#9fc5e8",
+                    borderColor: "black",
+                    borderWidth: 1,
+                },
+                {
+                    label: "Wife Benefit",
+                    data: wifeBenefitArray,
+                    backgroundColor: "#ead1dc",
+                    borderColor: "black",
+                    borderWidth: 1,
+                },
+            ],
+        });
+    }, [tableData]);
+
+    const benefitChartOptions = {
+        //Add commas to bar chart values
+        tooltips: {
+            callbacks: {
+                label: function (tooltipItem, data) {
+                    var value = data.datasets[0].data[tooltipItem.index];
+                    value = value.toString();
+                    value = value.split(/(?=(?:...)*$)/);
+                    value = value.join(",");
+                    return "$" + value;
+                },
+            },
+        },
+
+        plugins: {
+            legend: {
+                position: "bottom",
+            },
+        },
+
+        scales: {
+            x: {
+                stacked: true,
+                grid: {
+                    drawOnChartArea: false,
+                },
+            },
+            y: {
+                stacked: true,
+                ticks: {
+                    callback: function (value, index, values) {
+                        value = value.toString();
+                        value = value.split(/(?=(?:...)*$)/);
+                        value = value.join(",");
+                        return "$" + value;
+                    },
+                },
+            },
+        },
+    };
+
+    console.log(tableData1);
     return (
         <div>
             <h2 className="text-xl font-semibold mb-3">Outputs</h2>
             <div className="mb-6">
                 <h3 className="font-medium">Total Social Security Collected</h3>
-                <p>Cash Collected: ${Number(totalCash.toFixed(0)).toLocaleString()}</p>
-                <p>Net Present Value: ${Number(npv.toFixed(0)).toLocaleString()}</p>
+                <p>
+                    Cash Collected: $
+                    {Number(totalCash.toFixed(0)).toLocaleString()}
+                </p>
+                <p>
+                    Net Present Value: $
+                    {Number(npv.toFixed(0)).toLocaleString()}
+                </p>
             </div>
             <div>
-                <h3 className="font-medium mb-2">Social Security Benefits Table</h3>
+                <h3 className="font-medium mb-2">
+                    Social Security Benefits Graph
+                </h3>
+                <BarChart
+                    chartData={userData}
+                    chartOptions={benefitChartOptions}
+                />
+            </div>
+            <div>
+                <h3 className="font-medium mb-2">
+                    Social Security Benefits Table
+                </h3>
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
-                    <tr>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Year</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Husband&apos;s Age</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Wife&apos;s Age</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Husband SS Benefit</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Wife SS Benefit</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Total SS Benefit</th>
-                    </tr>
+                        <tr>
+                            <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">
+                                Year
+                            </th>
+                            <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">
+                                Husband&apos;s Age
+                            </th>
+                            <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">
+                                Wife&apos;s Age
+                            </th>
+                            <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">
+                                Husband SS Benefit
+                            </th>
+                            <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">
+                                Wife SS Benefit
+                            </th>
+                            <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">
+                                Total SS Benefit
+                            </th>
+                        </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                    {tableData.map(({ year, husbandAge, wifeAge, husbandBenefit, wifeBenefit, totalBenefit }, index) => (
-                        <tr key={index}>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{year}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{husbandAge}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{wifeAge}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${Number(husbandBenefit).toLocaleString()}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${Number(wifeBenefit).toLocaleString()}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${Number(totalBenefit).toLocaleString()}</td>
-                        </tr>
-                    ))}
+                        {tableData.map(
+                            (
+                                {
+                                    year,
+                                    husbandAge,
+                                    wifeAge,
+                                    husbandBenefit,
+                                    wifeBenefit,
+                                    totalBenefit,
+                                },
+                                index
+                            ) => (
+                                <tr key={index}>
+                                    <td className="px-3 py-2 text-center whitespace-nowrap">
+                                        {year}
+                                    </td>
+                                    <td className="px-3 py-2 text-center whitespace-nowrap">
+                                        {husbandAge}
+                                    </td>
+                                    <td className="px-3 py-2 text-center whitespace-nowrap">
+                                        {wifeAge}
+                                    </td>
+                                    <td className="px-3 py-2 text-center whitespace-nowrap">
+                                        $
+                                        {Number(
+                                            husbandBenefit
+                                        ).toLocaleString()}
+                                    </td>
+                                    <td className="px-3 py-2 text-center whitespace-nowrap">
+                                        ${Number(wifeBenefit).toLocaleString()}
+                                    </td>
+                                    <td className="px-3 py-2 text-center whitespace-nowrap">
+                                        ${Number(totalBenefit).toLocaleString()}
+                                    </td>
+                                </tr>
+                            )
+                        )}
                     </tbody>
                 </table>
             </div>
+
             {/*REFERENCE TABLE !!!!!!!
             <div>
                 <div>Benefit Based on Age of Withdraw:</div>
