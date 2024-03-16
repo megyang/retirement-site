@@ -295,6 +295,7 @@ const SocialSecurityOutput = ({ inputs }) => {
             },
             y: {
                 stacked: true,
+                max: 100000,
                 ticks: {
                     callback: function (value, index, values) {
                         value = value.toString();
