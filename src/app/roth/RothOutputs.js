@@ -1,8 +1,16 @@
 "use client"
 import React, {useEffect, useState} from 'react';
 import Decimal from 'decimal.js';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { useUser } from "@/app/hooks/useUser";
 
-const RothOutputs = ({ inputs, inputs1 }) => {
+const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setStaticFields }) => {
+    const supabaseClient = useSupabaseClient();
+    const { user } = useUser();
+
+    const [savedVersions, setSavedVersions] = useState([]); // State to store saved versions
+    const [versionName, setVersionName] = useState(""); // State to store the name of the version
+
     const findRmdByYear = (details, year) => {
         const detail = details.find((detail) => detail.year === year);
         return detail ? detail.rmd : "0.00"; // Default to "0.00" if no detail found for that year
@@ -85,6 +93,9 @@ const RothOutputs = ({ inputs, inputs1 }) => {
         const distributionPeriod = rmdDistributionTable[age];
         return distributionPeriod ? new Decimal(startingValue).dividedBy(distributionPeriod) : new Decimal(0);
     };
+    useEffect(() => {
+        console.log('Updated editableFields in RothOutputs:', editableFields);
+    }, [editableFields]);
 
     useEffect(() => {
         const calculateIraDetails = (startingAge, lifeExpectancy, currentIraValue) => {
@@ -145,7 +156,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
 
     // Initial state setup for editable fields.
     // You can also use inputs to pre-populate this state if they should start with values.
-    const [editableFields, setEditableFields] = useState(() => {
+    [editableFields, setEditableFields] = useState(() => {
         const fields = {};
         for (let year = currentYear; year <= currentYear + (maxLifeExpectancy - Math.min(age1, age2)); year++) {
             fields[year] = {
@@ -162,7 +173,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
         return fields;
     });
 
-    const staticFields = {};
+    staticFields = {};
     for (let year = currentYear, ageSpouse1 = age1, ageSpouse2 = age2;
          year <= currentYear + maxLifeExpectancy - Math.min(age1, age2);
          year++, ageSpouse1++, ageSpouse2++) {
@@ -172,45 +183,135 @@ const RothOutputs = ({ inputs, inputs1 }) => {
             ageSpouse2: ageSpouse2,
         };
     }
+    // Save, load, and delete functions
+    const saveVersion = async (versionName) => {
+        if (!user) {
+            console.error('User is not logged in');
+            return;
+        }
+
+        const dataToSave = [];
+        for (let year in editableFields) {
+            dataToSave.push({
+                user_id: user.id,
+                version_name: versionName,
+                year: parseInt(year),
+                rental_income: editableFields[year].rentalIncome,
+                capital_gains: editableFields[year].capitalGains,
+                pension: editableFields[year].pension,
+                roth_1: editableFields[year].rothSpouse1,
+                roth_2: editableFields[year].rothSpouse2,
+                salary1: editableFields[year].salary1,
+                salary2: editableFields[year].salary2,
+                interest: editableFields[year].interest
+            });
+        }
+
+        const { error } = await supabaseClient.from('roth').insert(dataToSave);
+        if (error) {
+            console.error('Error saving data to Supabase:', error);
+        } else {
+            console.log('Data successfully saved to Supabase.');
+            fetchSavedVersions(); // Refresh the list of saved versions
+        }
+    };
+
+    const fetchSavedVersions = async () => {
+        if (!user) {
+            console.error('User is not logged in');
+            return;
+        }
+
+        const { data, error } = await supabaseClient
+            .from('roth')
+            .select('version_name')
+            .eq('user_id', user.id);
+
+        if (error) {
+            console.error('Error fetching versions from Supabase:', error);
+        } else {
+            const uniqueVersions = [...new Set(data.map(item => item.version_name))];
+            setSavedVersions(uniqueVersions.map(name => ({ name })));
+        }
+    };
+
+    const loadVersion = async (version) => {
+        if (!user) {
+            console.error('User is not logged in');
+            return;
+        }
+
+        const { data, error } = await supabaseClient
+            .from('roth')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('version_name', version.name);
+
+        if (error) {
+            console.error('Error loading version from Supabase:', error);
+        } else {
+            const loadedEditableFields = {};
+            data.forEach(item => {
+                loadedEditableFields[item.year] = {
+                    rothSpouse1: item.roth_1,
+                    rothSpouse2: item.roth_2,
+                    salary1: item.salary1,
+                    salary2: item.salary2,
+                    rentalIncome: item.rental_income,
+                    interest: item.interest,
+                    capitalGains: item.capital_gains,
+                    pension: item.pension
+                };
+            });
+            setEditableFields(loadedEditableFields);
+        }
+    };
+
+    const deleteVersion = async (versionName) => {
+        if (!user) {
+            console.error('User is not logged in');
+            return;
+        }
+
+        const { error } = await supabaseClient
+            .from('roth')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('version_name', versionName);
+
+        if (error) {
+            console.error('Error deleting version from Supabase:', error);
+        } else {
+            console.log('Version successfully deleted from Supabase.');
+            fetchSavedVersions(); // Refresh the list of saved versions
+        }
+    };
+
+    useEffect(() => {
+        if (user) {
+            fetchSavedVersions();
+        }
+    }, [user]);
 
     // Handler for changes in the editable fields
     const handleEditableFieldChange = (year, field, value) => {
-        if (field.startsWith('rothSpouse')) {
-            const spouseKey = field === 'rothSpouse1' ? 'spouse1' : 'spouse2';
-            setRothConversions(prev => ({
-                ...prev,
-                [spouseKey]: {
-                    ...prev[spouseKey],
-                    [year]: value
-                }
-            }));
+        console.log(`Updating ${field} for year ${year} to value:`, value);
+        if (value.trim() === '' || isNaN(value)) {
+            alert('Please enter a valid number');
+            return;
         }
 
-
-
-        // Check if the input is empty or if it's not a valid number
-        if (value.trim() === '') {
-            // If empty, default the value to 0
-            setEditableFields(prev => ({
+        setEditableFields(prev => {
+            const updatedFields = {
                 ...prev,
                 [year]: {
                     ...prev[year],
-                    [field]: 0 // Default to 0
+                    [field]: parseFloat(value)
                 }
-            }));
-        } else if (isNaN(value) || value.trim() === '') {
-            // If not a valid number, display an error message
-            alert('Please enter a number'); // Simple alert, consider using a more user-friendly approach
-        } else {
-            // If valid, update the state with the Decimal value
-            setEditableFields(prev => ({
-                ...prev,
-                [year]: {
-                    ...prev[year],
-                    [field]: new Decimal(value)
-                }
-            }));
-        }
+            };
+            console.log('Updated editableFields:', updatedFields);  // Log updated state
+            return updatedFields;
+        });
     };
 
 
@@ -220,6 +321,7 @@ const RothOutputs = ({ inputs, inputs1 }) => {
             <input
                 type="text"
                 className="w-full p-1 border border-gray-300 rounded text-right"
+                name={`${year}-${field}`}
                 value={editableFields[year][field]} // Show values as fixed-point notation
                 onChange={(e) => handleEditableFieldChange(year, field, e.target.value)}
             />
@@ -530,7 +632,6 @@ const RothOutputs = ({ inputs, inputs1 }) => {
 
     }, [inputs.roi, taxableIncomes, beneficiaryTaxPaid, inputs1, currentYear, age1, le1, age2, le2]);
 
-
 return (
         <div>
             <div className="totals-display" style={{ display: 'flex', justifyContent: 'space-around', marginTop: '20px', marginBottom: '20px' }}>
@@ -572,6 +673,44 @@ return (
                 </div>
             </div>
 
+            <div className="flex justify-between items-center mb-4">
+                <input
+                    type="text"
+                    placeholder="Enter version name"
+                    className="border rounded p-2"
+                    onChange={(e) => setVersionName(e.target.value)}
+                />
+                <button
+                    className="bg-blue-500 text-white rounded p-2"
+                    onClick={() => saveVersion(versionName)}
+                >
+                    Save Version
+                </button>
+            </div>
+            <div>
+                {savedVersions.map((version, index) => (
+                    <div key={index} className="flex justify-between items-center mb-2">
+                        <span>{version.name}</span>
+                        <div>
+                            <button
+                                className="bg-green-500 text-white rounded p-2 mr-2"
+                                onClick={() => loadVersion(version)}
+                            >
+                                Load
+                            </button>
+                            <button
+                                className="bg-red-500 text-white rounded p-2"
+                                onClick={() => deleteVersion(version.name)}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+
+
             <h2 className="text-xl font-semibold mb-3">Financial Plan Details</h2>
             <table className="min-w-full table-fixed border-collapse border border-slate-400">
                 <thead className="bg-gray-100">
@@ -598,6 +737,7 @@ return (
 
                 </tr>
                 </thead>
+
                 <tbody>
                 {Object.keys(staticFields).map((year, index) => {
                     const ssBenefits = findSsBenefitsByYear(parseInt(year));
@@ -665,90 +805,6 @@ return (
                 })}
                 </tbody>
             </table>
-
-            {/*RMD TABLES */}
-            {/*
-            <h2 className="text-xl font-semibold mb-3">Spouse 1 IRA Details</h2>
-            <table className="min-w-full table-auto border-collapse border border-slate-400">
-                <thead>
-                <tr>
-                    <th className="border border-slate-300">Year</th>
-                    <th className="border border-slate-300">Age</th>
-                    <th className="border border-slate-300">Starting Value</th>
-                    <th className="border border-slate-300">Investment Returns</th>
-                    <th className="border border-slate-300">RMD</th>
-                    <th className="border border-slate-300">Roth Conversion</th>
-                    <th className="border border-slate-300">Ending Value</th>
-                </tr>
-                </thead>
-                <tbody>
-                {iraDetails.spouse1.map((detail, index) => {
-                    // Fetch the Roth conversion value for the specific year
-                    const rothConversion = rothConversions.spouse1[detail.year] ? new Decimal(rothConversions.spouse1[detail.year]) : new Decimal(0);
-
-                    // Adjust the ending value calculation
-                    const adjustedEndingValue = new Decimal(detail.startingValue)
-                        .plus(detail.investmentReturns)
-                        .minus(detail.rmd)
-                        .minus(rothConversion); // Subtracting Roth conversion
-
-                    return (
-                        <tr key={index}>
-                            <td className="border border-slate-300 text-center">{detail.year}</td>
-                            <td className="border border-slate-300 text-center">{detail.age}</td>
-                            <td className="border border-slate-300 text-right">${detail.startingValue}</td>
-                            <td className="border border-slate-300 text-right">${detail.investmentReturns}</td>
-                            <td className="border border-slate-300 text-right">${detail.rmd}</td>
-                            <td className="border border-slate-300 text-right">${rothConversion.toFixed(2)}</td>
-                            <td className="border border-slate-300 text-right">${adjustedEndingValue.toFixed(2)}</td>
-                        </tr>
-                    );
-                })}
-                </tbody>
-            </table>
-
-
-            <h2 className="text-xl font-semibold mb-3 mt-5">Spouse 2 IRA Details</h2>
-            <table className="min-w-full table-auto border-collapse border border-slate-400">
-                <thead>
-                <tr>
-                    <th className="border border-slate-300">Year</th>
-                    <th className="border border-slate-300">Age</th>
-                    <th className="border border-slate-300">Starting Value</th>
-                    <th className="border border-slate-300">Investment Returns</th>
-                    <th className="border border-slate-300">RMD</th>
-                    <th className="border border-slate-300">roth conversion</th>
-                    <th className="border border-slate-300">Ending Value</th>
-
-
-                </tr>
-                </thead>
-                <tbody>
-                {iraDetails.spouse2.map((detail, index) => {
-                    // Fetch the Roth conversion value for the specific year
-                    const rothConversion = rothConversions.spouse2[detail.year] ? new Decimal(rothConversions.spouse2[detail.year]) : new Decimal(0);
-
-                    // Adjust the ending value calculation
-                    const adjustedEndingValue = new Decimal(detail.startingValue)
-                        .plus(detail.investmentReturns)
-                        .minus(detail.rmd)
-                        .minus(rothConversion); // Subtracting Roth conversion
-
-                    return (
-                        <tr key={index}>
-                            <td className="border border-slate-300 text-center">{detail.year}</td>
-                            <td className="border border-slate-300 text-center">{detail.age}</td>
-                            <td className="border border-slate-300 text-right">${detail.startingValue}</td>
-                            <td className="border border-slate-300 text-right">${detail.investmentReturns}</td>
-                            <td className="border border-slate-300 text-right">${detail.rmd}</td>
-                            <td className="border border-slate-300 text-right">${rothConversion.toFixed(2)}</td>
-                            <td className="border border-slate-300 text-right">${adjustedEndingValue.toFixed(2)}</td>
-                        </tr>
-                    );
-                })}
-                </tbody>
-            </table>
-*/}
         </div>
     );
 
