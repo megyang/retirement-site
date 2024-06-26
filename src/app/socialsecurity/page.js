@@ -1,4 +1,4 @@
-import SocialSecurityCalculator from "@/app/calculator/SocialSecurityCalculator";
+import SocialSecurityCalculator from "@/app/socialsecurity/SocialSecurityCalculator";
 
 export default function Page() {
     return (

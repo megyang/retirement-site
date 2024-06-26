@@ -17,8 +17,6 @@ const RothConversionCalculator = () => {
     const [inputs1, setInputs1] = useState({
         age1: 62,
         age2: 60,
-        le1: 90,
-        le2: 95,
         ira1: 800000,
         ira2: 1000000,
         roi: 3.0,
@@ -30,7 +28,7 @@ const RothConversionCalculator = () => {
 
     useEffect(() => {
         const currentYear = new Date().getFullYear();
-        const maxLifeExpectancy = Math.max(inputs1.le1, inputs1.le2);
+        const maxLifeExpectancy = Math.max(inputs.hLE, inputs.wLE);
 
         const initialEditableFields = {};
         const initialStaticFields = {};
@@ -87,8 +85,6 @@ const RothConversionCalculator = () => {
         setInputs1({
             age1: inputs1.age1,
             age2: inputs1.age2,
-            le1: inputs1.le1,
-            le2: inputs1.le2,
             ira1: inputs1.ira1,
             ira2: inputs1.ira2,
             roi: inputs1.roi,
@@ -110,6 +106,7 @@ const RothConversionCalculator = () => {
                             setEditableFields={setEditableFields}
                             staticFields={staticFields}
                             setStaticFields={setStaticFields}
+                            setInputs1={setInputs1}
                         />
                     </div>
                 </MyUserContextProvider>

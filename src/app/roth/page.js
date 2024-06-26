@@ -3,7 +3,7 @@ import SupabaseProvider from "@/app/providers/SupabaseProvider";
 import UserProvider from "@/app/providers/UserProvider";
 import ModalProviders from "@/app/providers/ModalProviders";
 import Header from "@/app/Header";
-import SocialSecurityCalculator from "@/app/calculator/SocialSecurityCalculator";
+import SocialSecurityCalculator from "@/app/socialsecurity/SocialSecurityCalculator";
 
 export default function Page() {
     return (

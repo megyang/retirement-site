@@ -46,10 +46,8 @@ const RothInputs = ({ inputs, onInputChange, inputs1, onInputChange1 }) => {
             <div className="mb-8">
                 <div className="grid gap-4 grid-cols-2">
                     {[
-                        { label: "Age 1:", name: "age1", value: inputs1.age1 },
-                        { label: "Age 2:", name: "age2", value: inputs1.age2 },
-                        { label: "Life Expectancy 1:", name: "le1", value: inputs1.le1 },
-                        { label: "Life Expectancy 2:", name: "le2", value: inputs1.le2 },
+                        { label: "Age:", name: "age1", value: inputs1.age1 },
+                        { label: "Spouse's Age:", name: "age2", value: inputs1.age2 },
                         { label: "Current IRA Value 1:", name: "ira1", value: inputs1.ira1 },
                         { label: "Current IRA Value 2:", name: "ira2", value: inputs1.ira2 },
                         { label: "ROI:", name: "roi", value: inputs1.roi },

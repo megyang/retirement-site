@@ -4,7 +4,7 @@ import Decimal from 'decimal.js';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
 
-const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields }) => {
+const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
 
@@ -25,7 +25,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
 
     //RMD calculations
-    const { age1, age2, le1, le2, ira1, ira2, roi } = inputs1;
+    const { age1, age2, ira1, ira2, roi } = inputs1;
 
     const [iraDetails, setIraDetails] = useState({
         spouse1: [],
@@ -125,8 +125,8 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             return details;
         };
 
-        const spouse1Details = calculateIraDetails(age1, le1, ira1);
-        const spouse2Details = calculateIraDetails(age2, le2, ira2);
+        const spouse1Details = calculateIraDetails(age1, inputs.hLE, ira1);
+        const spouse2Details = calculateIraDetails(age2, inputs.wLE, ira2);
 
         setIraDetails({
             spouse1: spouse1Details,
@@ -147,12 +147,12 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         });
 
 
-    }, [age1, age2, le1, le2, ira1, ira2, roi]);
+    }, [age1, age2, ira1, ira2, roi]);
 // RMD CALCULATIONS END ----------------
 
 // ROTH CALCULATIONS START -----------
     const currentYear = new Date().getFullYear();
-    const maxLifeExpectancy = Math.max(le1, le2);
+    const maxLifeExpectancy = Math.max(inputs.hLE, inputs.wLE);
     [editableFields, setEditableFields] = useState(() => {
         const fields = {};
         for (let year = currentYear; year <= currentYear + (maxLifeExpectancy - Math.min(age1, age2)); year++) {
@@ -204,8 +204,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 interest: editableFields[year].interest,
                 age1: inputs1.age1,       // Adding RMD inputs
                 age2: inputs1.age2,
-                le1: inputs1.le1,
-                le2: inputs1.le2,
                 ira1: inputs1.ira1,
                 ira2: inputs1.ira2,
                 roi: inputs1.roi,
@@ -260,8 +258,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             let loadedInputs1 = {
                 age1: 0,
                 age2: 0,
-                le1: 0,
-                le2: 0,
                 ira1: 0,
                 ira2: 0,
                 roi: 0,
@@ -284,8 +280,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 loadedInputs1 = {
                     age1: item.age1,
                     age2: item.age2,
-                    le1: item.le1,
-                    le2: item.le2,
                     ira1: item.ira1,
                     ira2: item.ira2,
                     roi: item.roi,
@@ -649,13 +643,13 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         setNpvLifetimeTax(npvLifetimeTaxValue);
 
         // For Beneficiary Tax Paid NPV
-        const futureYear = currentYear + Math.max(le1 - age1, le2 - age2);
+        const futureYear = currentYear + Math.max(inputs.hLE - age1, inputs.wLE - age2);
         const cashFlowBeneficiaryTax = new Decimal(beneficiaryTaxPaid);
         const dateBeneficiaryTax = new Date(futureYear, 0, 1);
         const npvBeneficiaryTaxValue = calculateXNPV(inputs.roi / 100, [cashFlowBeneficiaryTax], [dateBeneficiaryTax]);
         setNpvBeneficiaryTax(npvBeneficiaryTaxValue);
 
-    }, [inputs.roi, taxableIncomes, beneficiaryTaxPaid, inputs1, currentYear, age1, le1, age2, le2]);
+    }, [inputs.roi, taxableIncomes, beneficiaryTaxPaid, inputs1, currentYear, age1, inputs.hLE, age2, inputs.wLE]);
 
 return (
         <div>
