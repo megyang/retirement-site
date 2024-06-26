@@ -4,16 +4,16 @@ import Decimal from 'decimal.js';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
 
-const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setStaticFields }) => {
+const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields }) => {
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
 
-    const [savedVersions, setSavedVersions] = useState([]); // State to store saved versions
-    const [versionName, setVersionName] = useState(""); // State to store the name of the version
+    const [savedVersions, setSavedVersions] = useState([]);
+    const [versionName, setVersionName] = useState("");
 
     const findRmdByYear = (details, year) => {
         const detail = details.find((detail) => detail.year === year);
-        return detail ? detail.rmd : "0.00"; // Default to "0.00" if no detail found for that year
+        return detail ? detail.rmd : "0.00";
     };
     const findSsBenefitsByYear = (year) => {
         const benefitsForYear = tableData.find(data => data.year === year);
@@ -153,9 +153,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 // ROTH CALCULATIONS START -----------
     const currentYear = new Date().getFullYear();
     const maxLifeExpectancy = Math.max(le1, le2);
-
-    // Initial state setup for editable fields.
-    // You can also use inputs to pre-populate this state if they should start with values.
     [editableFields, setEditableFields] = useState(() => {
         const fields = {};
         for (let year = currentYear; year <= currentYear + (maxLifeExpectancy - Math.min(age1, age2)); year++) {
@@ -183,7 +180,8 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             ageSpouse2: ageSpouse2,
         };
     }
-    // Save, load, and delete functions
+
+    // save, load, and delete functions
     const saveVersion = async (versionName) => {
         if (!user) {
             console.error('User is not logged in');
@@ -203,7 +201,15 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 roth_2: editableFields[year].rothSpouse2,
                 salary1: editableFields[year].salary1,
                 salary2: editableFields[year].salary2,
-                interest: editableFields[year].interest
+                interest: editableFields[year].interest,
+                age1: inputs1.age1,       // Adding RMD inputs
+                age2: inputs1.age2,
+                le1: inputs1.le1,
+                le2: inputs1.le2,
+                ira1: inputs1.ira1,
+                ira2: inputs1.ira2,
+                roi: inputs1.roi,
+                inflation: inputs1.inflation
             });
         }
 
@@ -251,6 +257,17 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             console.error('Error loading version from Supabase:', error);
         } else {
             const loadedEditableFields = {};
+            let loadedInputs1 = {
+                age1: 0,
+                age2: 0,
+                le1: 0,
+                le2: 0,
+                ira1: 0,
+                ira2: 0,
+                roi: 0,
+                inflation: 0
+            };
+
             data.forEach(item => {
                 loadedEditableFields[item.year] = {
                     rothSpouse1: item.roth_1,
@@ -262,8 +279,22 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                     capitalGains: item.capital_gains,
                     pension: item.pension
                 };
+
+                // Load RMD inputs (assuming they are the same for each year)
+                loadedInputs1 = {
+                    age1: item.age1,
+                    age2: item.age2,
+                    le1: item.le1,
+                    le2: item.le2,
+                    ira1: item.ira1,
+                    ira2: item.ira2,
+                    roi: item.roi,
+                    inflation: item.inflation
+                };
             });
+
             setEditableFields(loadedEditableFields);
+            setInputs1(loadedInputs1);
         }
     };
 
@@ -315,14 +346,13 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     };
 
 
-    // Function to render editable field inputs with improved styling
     const renderEditableFieldInput = (year, field) => {
         return (
             <input
                 type="text"
                 className="w-full p-1 border border-gray-300 rounded text-right"
                 name={`${year}-${field}`}
-                value={editableFields[year][field]} // Show values as fixed-point notation
+                value={editableFields[year][field]}
                 onChange={(e) => handleEditableFieldChange(year, field, e.target.value)}
             />
         );
@@ -393,17 +423,13 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         return referenceTable[age];
     };
     useEffect(() => {
-        // After tableData1 is set, find the entries for the husband's and wife's start ages
         const husbandStartAgeData = tableData1.find(data => data.age === inputs.hSS);
         const wifeStartAgeData = tableData1.find(data => data.age === inputs.wSS);
-        // Update benefitsBasedOnAge with the yearly values found for both husband and wife
-        // If no data is found for the start age (in case of incorrect inputs or data not available),
-        // keep the benefits as 0 (or you could set them to a default value if preferred)
         setBenefitsBasedOnAge({
             husbandYearly: husbandStartAgeData ? husbandStartAgeData.husbandYearly : 0,
             wifeYearly: wifeStartAgeData ? wifeStartAgeData.wifeYearly : 0,
         });
-    }, [tableData1, inputs.hSS, inputs.wSS]); // Depend on tableData1 and the start ages to trigger this effect
+    }, [tableData1, inputs.hSS, inputs.wSS]);
 
 ////REFERENCE TABLE END
 
@@ -518,7 +544,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     };
     //ordinary income tax calc -------
     const calculateTaxesForBrackets = (taxableIncome) => {
-        // Define the thresholds for each bracket
         const brackets = [
             { threshold: 23200, rate: 0.10 },
             { threshold: 94300, rate: 0.12 },
