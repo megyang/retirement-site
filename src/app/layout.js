@@ -1,5 +1,10 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
+import SupabaseProvider from "@/app/providers/SupabaseProvider";
+import UserProvider from "@/app/providers/UserProvider";
+import ModalProviders from "@/app/providers/ModalProviders";
+import Header from "@/app/components/Header";
+import NavBar from "@/app/components/NavBar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -10,8 +15,19 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
-    </html>
+      <html lang="en">
+      <body className={inter.className}>
+      <SupabaseProvider>
+        <UserProvider>
+          <ModalProviders />
+          <Header />
+          <div className="flex">
+            <NavBar />
+            <div className="ml-64 mt-16 p-4 flex-1">{children}</div>
+          </div>
+        </UserProvider>
+      </SupabaseProvider>
+      </body>
+      </html>
   );
 }

@@ -45,24 +45,24 @@ const SocialSecurityCalculator = () => {
     };
 
     return (
-        <div className="mx-auto my-0">
+        <div className="mx-auto">
             <div>
                 <MyUserContextProvider>
-                <h1 className="text-2xl font-bold text-center mb-4">Social Security Calculator</h1>
-                <SocialSecurityInput inputs={inputs} onInputChange={handleInputChange} />
-                <div className="mt-8">
-                    <SaveInputs inputs={inputs}/>
-                </div>
-                <div className="mt-8">
-                    <LoadInputs onLoad={handleLoadInputs} onDelete={handleDeleteInputs} />
-                </div>
-                <div className="mt-8">
-                    <SocialSecurityOutput inputs={inputs} />
-                </div>
+                    <div>
+                        <SocialSecurityOutput inputs={inputs} onInputChange={handleInputChange} />
+                    </div>
+                    {/*<div className="mt-4">
+                        <SaveInputs inputs={inputs}/>
+                    </div>
+                        <div className="mt-4">
+                        <LoadInputs onLoad={handleLoadInputs} onDelete={handleDeleteInputs} />
+                        </div>
+                    */}
                 </MyUserContextProvider>
             </div>
         </div>
     );
+
 };
 
 export default SocialSecurityCalculator;
