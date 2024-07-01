@@ -3,6 +3,7 @@ import React, {useEffect, useState} from 'react';
 import Decimal from 'decimal.js';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
+import BarChart from "@/app/components/BarChart";
 
 const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
@@ -10,6 +11,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
     const [savedVersions, setSavedVersions] = useState([]);
     const [versionName, setVersionName] = useState("");
+    const [versionData, setVersionData] = useState([]);
 
     const findRmdByYear = (details, year) => {
         const detail = details.find((detail) => detail.year === year);
@@ -202,12 +204,14 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 salary1: editableFields[year].salary1,
                 salary2: editableFields[year].salary2,
                 interest: editableFields[year].interest,
-                age1: inputs1.age1,       // Adding RMD inputs
+                age1: inputs1.age1,
                 age2: inputs1.age2,
                 ira1: inputs1.ira1,
                 ira2: inputs1.ira2,
                 roi: inputs1.roi,
-                inflation: inputs1.inflation
+                inflation: inputs1.inflation,
+                lifetime_tax: totalLifetimeTaxPaid,
+                beneficiary_tax: beneficiaryTaxPaid
             });
         }
 
@@ -216,10 +220,9 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             console.error('Error saving data to Supabase:', error);
         } else {
             console.log('Data successfully saved to Supabase.');
-            fetchSavedVersions(); // Refresh the list of saved versions
+            await fetchSavedVersions();
         }
     };
-
     const fetchSavedVersions = async () => {
         if (!user) {
             console.error('User is not logged in');
@@ -228,16 +231,27 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
         const { data, error } = await supabaseClient
             .from('roth')
-            .select('version_name')
+            .select('version_name, lifetime_tax, beneficiary_tax')
             .eq('user_id', user.id);
 
         if (error) {
             console.error('Error fetching versions from Supabase:', error);
         } else {
-            const uniqueVersions = [...new Set(data.map(item => item.version_name))];
-            setSavedVersions(uniqueVersions.map(name => ({ name })));
+            const uniqueVersions = Array.from(new Set(data.map(item => item.version_name)))
+                .map(name => {
+                    const version = data.find(item => item.version_name === name);
+                    return {
+                        name: name,
+                        lifetime_tax: version.lifetime_tax,
+                        beneficiary_tax: version.beneficiary_tax
+                    };
+                });
+            setSavedVersions(uniqueVersions.map(version => ({ name: version.name })));
+            setVersionData(uniqueVersions);  // Ensure versionData is correctly set
         }
     };
+
+
 
     const loadVersion = async (version) => {
         if (!user) {
@@ -651,8 +665,84 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
     }, [inputs.roi, taxableIncomes, beneficiaryTaxPaid, inputs1, currentYear, age1, inputs.hLE, age2, inputs.wLE]);
 
+
+    const chartData = {
+        labels: Array.from(new Set(versionData.map(item => item.name))), // Unique version names
+        datasets: [
+            {
+                label: 'Lifetime Tax Paid',
+                data: versionData.map(item => item.lifetime_tax),
+                backgroundColor: 'rgba(173, 216, 230, 0.6)', // Light blue
+                borderColor: 'black',
+                borderWidth: 1,
+            },
+            {
+                label: 'Beneficiary Tax Paid',
+                data: versionData.map(item => item.beneficiary_tax),
+                backgroundColor: 'rgba(255, 182, 193, 0.6)', // Light pink
+                borderColor: 'black',
+                borderWidth: 1,
+            },
+        ],
+    };
+
+    const chartOptions = {
+        responsive: true,
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        return `$${context.raw}`;
+                    },
+                },
+            },
+            legend: {
+                position: 'top', // Positioning the legend at the top
+            },
+        },
+        scales: {
+            x: {
+                stacked: true,
+                grid: {
+                    drawOnChartArea: false,
+                },
+            },
+            y: {
+                stacked: true,
+                ticks: {
+                    callback: function (value) {
+                        return `$${value.toLocaleString()}`;
+                    },
+                },
+            },
+        },
+    };
+
 return (
         <div>
+            <div className="flex-col">
+                <div className="bg-[#f8f5f0] p-4 rounded w-full h-auto">
+                    <BarChart chartData={chartData} chartOptions={chartOptions} />
+
+                </div>
+                <div className="mt-4 text-left bg-[#f8f5f0] p-4 rounded w-auto h-auto">
+                    dropdown
+                </div>
+                <div className="flex">
+                    <div className="mt-4 text-left bg-[#f8f5f0] p-4 rounded w-1/2 h-auto">
+
+                    </div>
+                    <div className="mt-4 text-left bg-[#f8f5f0] p-4 rounded w-1/2 h-auto">
+
+                    </div>
+                </div>
+                <div className="mt-4 text-left bg-[#f8f5f0] p-4 rounded w-full h-auto">
+
+                </div>
+            </div>
+
+
+
             <div className="totals-display" style={{ display: 'flex', justifyContent: 'space-around', marginTop: '20px', marginBottom: '20px' }}>
                 <div className="total-rmds" style={{ textAlign: 'center', padding: '10px' }}>
                     <h2 style={{ marginBottom: '15px', color: '#333', fontSize: '18px', fontWeight: 'bold' }}>Total RMDs</h2>

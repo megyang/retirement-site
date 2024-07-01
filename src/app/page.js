@@ -17,10 +17,10 @@ export default function Page() {
                 <UserProvider>
                     <ModalProviders />
                     <Header />
-                    <div className="flex flex-1 mt-16">
+                    <div className="flex flex-1">
                         <NavBar />
                         <div className="flex-1 flex justify-center items-center">
-                            <div className="p-4 w-11/12 max-w-screen-lg">
+                            <div className="w-11/12 max-w-screen-lg">
                                 <SocialSecurityCalculator />
                             </div>
                         </div>
