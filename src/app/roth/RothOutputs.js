@@ -12,6 +12,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     const [savedVersions, setSavedVersions] = useState([]);
     const [versionName, setVersionName] = useState("");
     const [versionData, setVersionData] = useState([]);
+    const [selectedVersion, setSelectedVersion] = useState("");
 
     const findRmdByYear = (details, year) => {
         const detail = details.find((detail) => detail.year === year);
@@ -190,12 +191,57 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             return;
         }
 
+        // Clone editableFields and set roth1 and roth2 to zero for all years
+        const editableFieldsWithZeroRoth = JSON.parse(JSON.stringify(editableFields));
+        Object.keys(editableFieldsWithZeroRoth).forEach(year => {
+            editableFieldsWithZeroRoth[year].rothSpouse1 = 0;
+            editableFieldsWithZeroRoth[year].rothSpouse2 = 0;
+        });
+
+        const calculateTotalIncomeForYearWithZeroRoth = (year, editableFieldsWithZeroRoth) => {
+            const ssBenefits = findSsBenefitsByYear(parseInt(year));
+            const editableFieldsForYear = editableFieldsWithZeroRoth[year];
+            const rmdSpouse1 = findRmdByYear(iraDetails.spouse1, parseInt(year));
+            const rmdSpouse2 = findRmdByYear(iraDetails.spouse2, parseInt(year));
+
+            const totalIncome = new Decimal(editableFieldsForYear.rothSpouse1)
+                .plus(editableFieldsForYear.rothSpouse2)
+                .plus(editableFieldsForYear.salary1)
+                .plus(editableFieldsForYear.salary2)
+                .plus(editableFieldsForYear.rentalIncome)
+                .plus(editableFieldsForYear.interest)
+                .plus(editableFieldsForYear.capitalGains)
+                .plus(editableFieldsForYear.pension)
+                .plus(rmdSpouse1)
+                .plus(rmdSpouse2)
+                .plus(ssBenefits.spouse1Benefit)
+                .plus(ssBenefits.spouse2Benefit);
+
+            return totalIncome.toFixed(2);
+        };
+
+        // Calculate lifetime0 and beneficiary0 with roth1 and roth2 set to zero
+        const taxableIncomesWithZeroRoth = calculateTaxableIncomes(
+            staticFields,
+            iraDetails,
+            findSsBenefitsByYear,
+            (year) => calculateTotalIncomeForYearWithZeroRoth(year, editableFieldsWithZeroRoth),
+            calculateStandardDeductionForYear
+        );
+
+        const totalLifetimeTaxPaidWithZeroRoth = Object.keys(taxableIncomesWithZeroRoth).reduce(
+            (total, year) => total.plus(new Decimal(taxableIncomesWithZeroRoth[year])),
+            new Decimal(0)
+        );
+
+        const beneficiaryTaxPaidWithZeroRoth = totalInheritedIRA.times(beneficiaryTaxRate).toFixed(2);
+
         const dataToSave = [];
         for (let year in editableFields) {
             dataToSave.push({
                 user_id: user.id,
                 version_name: versionName,
-                year: parseInt(year),
+                year: year,
                 rental_income: editableFields[year].rentalIncome,
                 capital_gains: editableFields[year].capitalGains,
                 pension: editableFields[year].pension,
@@ -210,8 +256,10 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 ira2: inputs1.ira2,
                 roi: inputs1.roi,
                 inflation: inputs1.inflation,
-                lifetime_tax: totalLifetimeTaxPaid,
-                beneficiary_tax: beneficiaryTaxPaid
+                lifetime_tax: totalLifetimeTaxPaid.toFixed(2),
+                beneficiary_tax: beneficiaryTaxPaid,
+                lifetime0: totalLifetimeTaxPaidWithZeroRoth.toFixed(2),
+                beneficiary0: beneficiaryTaxPaidWithZeroRoth
             });
         }
 
@@ -220,7 +268,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             console.error('Error saving data to Supabase:', error);
         } else {
             console.log('Data successfully saved to Supabase.');
-            await fetchSavedVersions();
+            await fetchSavedVersions();  // Ensure versions are fetched after saving
         }
     };
     const fetchSavedVersions = async () => {
@@ -231,7 +279,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
         const { data, error } = await supabaseClient
             .from('roth')
-            .select('version_name, lifetime_tax, beneficiary_tax')
+            .select('version_name, lifetime_tax, beneficiary_tax, lifetime0, beneficiary0')
             .eq('user_id', user.id);
 
         if (error) {
@@ -240,14 +288,21 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             const uniqueVersions = Array.from(new Set(data.map(item => item.version_name)))
                 .map(name => {
                     const version = data.find(item => item.version_name === name);
+                    console.log('Version:', version); // Log version data to check values
                     return {
                         name: name,
                         lifetime_tax: version.lifetime_tax,
-                        beneficiary_tax: version.beneficiary_tax
+                        beneficiary_tax: version.beneficiary_tax,
+                        lifetime0: version.lifetime0,
+                        beneficiary0: version.beneficiary0
                     };
                 });
             setSavedVersions(uniqueVersions.map(version => ({ name: version.name })));
-            setVersionData(uniqueVersions);  // Ensure versionData is correctly set
+            setVersionData(uniqueVersions);
+            if (uniqueVersions.length > 0) {
+                setSelectedVersion(uniqueVersions[0].name);
+            }
+
         }
     };
 
@@ -621,6 +676,14 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
     const [beneficiaryTaxRate, setBeneficiaryTaxRate] = useState(0.24); // Default to 24%
 
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setInputs1(prevInputs => ({
+            ...prevInputs,
+            [name]: parseFloat(value),
+        }));
+    };
+
     const handleTaxRateChange = (e) => {
         const newRate = parseFloat(e.target.value) / 100; // Convert percentage to a decimal for calculation
         setBeneficiaryTaxRate(newRate);
@@ -667,18 +730,18 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
 
     const chartData = {
-        labels: Array.from(new Set(versionData.map(item => item.name))), // Unique version names
+        labels: ["No Conversion", ...Array.from(new Set(versionData.map(item => item.name)))], // Unique version names with "No Conversion" as the first label
         datasets: [
             {
                 label: 'Lifetime Tax Paid',
-                data: versionData.map(item => item.lifetime_tax),
+                data: [versionData.length > 0 ? parseFloat(versionData[0].lifetime0) : 0, ...versionData.map(item => item.lifetime_tax)],
                 backgroundColor: 'rgba(173, 216, 230, 0.6)', // Light blue
                 borderColor: 'black',
                 borderWidth: 1,
             },
             {
                 label: 'Beneficiary Tax Paid',
-                data: versionData.map(item => item.beneficiary_tax),
+                data: [versionData.length > 0 ? parseFloat(versionData[0].beneficiary0) : 0, ...versionData.map(item => item.beneficiary_tax)],
                 backgroundColor: 'rgba(255, 182, 193, 0.6)', // Light pink
                 borderColor: 'black',
                 borderWidth: 1,
@@ -711,7 +774,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 stacked: true,
                 ticks: {
                     callback: function (value) {
-                        return `$${value.toLocaleString()}`;
+                        return `$${value}`;
                     },
                 },
             },
@@ -723,103 +786,236 @@ return (
             <div className="flex-col">
                 <div className="bg-[#f8f5f0] p-4 rounded w-full h-auto">
                     <BarChart chartData={chartData} chartOptions={chartOptions} />
-
                 </div>
-                <div className="mt-4 text-left bg-[#f8f5f0] p-4 rounded w-auto h-auto">
-                    dropdown
-                </div>
-                <div className="flex">
-                    <div className="mt-4 text-left bg-[#f8f5f0] p-4 rounded w-1/2 h-auto">
-
+                <div className="mt-4 text-left flex items-center space-x-2">
+                    <div className="bg-[#f8f5f0] rounded p-2 flex-grow">
+                        <select
+                            className="w-full bg-[#f8f5f0] border-none"
+                            value={selectedVersion}
+                            onChange={(e) => {
+                                setSelectedVersion(e.target.value);
+                                const version = savedVersions.find(v => v.name === e.target.value);
+                                if (version) {
+                                    loadVersion(version);
+                                }
+                            }}
+                        >
+                            {savedVersions.map((version, index) => (
+                                <option key={index} value={version.name}>
+                                    <span className="font-bold">Selected: {version.name}</span>
+                                </option>
+                            ))}
+                        </select>
                     </div>
-                    <div className="mt-4 text-left bg-[#f8f5f0] p-4 rounded w-1/2 h-auto">
-
-                    </div>
-                </div>
-                <div className="mt-4 text-left bg-[#f8f5f0] p-4 rounded w-full h-auto">
-
-                </div>
-            </div>
-
-
-
-            <div className="totals-display" style={{ display: 'flex', justifyContent: 'space-around', marginTop: '20px', marginBottom: '20px' }}>
-                <div className="total-rmds" style={{ textAlign: 'center', padding: '10px' }}>
-                    <h2 style={{ marginBottom: '15px', color: '#333', fontSize: '18px', fontWeight: 'bold' }}>Total RMDs</h2>
-                    <div style={{ marginBottom: '10px' }}>Husband: <strong>${totals.totalRMDsHusband.toFixed(2)}</strong></div>
-                    <div style={{ marginBottom: '10px' }}>Wife: <strong>${totals.totalRMDsWife.toFixed(2)}</strong></div>
-                    <div>Total: <strong>${totals.totalRMDsHusband.plus(totals.totalRMDsWife).toFixed(2)}</strong></div>
-                </div>
-                <div className="total-taxes-paid" style={{ textAlign: 'center', padding: '10px' }}>
-                    <h2 style={{ marginBottom: '15px', color: '#333', fontSize: '18px', fontWeight: 'bold' }}>Total Taxes Paid </h2>
-                    <h1>Total Cash</h1>
-                    <div>Lifetime Tax Paid: <strong>${totalLifetimeTaxPaid.toFixed(2)}</strong></div>
-                    <div>Beneficiary Tax Paid: <strong>${beneficiaryTaxPaid}</strong></div>
-                    <h1>Net Present Value</h1>
-                    <div>Lifetime Tax NPV: <strong>${npvLifetimeTax.toFixed(2)}</strong></div>
-                    <div>Beneficiary Tax NPV: <strong>${npvBeneficiaryTax.toFixed(2)}</strong></div>
-
-                </div>
-
-                <div className="inherited-iras" style={{ textAlign: 'center', padding: '10px', width: '30%'}}>
-                    <h2 style={{ marginBottom: '15px', color: '#333', fontSize: '18px', fontWeight: 'bold' }}>Inherited Pre-Tax IRA</h2>
-                    <div style={{ marginBottom: '10px' }}>Husband: <strong>${totals.inheritedIRAHusband.toFixed(2)}</strong></div>
-                    <div style={{ marginBottom: '10px' }}>Wife: <strong>${totals.inheritedIRAWife.toFixed(2)}</strong></div>
-                    <div>Total: <strong>${totalInheritedIRA.toFixed(2)}</strong></div>
-                    <div>
-                        <label htmlFor="beneficiaryTaxRate" style={{ fontWeight: 'normal', color: '#333', fontSize: '16px', marginRight: '10px' }}>Beneficiary Tax Rate:</label>
+                    <div className="flex items-center space-x-2">
                         <input
-                            id="beneficiaryTaxRate"
-                            type="number"
-                            value={beneficiaryTaxRate * 100}
-                            onChange={handleTaxRateChange}
-                            style={{ flex: '1', textAlign: 'right', padding: '5px', border: '1px solid #ddd', borderRadius: '5px' }}
-                        />%
-                    </div>
-                    <div style={{ marginTop: '10px' }}>
-                        Beneficiary Tax Paid: <strong>${beneficiaryTaxPaid}</strong>
+                            type="text"
+                            placeholder="Enter version name"
+                            className="border rounded p-2"
+                            onChange={(e) => setVersionName(e.target.value)}
+                        />
+                        <button
+                            className="bg-blue-500 text-white rounded p-2"
+                            onClick={() => saveVersion(versionName)}
+                        >
+                            Save
+                        </button>
+                        <button
+                            className="bg-red-500 text-white rounded p-2"
+                            onClick={() => deleteVersion(selectedVersion)}
+                        >
+                            Delete
+                        </button>
                     </div>
                 </div>
-            </div>
-
-            <div className="flex justify-between items-center mb-4">
-                <input
-                    type="text"
-                    placeholder="Enter version name"
-                    className="border rounded p-2"
-                    onChange={(e) => setVersionName(e.target.value)}
-                />
-                <button
-                    className="bg-blue-500 text-white rounded p-2"
-                    onClick={() => saveVersion(versionName)}
-                >
-                    Save Version
-                </button>
-            </div>
-            <div>
-                {savedVersions.map((version, index) => (
-                    <div key={index} className="flex justify-between items-center mb-2">
-                        <span>{version.name}</span>
-                        <div>
-                            <button
-                                className="bg-green-500 text-white rounded p-2 mr-2"
-                                onClick={() => loadVersion(version)}
-                            >
-                                Load
-                            </button>
-                            <button
-                                className="bg-red-500 text-white rounded p-2"
-                                onClick={() => deleteVersion(version.name)}
-                            >
-                                Delete
-                            </button>
+                <div className="flex mt-4 w-full space-x-4">
+                    <div className="bg-[#f8f5f0] p-6 rounded flex-1">
+                        <h3 className="text-center font-bold mb-4">{selectedVersion}: Total Taxes Saved</h3>
+                        <div className="text-4xl font-bold text-center">
+                            ${parseFloat(versionData.find(v => v.name === selectedVersion)?.lifetime_tax || 0) + parseFloat(versionData.find(v => v.name === selectedVersion)?.beneficiary_tax || 0)}
                         </div>
                     </div>
-                ))}
+                    <div className="bg-[#f8f5f0] p-6 rounded flex-1">
+                        <h3 className="text-center font-bold mb-4">Other Inputs</h3>
+                        <div className="space-y-2 text-sm"> {/* Add text-sm for smaller font size */}
+                            <div className="flex items-center justify-between">
+                                <label>Beneficiary Tax Rate:</label>
+                                <input
+                                    type="number"
+                                    value={beneficiaryTaxRate * 100}
+                                    onChange={handleTaxRateChange}
+                                    className="border rounded p-1 w-20"
+                                />%
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <label>Your IRA:</label>
+                                <input
+                                    type="number"
+                                    name="ira2"
+                                    value={inputs1.ira2}
+                                    onChange={handleInputChange}
+                                    className="border rounded p-1 w-20"
+                                />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <label>Your Spouse’s IRA:</label>
+                                <input
+                                    type="number"
+                                    name="ira1"
+                                    value={inputs1.ira1}
+                                    onChange={handleInputChange}
+                                    className="border rounded p-1 w-20"
+                                />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <label>Investment Return:</label>
+                                <input
+                                    type="number"
+                                    name="roi"
+                                    value={inputs1.roi}
+                                    onChange={handleInputChange}
+                                    className="border rounded p-1 w-20"
+                                />%
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <label>Inflation Rate:</label>
+                                <input
+                                    type="number"
+                                    name="inflation"
+                                    value={inputs1.inflation}
+                                    onChange={handleInputChange}
+                                    className="border rounded p-1 w-20"
+                                />%
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div className="bg-[#f8f5f0] p-4 rounded overflow-auto max-h-96" style={{ maxHeight: '600px' }}>
+                <h2 className="text-xl font-semibold mb-3">Financial Plan Details</h2>
+                <table className="min-w-full table-fixed border-collapse border border-slate-400">
+                    <thead className="bg-gray-100">
+                    <tr>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Year</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Age Spouse 1</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Age Spouse 2</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Roth Conversion 1</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Roth Conversion 2</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Salary 1</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Salary 2</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Rental Income</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Interest / Dividend</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Capital Gains</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Pension</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">RMD Spouse 1</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">RMD Spouse 2</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">SS Spouse 1</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">SS Spouse 2</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Total Ordinary Income</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Standard Deductions</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Taxable Ordinary Income</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {Object.keys(staticFields).map((year, index) => {
+                        const ssBenefits = findSsBenefitsByYear(parseInt(year));
+                        const totalIncomeForYear = calculateTotalIncomeForYear(year);
+                        const standardDeductionForYear = calculateStandardDeductionForYear(parseInt(year));
+                        const taxableIncomeForYear = totalIncomeForYear - standardDeductionForYear;
+                        return (
+                            <tr key={year}>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{year}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{staticFields[year].ageSpouse1}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{staticFields[year].ageSpouse2}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rothSpouse1')}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rothSpouse2')}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'salary1')}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'salary2')}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rentalIncome')}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'interest')}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'capitalGains')}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'pension')}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{findRmdByYear(iraDetails.spouse1, parseInt(year))}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{findRmdByYear(iraDetails.spouse2, parseInt(year))}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{ssBenefits.spouse1Benefit}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">{ssBenefits.spouse2Benefit}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">${totalIncomeForYear}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">-${standardDeductionForYear.toFixed(2)}</td>
+                                <td className="px-3 py-2 text-center whitespace-nowrap">${taxableIncomeForYear.toFixed(2)}</td>
+                            </tr>
+                        )
+                    })}
+                    </tbody>
+                </table>
             </div>
 
 
+            {/*
+                <div className="totals-display"
+                     style={{display: 'flex', justifyContent: 'space-around', marginTop: '20px', marginBottom: '20px'}}>
+                    <div className="total-rmds" style={{textAlign: 'center', padding: '10px'}}>
+                        <h2 style={{marginBottom: '15px', color: '#333', fontSize: '18px', fontWeight: 'bold'}}>Total
+                            RMDs</h2>
+                        <div
+                            style={{marginBottom: '10px'}}>Husband: <strong>${totals.totalRMDsHusband.toFixed(2)}</strong>
+                        </div>
+                        <div style={{marginBottom: '10px'}}>Wife: <strong>${totals.totalRMDsWife.toFixed(2)}</strong>
+                        </div>
+                        <div>Total: <strong>${totals.totalRMDsHusband.plus(totals.totalRMDsWife).toFixed(2)}</strong>
+                        </div>
+                    </div>
+                    <div className="total-taxes-paid" style={{textAlign: 'center', padding: '10px'}}>
+                        <h2 style={{marginBottom: '15px', color: '#333', fontSize: '18px', fontWeight: 'bold'}}>Total
+                            Taxes Paid </h2>
+                        <h1>Total Cash</h1>
+                        <div>Lifetime Tax Paid: <strong>${totalLifetimeTaxPaid.toFixed(2)}</strong></div>
+                        <div>Beneficiary Tax Paid: <strong>${beneficiaryTaxPaid}</strong></div>
+                        <h1>Net Present Value</h1>
+                        <div>Lifetime Tax NPV: <strong>${npvLifetimeTax.toFixed(2)}</strong></div>
+                        <div>Beneficiary Tax NPV: <strong>${npvBeneficiaryTax.toFixed(2)}</strong></div>
 
+                    </div>
+
+                    <div className="inherited-iras" style={{textAlign: 'center', padding: '10px', width: '30%'}}>
+                        <h2 style={{
+                            marginBottom: '15px',
+                            color: '#333',
+                            fontSize: '18px',
+                            fontWeight: 'bold'
+                        }}>Inherited Pre-Tax IRA</h2>
+                        <div
+                            style={{marginBottom: '10px'}}>Husband: <strong>${totals.inheritedIRAHusband.toFixed(2)}</strong>
+                        </div>
+                        <div style={{marginBottom: '10px'}}>Wife: <strong>${totals.inheritedIRAWife.toFixed(2)}</strong>
+                        </div>
+                        <div>Total: <strong>${totalInheritedIRA.toFixed(2)}</strong></div>
+                        <div>
+                            <label htmlFor="beneficiaryTaxRate"
+                                   style={{fontWeight: 'normal', color: '#333', fontSize: '16px', marginRight: '10px'}}>Beneficiary
+                                Tax Rate:</label>
+                            <input
+                                id="beneficiaryTaxRate"
+                                type="number"
+                                value={beneficiaryTaxRate * 100}
+                                onChange={handleTaxRateChange}
+                                style={{
+                                    flex: '1',
+                                    textAlign: 'right',
+                                    padding: '5px',
+                                    border: '1px solid #ddd',
+                                    borderRadius: '5px'
+                                }}
+                            />%
+                        </div>
+                        <div style={{marginTop: '10px'}}>
+                            Beneficiary Tax Paid: <strong>${beneficiaryTaxPaid}</strong>
+                        </div>
+                    </div>
+                </div>*/}
+
+            {/*
             <h2 className="text-xl font-semibold mb-3">Financial Plan Details</h2>
             <table className="min-w-full table-fixed border-collapse border border-slate-400">
                 <thead className="bg-gray-100">
@@ -881,9 +1077,9 @@ return (
 
                 </tbody>
             </table>
-
+*/}
             {/*ORDINARY INCOME TAX BRACKET*/}
-            {/* Ordinary Income Tax Brackets Table */}
+            {/* Ordinary Income Tax Brackets Table
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                 <tr>
@@ -913,7 +1109,7 @@ return (
                     );
                 })}
                 </tbody>
-            </table>
+            </table>*/}
         </div>
     );
 

@@ -106,11 +106,9 @@ const RothConversionCalculator = () => {
                             setStaticFields={setStaticFields}
                             setInputs1={setInputs1}
                         />
-
                     </div>
                     <h1 className="text-2xl font-bold text-center mb-4">Social Security Calculator</h1>
-                    <RothInputs inputs={inputs} onInputChange={handleInputChange} inputs1={inputs1} onInputChange1={handleInputChange1}/>
-
+                    <RothInputs inputs={inputs} onInputChange={handleInputChange} inputs1={inputs1} onInputChange1={handleInputChange1} />
                 </MyUserContextProvider>
             </div>
         </div>
