@@ -1,0 +1,8 @@
+.scrollable-container {
+    background-color: #f8f5f0; /* Beige background */
+    max-width: 100%; /* Ensures the container doesn't exceed the screen width */
+    overflow-x: auto; /* Enables horizontal scrolling */
+    padding: 16px; /* Adds some padding */
+    border-radius: 8px; /* Rounds the corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
+}

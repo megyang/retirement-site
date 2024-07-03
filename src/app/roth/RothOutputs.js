@@ -782,12 +782,15 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     };
 
 return (
-        <div>
+        <div className="max-w-4xl mx-auto">
             <div className="flex-col">
-                <div className="bg-[#f8f5f0] p-4 rounded w-full h-auto">
+                <div className="bg-[#f8f5f0] p-4 rounded h-auto w-full">
+                    <h3 className=" text-left text-2xl">
+                        Total Taxes Paid
+                    </h3>
                     <BarChart chartData={chartData} chartOptions={chartOptions} />
                 </div>
-                <div className="mt-4 text-left flex items-center space-x-2">
+                <div className="mt-4 text-left flex items-center space-x-2 w-full">
                     <div className="bg-[#f8f5f0] rounded p-2 flex-grow">
                         <select
                             className="w-full bg-[#f8f5f0] border-none"
@@ -829,124 +832,188 @@ return (
                     </div>
                 </div>
                 <div className="flex mt-4 w-full space-x-4">
-                    <div className="bg-[#f8f5f0] p-6 rounded flex-1">
-                        <h3 className="text-center font-bold mb-4">{selectedVersion}: Total Taxes Saved</h3>
+                    <div className="bg-[#f8f5f0] p-6 rounded flex-1 w-2 flex flex-col justify-center">
+                        <h3 className="text-2xl text-center mb-4">{selectedVersion}: Total Taxes Saved</h3>
                         <div className="text-4xl font-bold text-center">
-                            ${parseFloat(versionData.find(v => v.name === selectedVersion)?.lifetime_tax || 0) + parseFloat(versionData.find(v => v.name === selectedVersion)?.beneficiary_tax || 0)}
+                            ${(parseFloat(versionData.find(v => v.name === selectedVersion)?.lifetime_tax || 0) + parseFloat(versionData.find(v => v.name === selectedVersion)?.beneficiary_tax || 0)).toLocaleString()}
                         </div>
                     </div>
-                    <div className="bg-[#f8f5f0] p-6 rounded flex-1">
-                        <h3 className="text-center font-bold mb-4">Other Inputs</h3>
-                        <div className="space-y-2 text-sm"> {/* Add text-sm for smaller font size */}
-                            <div className="flex items-center justify-between">
-                                <label>Beneficiary Tax Rate:</label>
+                    <div className="bg-[#f8f5f0] p-6 rounded flex-1 w-2">
+                        <h3 className="text-left text-1xl">Other Inputs</h3>
+                        <div className="">
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="flex-grow">Beneficiary Tax Rate:</label>
                                 <input
                                     type="number"
                                     value={beneficiaryTaxRate * 100}
                                     onChange={handleTaxRateChange}
-                                    className="border rounded p-1 w-20"
+                                    className="border rounded p-1 w-24 text-right"
                                 />%
                             </div>
-                            <div className="flex items-center justify-between">
-                                <label>Your IRA:</label>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="flex-grow">Your IRA:</label>
                                 <input
                                     type="number"
                                     name="ira2"
                                     value={inputs1.ira2}
                                     onChange={handleInputChange}
-                                    className="border rounded p-1 w-20"
+                                    className="border rounded w-24 text-right"
                                 />
                             </div>
-                            <div className="flex items-center justify-between">
-                                <label>Your Spouse’s IRA:</label>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="flex-grow">Your Spouse’s IRA:</label>
                                 <input
                                     type="number"
                                     name="ira1"
                                     value={inputs1.ira1}
                                     onChange={handleInputChange}
-                                    className="border rounded p-1 w-20"
+                                    className="border rounded w-24 text-right"
                                 />
                             </div>
-                            <div className="flex items-center justify-between">
-                                <label>Investment Return:</label>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="flex-grow">Investment Return:</label>
                                 <input
                                     type="number"
                                     name="roi"
                                     value={inputs1.roi}
                                     onChange={handleInputChange}
-                                    className="border rounded p-1 w-20"
+                                    className="border rounded w-24 text-right"
                                 />%
                             </div>
                             <div className="flex items-center justify-between">
-                                <label>Inflation Rate:</label>
+                                <label className="flex-grow">Inflation Rate:</label>
                                 <input
                                     type="number"
                                     name="inflation"
                                     value={inputs1.inflation}
                                     onChange={handleInputChange}
-                                    className="border rounded p-1 w-20"
+                                    className="border rounded w-24 text-right"
                                 />%
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
 
-            <div className="bg-[#f8f5f0] p-4 rounded overflow-auto max-h-96" style={{ maxHeight: '600px' }}>
-                <h2 className="text-xl font-semibold mb-3">Financial Plan Details</h2>
-                <table className="min-w-full table-fixed border-collapse border border-slate-400">
+            <div className="scrollable-container mt-4 bg-[#f8f5f0] overflow-x-auto p-4 rounded">
+                <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
+                <table className="border-collapse border border-slate-400">
                     <thead className="bg-gray-100">
                     <tr>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Year</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Age Spouse 1</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Age Spouse 2</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Roth Conversion 1</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Roth Conversion 2</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Salary 1</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Salary 2</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Rental Income</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Interest / Dividend</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Capital Gains</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Pension</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">RMD Spouse 1</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">RMD Spouse 2</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">SS Spouse 1</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">SS Spouse 2</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Total Ordinary Income</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Standard Deductions</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Taxable Ordinary Income</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 tracking-wider">Field</th>
+                        {Object.keys(staticFields).map((year) => (
+                            <th key={year} className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">{year}</th>
+                        ))}
                     </tr>
                     </thead>
                     <tbody>
-                    {Object.keys(staticFields).map((year, index) => {
-                        const ssBenefits = findSsBenefitsByYear(parseInt(year));
-                        const totalIncomeForYear = calculateTotalIncomeForYear(year);
-                        const standardDeductionForYear = calculateStandardDeductionForYear(parseInt(year));
-                        const taxableIncomeForYear = totalIncomeForYear - standardDeductionForYear;
-                        return (
-                            <tr key={year}>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{year}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{staticFields[year].ageSpouse1}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{staticFields[year].ageSpouse2}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rothSpouse1')}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rothSpouse2')}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'salary1')}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'salary2')}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rentalIncome')}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'interest')}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'capitalGains')}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'pension')}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{findRmdByYear(iraDetails.spouse1, parseInt(year))}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{findRmdByYear(iraDetails.spouse2, parseInt(year))}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{ssBenefits.spouse1Benefit}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">{ssBenefits.spouse2Benefit}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">${totalIncomeForYear}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">-${standardDeductionForYear.toFixed(2)}</td>
-                                <td className="px-3 py-2 text-center whitespace-nowrap">${taxableIncomeForYear.toFixed(2)}</td>
-                            </tr>
-                        )
-                    })}
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">Age Spouse 1</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">{staticFields[year].ageSpouse1}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">Age Spouse 2</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">{staticFields[year].ageSpouse2}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">Roth Conversion 1</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rothSpouse1')}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">Roth Conversion 2</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rothSpouse2')}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">Salary 1</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'salary1')}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">Salary 2</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'salary2')}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">Rental Income</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rentalIncome')}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">Interest / Dividend</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'interest')}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">Capital Gains</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'capitalGains')}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">Pension</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'pension')}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">RMD Spouse 1</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">{findRmdByYear(iraDetails.spouse1, parseInt(year))}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">RMD Spouse 2</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">{findRmdByYear(iraDetails.spouse2, parseInt(year))}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">SS Spouse 1</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">{findSsBenefitsByYear(parseInt(year)).spouse1Benefit}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">SS Spouse 2</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">{findSsBenefitsByYear(parseInt(year)).spouse2Benefit}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">Total Ordinary Income</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">${calculateTotalIncomeForYear(year)}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">Standard Deductions</td>
+                        {Object.keys(staticFields).map((year) => (
+                            <td key={year} className="px-3 py-2 text-center whitespace-nowrap">-${calculateStandardDeductionForYear(parseInt(year)).toFixed(2)}</td>
+                        ))}
+                    </tr>
+                    <tr>
+                        <td className="px-3 py-2 text-left whitespace-nowrap">Taxable Ordinary Income</td>
+                        {Object.keys(staticFields).map((year) => {
+                            const totalIncomeForYear = calculateTotalIncomeForYear(year);
+                            const standardDeductionForYear = calculateStandardDeductionForYear(parseInt(year));
+                            const taxableIncomeForYear = totalIncomeForYear - standardDeductionForYear;
+                            return (
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">${taxableIncomeForYear.toFixed(2)}</td>
+                            );
+                        })}
+                    </tr>
                     </tbody>
                 </table>
             </div>
