@@ -1,9 +1,4 @@
-"use client"
-import React from 'react';
-
 const RothInputs = ({ inputs, onInputChange, inputs1, onInputChange1 }) => {
-
-
     const handleChange = (e) => {
         const { name, value } = e.target;
         onInputChange(name, value);
@@ -26,7 +21,6 @@ const RothInputs = ({ inputs, onInputChange, inputs1, onInputChange1 }) => {
                         { label: "Spouse's age to start collecting Social Security:", name: "wSS", value: inputs.wSS },
                         { label: "Life Expectancy:", name: "hLE", value: inputs.hLE },
                         { label: "Spouse's Life Expectancy:", name: "wLE", value: inputs.wLE },
-
                     ].map((input) => (
                         <div key={input.name} className="flex items-center">
                             <label className="w-1/2 mr-4 text-right">{input.label}</label>
@@ -46,13 +40,10 @@ const RothInputs = ({ inputs, onInputChange, inputs1, onInputChange1 }) => {
             <div className="mb-8">
                 <div className="grid gap-4 grid-cols-2">
                     {[
-                        { label: "Age:", name: "age1", value: inputs1.age1 },
-                        { label: "Spouse's Age:", name: "age2", value: inputs1.age2 },
                         { label: "Current IRA Value 1:", name: "ira1", value: inputs1.ira1 },
                         { label: "Current IRA Value 2:", name: "ira2", value: inputs1.ira2 },
                         { label: "ROI:", name: "roi", value: inputs1.roi },
                         { label: "Inflation Rate:", name: "inflation", value: inputs1.inflation }
-
                     ].map((input) => (
                         <div key={input.name} className="flex items-center">
                             <label className="w-1/2 mr-4 text-right">{input.label}</label>
@@ -68,9 +59,7 @@ const RothInputs = ({ inputs, onInputChange, inputs1, onInputChange1 }) => {
                 </div>
             </div>
         </div>
-
     );
-
 };
 
 export default RothInputs;

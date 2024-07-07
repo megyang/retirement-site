@@ -28,7 +28,9 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
 
     //RMD calculations
-    const { age1, age2, ira1, ira2, roi } = inputs1;
+    const { ira1, ira2, roi } = inputs1;
+    const age1 = inputs.husbandAge;
+    const age2 = inputs.wifeAge;
 
     const [iraDetails, setIraDetails] = useState({
         spouse1: [],
@@ -174,8 +176,8 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     });
 
     staticFields = {};
-    for (let year = currentYear, ageSpouse1 = age1, ageSpouse2 = age2;
-         year <= currentYear + maxLifeExpectancy - Math.min(age1, age2);
+    for (let year = currentYear, ageSpouse1 = inputs.husbandAge, ageSpouse2 = inputs.wifeAge;
+         year <= currentYear + maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge);
          year++, ageSpouse1++, ageSpouse2++) {
         staticFields[year] = {
             year: year,
@@ -250,8 +252,8 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 salary1: editableFields[year].salary1,
                 salary2: editableFields[year].salary2,
                 interest: editableFields[year].interest,
-                age1: inputs1.age1,
-                age2: inputs1.age2,
+                age1: inputs.husbandAge,
+                age2: inputs.wifeAge,
                 ira1: inputs1.ira1,
                 ira2: inputs1.ira2,
                 roi: inputs1.roi,
@@ -347,8 +349,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
                 // Load RMD inputs (assuming they are the same for each year)
                 loadedInputs1 = {
-                    age1: item.age1,
-                    age2: item.age2,
                     ira1: item.ira1,
                     ira2: item.ira2,
                     roi: item.roi,

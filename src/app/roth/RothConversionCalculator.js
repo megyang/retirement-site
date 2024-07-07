@@ -3,20 +3,18 @@ import React, { useState, useEffect } from 'react';
 import RothInputs from "@/app/roth/RothInputs";
 import RothOutputs from "@/app/roth/RothOutputs";
 import { MyUserContextProvider } from "@/app/hooks/useUser";
+import useStore from "@/app/actions/useStore";
 
 const RothConversionCalculator = () => {
-    const [inputs, setInputs] = useState({
-        hLE: 90,
-        wLE: 95,
-        hPIA: 2500,
-        wPIA: 2000,
-        hSS: 70,
-        wSS: 70
-    });
+    const { socialSecurityInputs } = useStore();
+    const [inputs, setInputs] = useState(socialSecurityInputs);
+
+    useEffect(() => {
+        setInputs(socialSecurityInputs);
+    }, [socialSecurityInputs]);
+
 
     const [inputs1, setInputs1] = useState({
-        age1: 62,
-        age2: 60,
         ira1: 800000,
         ira2: 1000000,
         roi: 3.0,
@@ -72,6 +70,8 @@ const RothConversionCalculator = () => {
 
     const handleLoadInputs = (inputs) => {
         setInputs({
+            husbandAge: inputs.husbandAge,
+            wifeAge: inputs.wifeAge,
             hLE: inputs.le,
             wLE: inputs.spouse_le,
             hPIA: inputs.pia,
@@ -83,8 +83,6 @@ const RothConversionCalculator = () => {
 
     const handleLoadInputs1 = (inputs1) => {
         setInputs1({
-            age1: inputs1.age1,
-            age2: inputs1.age2,
             ira1: inputs1.ira1,
             ira2: inputs1.ira2,
             roi: inputs1.roi,
@@ -107,8 +105,6 @@ const RothConversionCalculator = () => {
                             setInputs1={setInputs1}
                         />
                     </div>
-                    <h1 className="text-2xl font-bold text-center mb-4">Social Security Calculator</h1>
-                    <RothInputs inputs={inputs} onInputChange={handleInputChange} inputs1={inputs1} onInputChange1={handleInputChange1} />
                 </MyUserContextProvider>
             </div>
         </div>
