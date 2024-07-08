@@ -4,10 +4,13 @@ import Decimal from 'decimal.js';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
 import BarChart from "@/app/components/BarChart";
+import useRmdCalculations from "@/app/hooks/useRmdCalculations";
+import useReferenceTable from "@/app/hooks/useReferenceTable";
 
 const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
+    const { refTable, benefitsBasedOnAge } = useReferenceTable(inputs);
 
     const [savedVersions, setSavedVersions] = useState([]);
     const [versionName, setVersionName] = useState("");
@@ -19,141 +22,16 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         return detail ? detail.rmd : "0.00";
     };
     const findSsBenefitsByYear = (year) => {
-        const benefitsForYear = tableData.find(data => data.year === year);
+        const benefitsForYear = refTable.find(data => data.year === year);
         return {
             spouse1Benefit: benefitsForYear ? benefitsForYear.husbandBenefit : "0.00",
             spouse2Benefit: benefitsForYear ? benefitsForYear.wifeBenefit : "0.00",
         };
     };
-
-
-    //RMD calculations
     const { ira1, ira2, roi } = inputs1;
     const age1 = inputs.husbandAge;
     const age2 = inputs.wifeAge;
-
-    const [iraDetails, setIraDetails] = useState({
-        spouse1: [],
-        spouse2: []
-    });
-
-    const [totals, setTotals] = useState({
-        totalRMDsHusband: new Decimal(0),
-        totalRMDsWife: new Decimal(0),
-        inheritedIRAHusband: new Decimal(0),
-        inheritedIRAWife: new Decimal(0)
-    });
-
-    const rmdDistributionTable = {
-        75: 24.6,
-        76: 23.7,
-        77: 22.9,
-        78: 22.0,
-        79: 21.1,
-        80: 20.2,
-        81: 19.4,
-        82: 18.5,
-        83: 17.7,
-        84: 16.8,
-        85: 16.0,
-        86: 15.2,
-        87: 14.4,
-        88: 13.7,
-        89: 12.9,
-        90: 12.2,
-        91: 11.5,
-        92: 10.8,
-        93: 10.1,
-        94: 9.5,
-        95: 8.9,
-        96: 8.4,
-        97: 7.8,
-        98: 7.3,
-        99: 6.8,
-        100: 6.4,
-        101: 6.0,
-        102: 5.6,
-        103: 5.2,
-        104: 4.9,
-        105: 4.6,
-        106: 4.3,
-        107: 4.1,
-        108: 3.9,
-        109: 3.7,
-        110: 3.5,
-        111: 3.4,
-        112: 3.3,
-        113: 3.1,
-        114: 3.0,
-        115: 2.9,
-        116: 2.8,
-        117: 2.7,
-        118: 2.5,
-        119: 2.3,
-        120: 2.0
-    };
-
-    const calculateRMD = (age, startingValue) => {
-        if (age < 75) return new Decimal(0); // RMD is 0 for ages below 75
-        const distributionPeriod = rmdDistributionTable[age];
-        return distributionPeriod ? new Decimal(startingValue).dividedBy(distributionPeriod) : new Decimal(0);
-    };
-    useEffect(() => {
-        console.log('Updated editableFields in RothOutputs:', editableFields);
-    }, [editableFields]);
-
-    useEffect(() => {
-        const calculateIraDetails = (startingAge, lifeExpectancy, currentIraValue) => {
-            let year = new Date().getFullYear();
-            let age = startingAge;
-            let startingValue = new Decimal(currentIraValue);
-            const details = [];
-
-            while (age <= lifeExpectancy) {
-                const investmentReturns = startingValue.times(Decimal(roi).dividedBy(100));
-                const rmd = calculateRMD(age, startingValue);
-                const endingValue = startingValue.plus(investmentReturns).minus(rmd); // SUBTRACT ROTH LATER
-
-                details.push({
-                    year,
-                    age,
-                    startingValue: startingValue.toFixed(2),
-                    investmentReturns: investmentReturns.toFixed(2),
-                    rmd: rmd.toFixed(2),
-                    endingValue: endingValue.toFixed(2)
-                });
-                startingValue = endingValue;
-                age++;
-                year++;
-            }
-
-            return details;
-        };
-
-        const spouse1Details = calculateIraDetails(age1, inputs.hLE, ira1);
-        const spouse2Details = calculateIraDetails(age2, inputs.wLE, ira2);
-
-        setIraDetails({
-            spouse1: spouse1Details,
-            spouse2: spouse2Details
-        });
-
-        const totalRMDsHusband = spouse1Details.reduce((total, detail) => total.plus(new Decimal(detail.rmd)), new Decimal(0));
-        const totalRMDsWife = spouse2Details.reduce((total, detail) => total.plus(new Decimal(detail.rmd)), new Decimal(0));
-
-        const inheritedIRAHusband = new Decimal(spouse1Details[spouse1Details.length - 1]?.endingValue || 0);
-        const inheritedIRAWife = new Decimal(spouse2Details[spouse2Details.length - 1]?.endingValue || 0);
-
-        setTotals({
-            totalRMDsHusband,
-            totalRMDsWife,
-            inheritedIRAHusband,
-            inheritedIRAWife
-        });
-
-
-    }, [age1, age2, ira1, ira2, roi]);
-// RMD CALCULATIONS END ----------------
+    const {iraDetails, totals} = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE);
 
 // ROTH CALCULATIONS START -----------
     const currentYear = new Date().getFullYear();
@@ -308,8 +186,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         }
     };
 
-
-
     const loadVersion = async (version) => {
         if (!user) {
             console.error('User is not logged in');
@@ -408,7 +284,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         });
     };
 
-
     const renderEditableFieldInput = (year, field) => {
         return (
             <input
@@ -421,80 +296,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         );
     };
 
-//social security -----------------
-    //REFERENCE TABLE
-    const [tableData1, setTableData1] = useState([]);
-    const [benefitsBasedOnAge, setBenefitsBasedOnAge] = useState({
-        husbandYearly: 0,
-        wifeYearly: 0,
-    });
-    useEffect(() => {
-        const calculateTableData1 = () => {
-            const newData = [];
-
-            for (let age = 62; age <= 70; age++) {
-                const percentageOfPIA = getPercentageOfPIAForAge(age);
-                const spousePIA = getSpouse(age);
-                const hBenefit = new Decimal(inputs.hPIA).times(percentageOfPIA).dividedBy(100);
-                const wBenefit = new Decimal(inputs.wPIA).times(spousePIA).dividedBy(100);
-                const husbandMonthly = Decimal.max(hBenefit, wBenefit);
-                const hBenefit1 = new Decimal(inputs.hPIA).times(spousePIA).dividedBy(100);
-                const wBenefit1 = new Decimal(inputs.wPIA).times(percentageOfPIA).dividedBy(100);
-                const wifeMonthly = Decimal.max(hBenefit1, wBenefit1);
-
-                newData.push({
-                    age,
-                    percentageOfPIA,
-                    spousePIA,
-                    husbandMonthly: husbandMonthly.toNumber(),
-                    wifeMonthly: wifeMonthly.toNumber(),
-                    husbandYearly: husbandMonthly.times(12).toNumber(),
-                    wifeYearly: wifeMonthly.times(12).toNumber(),
-                });
-            }
-
-            setTableData1(newData);
-        };
-
-        calculateTableData1();
-    }, [inputs]);
-
-    const getSpouse = (age) => {
-        const referenceTable = {
-            62: new Decimal(32.5),
-            63: new Decimal(35.0),
-            64: new Decimal(37.5),
-            65: new Decimal(41.7),
-            66: new Decimal(45.8),
-            // Assuming default as 50 for ages not listed in the table
-        };
-        return referenceTable[age] || new Decimal(50.0);
-    };
-
-    const getPercentageOfPIAForAge = (age) => {
-        const referenceTable = {
-            62: new Decimal(70.0),
-            63: new Decimal(75.0),
-            64: new Decimal(80.0),
-            65: new Decimal(86.7),
-            66: new Decimal(93.3),
-            67: new Decimal(100.0),
-            68: new Decimal(108.0),
-            69: new Decimal(116.0),
-            70: new Decimal(124.0),
-        };
-        return referenceTable[age];
-    };
-    useEffect(() => {
-        const husbandStartAgeData = tableData1.find(data => data.age === inputs.hSS);
-        const wifeStartAgeData = tableData1.find(data => data.age === inputs.wSS);
-        setBenefitsBasedOnAge({
-            husbandYearly: husbandStartAgeData ? husbandStartAgeData.husbandYearly : 0,
-            wifeYearly: wifeStartAgeData ? wifeStartAgeData.wifeYearly : 0,
-        });
-    }, [tableData1, inputs.hSS, inputs.wSS]);
-
-////REFERENCE TABLE END
 
 /////social security benefits
     const currentYear1 = new Date().getFullYear();
@@ -781,7 +582,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         },
     };
 
-return (
+    return (
         <div className="max-w-4xl mx-auto">
             <div className="flex-col">
                 <div className="bg-[#f8f5f0] p-4 rounded h-auto w-full">

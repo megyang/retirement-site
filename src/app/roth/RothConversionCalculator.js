@@ -1,28 +1,25 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import RothInputs from "@/app/roth/RothInputs";
 import RothOutputs from "@/app/roth/RothOutputs";
 import { MyUserContextProvider } from "@/app/hooks/useUser";
-import useStore from "@/app/actions/useStore";
+import useStore from "@/app/store/useStore";
 
 const RothConversionCalculator = () => {
     const { socialSecurityInputs } = useStore();
     const [inputs, setInputs] = useState(socialSecurityInputs);
-
-    useEffect(() => {
-        setInputs(socialSecurityInputs);
-    }, [socialSecurityInputs]);
-
-
     const [inputs1, setInputs1] = useState({
         ira1: 800000,
         ira2: 1000000,
         roi: 3.0,
         inflation: 2.0
     });
-
     const [editableFields, setEditableFields] = useState({});
     const [staticFields, setStaticFields] = useState({});
+
+    useEffect(() => {
+        setInputs(socialSecurityInputs);
+    }, [socialSecurityInputs]);
+
 
     useEffect(() => {
         const currentYear = new Date().getFullYear();
@@ -53,42 +50,6 @@ const RothConversionCalculator = () => {
         setEditableFields(initialEditableFields);
         setStaticFields(initialStaticFields);
     }, [inputs1]);
-
-    const handleInputChange = (name, value) => {
-        setInputs(prevInputs => ({
-            ...prevInputs,
-            [name]: parseFloat(value),
-        }));
-    };
-
-    const handleInputChange1 = (name, value) => {
-        setInputs1(prevInputs => ({
-            ...prevInputs,
-            [name]: parseFloat(value),
-        }));
-    };
-
-    const handleLoadInputs = (inputs) => {
-        setInputs({
-            husbandAge: inputs.husbandAge,
-            wifeAge: inputs.wifeAge,
-            hLE: inputs.le,
-            wLE: inputs.spouse_le,
-            hPIA: inputs.pia,
-            wPIA: inputs.spouse_pia,
-            hSS: inputs.ss_age,
-            wSS: inputs.spouse_ssage,
-        });
-    };
-
-    const handleLoadInputs1 = (inputs1) => {
-        setInputs1({
-            ira1: inputs1.ira1,
-            ira2: inputs1.ira2,
-            roi: inputs1.roi,
-            inflation: inputs1.inflation
-        });
-    };
 
     return (
         <div className="mx-auto my-0">

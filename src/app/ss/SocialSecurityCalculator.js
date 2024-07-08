@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import SocialSecurityOutput from './SocialSecurityOutput';
 import { MyUserContextProvider } from "@/app/hooks/useUser";
-import useStore from "@/app/actions/useStore";
+import useStore from "@/app/store/useStore";
 
 const SocialSecurityCalculator = () => {
     const { socialSecurityInputs, setSocialSecurityInputs } = useStore();
@@ -15,7 +15,7 @@ const SocialSecurityCalculator = () => {
     const handleInputChange = (name, value) => {
         const newInputs = {
             ...inputs,
-            [name]: parseFloat(value) // Convert value to a number
+            [name]: parseFloat(value)
         };
         setInputs(newInputs);
         setSocialSecurityInputs(newInputs);
@@ -25,9 +25,7 @@ const SocialSecurityCalculator = () => {
         <div className="mx-auto">
             <div>
                 <MyUserContextProvider>
-                    <div>
-                        <SocialSecurityOutput inputs={inputs} onInputChange={handleInputChange} />
-                    </div>
+                    <SocialSecurityOutput inputs={inputs} onInputChange={handleInputChange} />
                 </MyUserContextProvider>
             </div>
         </div>
