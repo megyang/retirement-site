@@ -6,6 +6,7 @@ import { useUser } from "@/app/hooks/useUser";
 import BarChart from "@/app/components/BarChart";
 import useRmdCalculations from "@/app/hooks/useRmdCalculations";
 import useReferenceTable from "@/app/hooks/useReferenceTable";
+import {calculateXNPV} from "@/app/utils/calculations";
 
 const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
@@ -493,14 +494,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     const totalInheritedIRA = totals.inheritedIRAHusband.plus(totals.inheritedIRAWife);
     const beneficiaryTaxPaid = totalInheritedIRA.times(beneficiaryTaxRate).toFixed(2);
 
-    const calculateXNPV = (rate, cashFlows, dates) => {
-        let xnpv = 0.0;
-        for (let i = 0; i < cashFlows.length; i++) {
-            const xnpvTerm = (dates[i] - dates[0]) / (365 * 24 * 3600 * 1000);
-            xnpv += cashFlows[i] / Math.pow(1 + rate, xnpvTerm);
-        }
-        return xnpv;
-    };
 
 // Compute Total Cash for Lifetime Tax Paid
     const totalLifetimeTaxPaid = Object.keys(taxableIncomes).reduce(
