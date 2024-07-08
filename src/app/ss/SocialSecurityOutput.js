@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Decimal from "decimal.js";
 import BarChart from "../components/BarChart";
 import useReferenceTable from "../hooks/useReferenceTable";
+import useStore from "@/app/store/useStore";
 import { calculateBenefitForYear, calculateXNPV } from "../utils/calculations";
 
 const SocialSecurityOutput = ({ inputs, onInputChange }) => {
@@ -12,6 +13,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
 
     //reference table
     const { refTable, benefitsBasedOnAge } = useReferenceTable(inputs);
+    const { setSocialSecurityBenefits } = useStore();
 
     // social security benefits
     const currentYear = new Date().getFullYear();
@@ -74,6 +76,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         });
 
         setTableData(newTableData);
+        setSocialSecurityBenefits(newTableData);
 
         // Calculate NPV
         const roi = inputs.roi / 100;
@@ -91,6 +94,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         currentYear,
         benefitsBasedOnAge.husbandYearly,
         benefitsBasedOnAge.wifeYearly,
+        setSocialSecurityBenefits
     ]);
 
     // Creating Bar Chart Data

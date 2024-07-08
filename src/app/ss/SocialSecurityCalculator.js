@@ -19,6 +19,7 @@ const SocialSecurityCalculator = () => {
         };
         setInputs(newInputs);
         setSocialSecurityInputs(newInputs);
+        
     };
 
     return (

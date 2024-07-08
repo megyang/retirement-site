@@ -3,6 +3,7 @@ import React, {useEffect, useState} from 'react';
 import Decimal from 'decimal.js';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
+import useStore from "@/app/store/useStore";
 import BarChart from "@/app/components/BarChart";
 import useRmdCalculations from "@/app/hooks/useRmdCalculations";
 import useReferenceTable from "@/app/hooks/useReferenceTable";
@@ -12,6 +13,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
     const { refTable, benefitsBasedOnAge } = useReferenceTable(inputs);
+    const { socialSecurityBenefits } = useStore();
 
     const [savedVersions, setSavedVersions] = useState([]);
     const [versionName, setVersionName] = useState("");
@@ -23,12 +25,13 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         return detail ? detail.rmd : "0.00";
     };
     const findSsBenefitsByYear = (year) => {
-        const benefitsForYear = refTable.find(data => data.year === year);
+        const benefitsForYear = socialSecurityBenefits.find(data => data.year === year);
         return {
             spouse1Benefit: benefitsForYear ? benefitsForYear.husbandBenefit : "0.00",
             spouse2Benefit: benefitsForYear ? benefitsForYear.wifeBenefit : "0.00",
         };
     };
+
     const { ira1, ira2, roi } = inputs1;
     const age1 = inputs.husbandAge;
     const age2 = inputs.wifeAge;
