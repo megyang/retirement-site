@@ -41,43 +41,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         setBeneficiaryTaxRate(newRate);
     };
 
-    const autoSaveToDatabase = async (year, fields) => {
-        if (!user) {
-            console.error('User is not logged in');
-            return;
-        }
-
-        const dataToSave = {
-            user_id: user.id,
-            version_name: selectedVersion,
-            year: year,
-            rental_income: fields.rentalIncome,
-            capital_gains: fields.capitalGains,
-            pension: fields.pension,
-            roth_1: fields.rothSpouse1,
-            roth_2: fields.rothSpouse2,
-            salary1: fields.salary1,
-            salary2: fields.salary2,
-            interest: fields.interest,
-            ira1: inputs1.ira1,
-            ira2: inputs1.ira2,
-            roi: inputs1.roi,
-            inflation: inputs1.inflation,
-            age1: inputs.husbandAge,
-            age2: inputs.wifeAge,
-        };
-
-        const { error } = await supabaseClient
-            .from('roth')
-            .upsert([dataToSave], { onConflict: ['user_id', 'version_name', 'year'] });
-
-        if (error) {
-            console.error('Error saving data to Supabase:', error);
-        } else {
-            console.log('Data successfully saved to Supabase.');
-        }
-    };
-
     const findRmdByYear = (details, year) => {
         const detail = details.find((detail) => detail.year === year);
         return detail ? detail.rmd : "0.00";
@@ -207,9 +170,9 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             });
         }
 
-        const { error } = await supabaseClient.from('roth').insert(dataToSave);
+        const { error } = await supabaseClient.from('roth').upsert(dataToSave, { onConflict: ['user_id', 'version_name', 'year'] });
         if (error) {
-            console.error('Error saving data to Supabase:', error);
+            console.error('saveVersion: Error saving data to Supabase:', error);
         } else {
             console.log('Data successfully saved to Supabase.');
             await fetchSavedVersions();  // Ensure versions are fetched after saving
@@ -342,9 +305,8 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                     [field]: parseFloat(value)
                 }
             };
-            console.log('Updated editableFields:', updatedFields);  // Log updated state
-            autoSaveToDatabase(year, updatedFields[year]);
-
+            console.log('Updated editableFields:', updatedFields);
+            saveVersion(selectedVersion);
             return updatedFields;
         });
     };
