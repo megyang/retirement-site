@@ -15,10 +15,31 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     const { refTable, benefitsBasedOnAge } = useReferenceTable(inputs);
     const { socialSecurityBenefits } = useStore();
 
-    const [savedVersions, setSavedVersions] = useState([]);
     const [versionName, setVersionName] = useState("");
     const [versionData, setVersionData] = useState([]);
-    const [selectedVersion, setSelectedVersion] = useState("");
+
+    const [savedVersions, setSavedVersions] = useState([
+        { name: "Scenario 1" },
+        { name: "Scenario 2" },
+        { name: "Scenario 3" }
+    ]);
+    
+    const [selectedVersion, setSelectedVersion] = useState("Scenario 1");
+
+    const [beneficiaryTaxRate, setBeneficiaryTaxRate] = useState(0.24);
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setInputs1(prevInputs => ({
+            ...prevInputs,
+            [name]: parseFloat(value),
+        }));
+    };
+
+    const handleTaxRateChange = (e) => {
+        const newRate = parseFloat(e.target.value) / 100; 
+        setBeneficiaryTaxRate(newRate);
+    };
 
     const autoSaveToDatabase = async (year, fields) => {
         if (!user) {
@@ -62,13 +83,15 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         return detail ? detail.rmd : "0.00";
     };
     const findSsBenefitsByYear = (year) => {
-        const benefitsForYear = socialSecurityBenefits.find(data => data.year === year);
+        const benefitsForYear = Array.isArray(socialSecurityBenefits) 
+            ? socialSecurityBenefits.find(data => data.year === year) 
+            : null;
         return {
             spouse1Benefit: benefitsForYear ? benefitsForYear.husbandBenefit : "0.00",
             spouse2Benefit: benefitsForYear ? benefitsForYear.wifeBenefit : "0.00",
         };
     };
-
+    
     const { ira1, ira2, roi } = inputs1;
     const age1 = inputs.husbandAge;
     const age2 = inputs.wifeAge;
@@ -192,6 +215,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             await fetchSavedVersions();  // Ensure versions are fetched after saving
         }
     };
+
     const fetchSavedVersions = async () => {
         if (!user) {
             console.error('User is not logged in');
@@ -209,7 +233,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             const uniqueVersions = Array.from(new Set(data.map(item => item.version_name)))
                 .map(name => {
                     const version = data.find(item => item.version_name === name);
-                    console.log('Version:', version); // Log version data to check values
+                    console.log('Version:', version);
                     return {
                         name: name,
                         lifetime_tax: version.lifetime_tax,
@@ -264,7 +288,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                     pension: item.pension
                 };
 
-                // Load RMD inputs (assuming they are the same for each year)
                 loadedInputs1 = {
                     ira1: item.ira1,
                     ira2: item.ira2,
@@ -294,7 +317,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             console.error('Error deleting version from Supabase:', error);
         } else {
             console.log('Version successfully deleted from Supabase.');
-            fetchSavedVersions(); // Refresh the list of saved versions
+            fetchSavedVersions(); 
         }
     };
 
@@ -304,7 +327,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         }
     }, [user]);
 
-    // Handler for changes in the editable fields
     const handleEditableFieldChange = (year, field, value) => {
         console.log(`Updating ${field} for year ${year} to value:`, value);
         if (value.trim() === '' || isNaN(value)) {
@@ -419,9 +441,10 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
     }, [inputs, currentYear1, benefitsBasedOnAge.husbandYearly, benefitsBasedOnAge.wifeYearly]);
 
-    const startingStandardDeduction = 29200;
 
     const [annualInflationRate, setAnnualInflationRate] = useState(inputs1.inflation/100);
+
+    const startingStandardDeduction = 29200;
 
     const calculateStandardDeductionForYear = (year) => {
         const yearsDifference = year - currentYear; // Assuming 'currentYear' is the base year
@@ -449,7 +472,114 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
         return totalIncome.toFixed(2);
     };
+    
+    const calculateTaxableIncomes = (staticFields, iraDetails, findSsBenefitsByYear, calculateTotalIncomeForYear, calculateStandardDeductionForYear) => {
+        let taxableIncomes = {};
+
+        Object.keys(staticFields).forEach(year => {
+            const totalIncomeForYear = calculateTotalIncomeForYear(year);
+            const standardDeductionForYear = calculateStandardDeductionForYear(parseInt(year));
+
+            taxableIncomes[year] = totalIncomeForYear - standardDeductionForYear;
+        });
+
+        return taxableIncomes;
+    };
+
+    const taxableIncomes = calculateTaxableIncomes(
+        staticFields,
+        iraDetails,
+        findSsBenefitsByYear,
+        calculateTotalIncomeForYear,
+        calculateStandardDeductionForYear
+    );
+    const totalInheritedIRA = totals.inheritedIRAHusband.plus(totals.inheritedIRAWife);
+    const beneficiaryTaxPaid = totalInheritedIRA.times(beneficiaryTaxRate).toFixed(2);
+
+    const totalLifetimeTaxPaid = Object.keys(taxableIncomes).reduce(
+        (total, year) => total.plus(new Decimal(taxableIncomes[year])),
+        new Decimal(0)
+    );
+
+
+
+    const chartData = {
+        labels: ["No Conversion", ...Array.from(new Set(versionData.map(item => item.name)))], 
+        datasets: [
+            {
+                label: 'Lifetime Tax Paid',
+                data: [versionData.length > 0 ? parseFloat(versionData[0].lifetime0) : 0, ...versionData.map(item => item.lifetime_tax)],
+                backgroundColor: 'rgba(173, 216, 230, 0.6)', // Light blue
+                borderColor: 'black',
+                borderWidth: 1,
+            },
+            {
+                label: 'Beneficiary Tax Paid',
+                data: [versionData.length > 0 ? parseFloat(versionData[0].beneficiary0) : 0, ...versionData.map(item => item.beneficiary_tax)],
+                backgroundColor: 'rgba(255, 182, 193, 0.6)', // Light pink
+                borderColor: 'black',
+                borderWidth: 1,
+            },
+        ],
+    };
+
+    const chartOptions = {
+        responsive: true,
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        return `$${context.raw}`;
+                    },
+                },
+            },
+            legend: {
+                position: 'top',
+            },
+        },
+        scales: {
+            x: {
+                stacked: true,
+                grid: {
+                    drawOnChartArea: false,
+                },
+            },
+            y: {
+                stacked: true,
+                ticks: {
+                    callback: function (value) {
+                        return `$${value}`;
+                    },
+                },
+            },
+        },
+    };
+
+
+    // Compute Total Cash for Lifetime Tax Paid
+    const [npvLifetimeTax, setNpvLifetimeTax] = useState(0);
+    const [npvBeneficiaryTax, setNpvBeneficiaryTax] = useState(0);
+
+
+    useEffect(() => {
+        // For Lifetime Tax Paid NPV
+        const cashFlowsLifetimeTax = Object.keys(taxableIncomes).map(year => new Decimal(taxableIncomes[year]));
+        const datesLifetimeTax = Object.keys(taxableIncomes).map(year => new Date(parseInt(year), 0, 1));
+        const npvLifetimeTaxValue = calculateXNPV(inputs.roi / 100, cashFlowsLifetimeTax, datesLifetimeTax);
+
+        setNpvLifetimeTax(npvLifetimeTaxValue);
+
+        // For Beneficiary Tax Paid NPV
+        const futureYear = currentYear + Math.max(inputs.hLE - age1, inputs.wLE - age2);
+        const cashFlowBeneficiaryTax = new Decimal(beneficiaryTaxPaid);
+        const dateBeneficiaryTax = new Date(futureYear, 0, 1);
+        const npvBeneficiaryTaxValue = calculateXNPV(inputs.roi / 100, [cashFlowBeneficiaryTax], [dateBeneficiaryTax]);
+        setNpvBeneficiaryTax(npvBeneficiaryTaxValue);
+
+    }, [inputs.roi, taxableIncomes, beneficiaryTaxPaid, inputs1, currentYear, age1, inputs.hLE, age2, inputs.wLE]);
+
     //ordinary income tax calc -------
+    const bracketTitles = ['10%', '12%', '22%', '24%', '32%', '35%', '37%'];
     const calculateTaxesForBrackets = (taxableIncome) => {
         const brackets = [
             { threshold: 23200, rate: 0.10 },
@@ -487,135 +617,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
         return taxesForBrackets;
     };
-    const calculateTaxableIncomes = (staticFields, iraDetails, findSsBenefitsByYear, calculateTotalIncomeForYear, calculateStandardDeductionForYear) => {
-        let taxableIncomes = {};
-
-        Object.keys(staticFields).forEach(year => {
-            const totalIncomeForYear = calculateTotalIncomeForYear(year);
-            const standardDeductionForYear = calculateStandardDeductionForYear(parseInt(year));
-
-            taxableIncomes[year] = totalIncomeForYear - standardDeductionForYear;
-        });
-
-        return taxableIncomes;
-    };
-
-    const taxableIncomes = calculateTaxableIncomes(
-        staticFields,
-        iraDetails,
-        findSsBenefitsByYear,
-        calculateTotalIncomeForYear,
-        calculateStandardDeductionForYear
-    );
-
-    const bracketTitles = ['10%', '12%', '22%', '24%', '32%', '35%', '37%'];
-    const years = Object.keys(taxableIncomes).map(year => parseInt(year, 10));
-    const startYear = currentYear
-
-    //// so that roth automatically shows up in rmd
-    const [rothConversions, setRothConversions] = useState({
-        spouse1: {},
-        spouse2: {},
-    });
-
-    const [beneficiaryTaxRate, setBeneficiaryTaxRate] = useState(0.24); // Default to 24%
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setInputs1(prevInputs => ({
-            ...prevInputs,
-            [name]: parseFloat(value),
-        }));
-    };
-
-    const handleTaxRateChange = (e) => {
-        const newRate = parseFloat(e.target.value) / 100; // Convert percentage to a decimal for calculation
-        setBeneficiaryTaxRate(newRate);
-    };
-
-    const totalInheritedIRA = totals.inheritedIRAHusband.plus(totals.inheritedIRAWife);
-    const beneficiaryTaxPaid = totalInheritedIRA.times(beneficiaryTaxRate).toFixed(2);
-
-
-// Compute Total Cash for Lifetime Tax Paid
-    const totalLifetimeTaxPaid = Object.keys(taxableIncomes).reduce(
-        (total, year) => total.plus(new Decimal(taxableIncomes[year])),
-        new Decimal(0)
-    );
-
-    const [npvLifetimeTax, setNpvLifetimeTax] = useState(0);
-    const [npvBeneficiaryTax, setNpvBeneficiaryTax] = useState(0);
-
-
-    useEffect(() => {
-        // For Lifetime Tax Paid NPV
-        const cashFlowsLifetimeTax = Object.keys(taxableIncomes).map(year => new Decimal(taxableIncomes[year]));
-        const datesLifetimeTax = Object.keys(taxableIncomes).map(year => new Date(parseInt(year), 0, 1));
-        const npvLifetimeTaxValue = calculateXNPV(inputs.roi / 100, cashFlowsLifetimeTax, datesLifetimeTax);
-
-        setNpvLifetimeTax(npvLifetimeTaxValue);
-
-        // For Beneficiary Tax Paid NPV
-        const futureYear = currentYear + Math.max(inputs.hLE - age1, inputs.wLE - age2);
-        const cashFlowBeneficiaryTax = new Decimal(beneficiaryTaxPaid);
-        const dateBeneficiaryTax = new Date(futureYear, 0, 1);
-        const npvBeneficiaryTaxValue = calculateXNPV(inputs.roi / 100, [cashFlowBeneficiaryTax], [dateBeneficiaryTax]);
-        setNpvBeneficiaryTax(npvBeneficiaryTaxValue);
-
-    }, [inputs.roi, taxableIncomes, beneficiaryTaxPaid, inputs1, currentYear, age1, inputs.hLE, age2, inputs.wLE]);
-
-
-    const chartData = {
-        labels: ["No Conversion", ...Array.from(new Set(versionData.map(item => item.name)))], // Unique version names with "No Conversion" as the first label
-        datasets: [
-            {
-                label: 'Lifetime Tax Paid',
-                data: [versionData.length > 0 ? parseFloat(versionData[0].lifetime0) : 0, ...versionData.map(item => item.lifetime_tax)],
-                backgroundColor: 'rgba(173, 216, 230, 0.6)', // Light blue
-                borderColor: 'black',
-                borderWidth: 1,
-            },
-            {
-                label: 'Beneficiary Tax Paid',
-                data: [versionData.length > 0 ? parseFloat(versionData[0].beneficiary0) : 0, ...versionData.map(item => item.beneficiary_tax)],
-                backgroundColor: 'rgba(255, 182, 193, 0.6)', // Light pink
-                borderColor: 'black',
-                borderWidth: 1,
-            },
-        ],
-    };
-
-    const chartOptions = {
-        responsive: true,
-        plugins: {
-            tooltip: {
-                callbacks: {
-                    label: function (context) {
-                        return `$${context.raw}`;
-                    },
-                },
-            },
-            legend: {
-                position: 'top', // Positioning the legend at the top
-            },
-        },
-        scales: {
-            x: {
-                stacked: true,
-                grid: {
-                    drawOnChartArea: false,
-                },
-            },
-            y: {
-                stacked: true,
-                ticks: {
-                    callback: function (value) {
-                        return `$${value}`;
-                    },
-                },
-            },
-        },
-    };
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -641,7 +642,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                         >
                             {savedVersions.map((version, index) => (
                                 <option key={index} value={version.name}>
-                                    <span className="font-bold">Selected: {version.name}</span>
+                                    Selected: {version.name}
                                 </option>
                             ))}
                         </select>
@@ -982,7 +983,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             </table>
 */}
             {/*ORDINARY INCOME TAX BRACKET*/}
-            {/* Ordinary Income Tax Brackets Table
+            Ordinary Income Tax Brackets Table
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                 <tr>
@@ -996,7 +997,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 <tbody className="bg-white divide-y divide-gray-200">
                 {Object.keys(taxableIncomes).map((year) => {
                     const taxesForBrackets = calculateTaxesForBrackets(taxableIncomes[year]);
-                    // Calculate the total tax by summing up all values in the taxesForBrackets object
                     const totalTax = Object.values(taxesForBrackets).reduce((sum, tax) => sum + tax, 0);
 
                     return (
@@ -1012,7 +1012,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                     );
                 })}
                 </tbody>
-            </table>*/}
+            </table>
         </div>
     );
 

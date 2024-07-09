@@ -1,8 +1,8 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import SocialSecurityOutput from './SocialSecurityOutput';
-import { MyUserContextProvider } from "@/app/hooks/useUser";
 import useStore from "@/app/store/useStore";
+import { MyUserContextProvider } from '../hooks/useUser';
 
 const SocialSecurityCalculator = () => {
     const { socialSecurityInputs, setSocialSecurityInputs } = useStore();
