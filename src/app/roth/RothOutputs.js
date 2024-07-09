@@ -8,6 +8,7 @@ import BarChart from "@/app/components/BarChart";
 import useRmdCalculations from "@/app/hooks/useRmdCalculations";
 import useReferenceTable from "@/app/hooks/useReferenceTable";
 import {calculateXNPV} from "@/app/utils/calculations";
+import { debounce } from 'lodash';
 
 const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
@@ -39,6 +40,43 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     const handleTaxRateChange = (e) => {
         const newRate = parseFloat(e.target.value) / 100; 
         setBeneficiaryTaxRate(newRate);
+    };
+
+    const autoSaveToDatabase = async (year, fields) => {
+        if (!user) {
+            console.error('User is not logged in');
+            return;
+        }
+
+        const dataToSave = {
+            user_id: user.id,
+            version_name: selectedVersion,
+            year: year,
+            rental_income: fields.rentalIncome,
+            capital_gains: fields.capitalGains,
+            pension: fields.pension,
+            roth_1: fields.rothSpouse1,
+            roth_2: fields.rothSpouse2,
+            salary1: fields.salary1,
+            salary2: fields.salary2,
+            interest: fields.interest,
+            ira1: inputs1.ira1,
+            ira2: inputs1.ira2,
+            roi: inputs1.roi,
+            inflation: inputs1.inflation,
+            age1: inputs.husbandAge,
+            age2: inputs.wifeAge,
+        };
+
+        const { error } = await supabaseClient
+            .from('roth')
+            .upsert([dataToSave], { onConflict: ['user_id', 'version_name', 'year'] });
+
+        if (error) {
+            console.error('Error saving data to Supabase:', error);
+        } else {
+            console.log('Data successfully saved to Supabase.');
+        }
     };
 
     const findRmdByYear = (details, year) => {
@@ -306,9 +344,94 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 }
             };
             console.log('Updated editableFields:', updatedFields);
-            saveVersion(selectedVersion);
             return updatedFields;
         });
+        debouncedSaveAndAutoSave(year, field, parseFloat(value));
+
+    };
+    const debouncedSaveAndAutoSave = debounce((year, field, value) => {
+        saveVersion(selectedVersion);
+        autoSaveToDatabase(year, { ...editableFields[year], [field]: value });
+    }, 500);
+
+    useEffect(() => {
+        return () => {
+            debouncedSaveAndAutoSave.cancel();
+        };
+    }, []);
+
+    const performCalculations = (editableFields, staticFields, iraDetails, findSsBenefitsByYear, calculateStandardDeductionForYear, totalInheritedIRA, beneficiaryTaxRate, inputs, inputs1) => {
+        // Clone editableFields and set roth1 and roth2 to zero for all years
+        const editableFieldsWithZeroRoth = JSON.parse(JSON.stringify(editableFields));
+        Object.keys(editableFieldsWithZeroRoth).forEach(year => {
+            editableFieldsWithZeroRoth[year].rothSpouse1 = 0;
+            editableFieldsWithZeroRoth[year].rothSpouse2 = 0;
+        });
+
+        const calculateTotalIncomeForYearWithZeroRoth = (year, editableFieldsWithZeroRoth) => {
+            const ssBenefits = findSsBenefitsByYear(parseInt(year));
+            const editableFieldsForYear = editableFieldsWithZeroRoth[year];
+            const rmdSpouse1 = findRmdByYear(iraDetails.spouse1, parseInt(year));
+            const rmdSpouse2 = findRmdByYear(iraDetails.spouse2, parseInt(year));
+
+            const totalIncome = new Decimal(editableFieldsForYear.rothSpouse1)
+                .plus(editableFieldsForYear.rothSpouse2)
+                .plus(editableFieldsForYear.salary1)
+                .plus(editableFieldsForYear.salary2)
+                .plus(editableFieldsForYear.rentalIncome)
+                .plus(editableFieldsForYear.interest)
+                .plus(editableFieldsForYear.capitalGains)
+                .plus(editableFieldsForYear.pension)
+                .plus(rmdSpouse1)
+                .plus(rmdSpouse2)
+                .plus(ssBenefits.spouse1Benefit)
+                .plus(ssBenefits.spouse2Benefit);
+
+            return totalIncome.toFixed(2);
+        };
+
+        // Calculate lifetime0 and beneficiary0 with roth1 and roth2 set to zero
+        const taxableIncomesWithZeroRoth = calculateTaxableIncomes(
+            staticFields,
+            iraDetails,
+            findSsBenefitsByYear,
+            (year) => calculateTotalIncomeForYearWithZeroRoth(year, editableFieldsWithZeroRoth),
+            calculateStandardDeductionForYear
+        );
+
+        const totalLifetimeTaxPaidWithZeroRoth = Object.keys(taxableIncomesWithZeroRoth).reduce(
+            (total, year) => total.plus(new Decimal(taxableIncomesWithZeroRoth[year])),
+            new Decimal(0)
+        );
+
+        const beneficiaryTaxPaidWithZeroRoth = totalInheritedIRA.times(beneficiaryTaxRate).toFixed(2);
+
+        const dataToSave = [];
+        for (let year in editableFields) {
+            dataToSave.push({
+                year: year,
+                rental_income: editableFields[year].rentalIncome,
+                capital_gains: editableFields[year].capitalGains,
+                pension: editableFields[year].pension,
+                roth_1: editableFields[year].rothSpouse1,
+                roth_2: editableFields[year].rothSpouse2,
+                salary1: editableFields[year].salary1,
+                salary2: editableFields[year].salary2,
+                interest: editableFields[year].interest,
+                age1: inputs.husbandAge,
+                age2: inputs.wifeAge,
+                ira1: inputs1.ira1,
+                ira2: inputs1.ira2,
+                roi: inputs1.roi,
+                inflation: inputs1.inflation,
+                lifetime_tax: totalLifetimeTaxPaid.toFixed(2),
+                beneficiary_tax: beneficiaryTaxPaid,
+                lifetime0: totalLifetimeTaxPaidWithZeroRoth.toFixed(2),
+                beneficiary0: beneficiaryTaxPaidWithZeroRoth
+            });
+        }
+
+        return dataToSave;
     };
 
     const renderEditableFieldInput = (year, field) => {
