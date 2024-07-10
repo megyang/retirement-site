@@ -234,7 +234,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             const uniqueVersions = Array.from(new Set(data.map(item => item.version_name)))
                 .map(name => {
                     const version = data.find(item => item.version_name === name);
-                    console.log('Version:', version);
                     return {
                         name: name,
                         lifetime_tax: version.lifetime_tax,
@@ -246,20 +245,19 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
             // Check if the default scenarios exist
             const defaultScenarios = ["Scenario 1", "Scenario 2", "Scenario 3"];
-            defaultScenarios.forEach(scenario => {
-                if (!uniqueVersions.find(version => version.name === scenario)) {
-                    // If the scenario does not exist, create it
-                    saveVersion(scenario);
-                }
-            });
+            const sortedVersions = [
+                ...defaultScenarios.map(scenario => uniqueVersions.find(version => version.name === scenario)).filter(Boolean),
+                ...uniqueVersions.filter(version => !defaultScenarios.includes(version.name))
+            ];
 
-            setSavedVersions(uniqueVersions.map(version => ({ name: version.name })));
-            setVersionData(uniqueVersions);
-            if (uniqueVersions.length > 0 && !uniqueVersions.find(v => v.name === selectedVersion)) {
-                setSelectedVersion(uniqueVersions[0].name);
+            setSavedVersions(sortedVersions.map(version => ({ name: version.name })));
+            setVersionData(sortedVersions);
+            if (sortedVersions.length > 0 && !sortedVersions.find(v => v.name === selectedVersion)) {
+                setSelectedVersion(sortedVersions[0].name);
             }
         }
-    };    const loadVersion = async (version) => {
+    };
+    const loadVersion = async (version) => {
         if (!user) {
             console.error('User is not logged in');
             return;
@@ -738,26 +736,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                                 </option>
                             ))}
                         </select>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <input
-                            type="text"
-                            placeholder="Enter version name"
-                            className="border rounded p-2"
-                            onChange={(e) => setVersionName(e.target.value)}
-                        />
-                        <button
-                            className="bg-blue-500 text-white rounded p-2"
-                            onClick={() => saveVersion(versionName)}
-                        >
-                            Save
-                        </button>
-                        <button
-                            className="bg-red-500 text-white rounded p-2"
-                            onClick={() => deleteVersion(selectedVersion)}
-                        >
-                            Delete
-                        </button>
                     </div>
                 </div>
                 <div className="flex mt-4 w-full space-x-4">
