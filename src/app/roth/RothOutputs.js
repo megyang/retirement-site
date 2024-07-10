@@ -24,7 +24,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         { name: "Scenario 2" },
         { name: "Scenario 3" }
     ]);
-    
+
     const [selectedVersion, setSelectedVersion] = useState("Scenario 1");
 
     const [beneficiaryTaxRate, setBeneficiaryTaxRate] = useState(0.24);
@@ -38,7 +38,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     };
 
     const handleTaxRateChange = (e) => {
-        const newRate = parseFloat(e.target.value) / 100; 
+        const newRate = parseFloat(e.target.value) / 100;
         setBeneficiaryTaxRate(newRate);
     };
 
@@ -84,15 +84,15 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         return detail ? detail.rmd : "0.00";
     };
     const findSsBenefitsByYear = (year) => {
-        const benefitsForYear = Array.isArray(socialSecurityBenefits) 
-            ? socialSecurityBenefits.find(data => data.year === year) 
+        const benefitsForYear = Array.isArray(socialSecurityBenefits)
+            ? socialSecurityBenefits.find(data => data.year === year)
             : null;
         return {
             spouse1Benefit: benefitsForYear ? benefitsForYear.husbandBenefit : "0.00",
             spouse2Benefit: benefitsForYear ? benefitsForYear.wifeBenefit : "0.00",
         };
     };
-    
+
     const { ira1, ira2, roi } = inputs1;
     const age1 = inputs.husbandAge;
     const age2 = inputs.wifeAge;
@@ -245,13 +245,11 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 });
             setSavedVersions(uniqueVersions.map(version => ({ name: version.name })));
             setVersionData(uniqueVersions);
-            if (uniqueVersions.length > 0) {
+            if (uniqueVersions.length > 0 && !uniqueVersions.find(v => v.name === selectedVersion)) {
                 setSelectedVersion(uniqueVersions[0].name);
             }
-
         }
     };
-
     const loadVersion = async (version) => {
         if (!user) {
             console.error('User is not logged in');
@@ -318,7 +316,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             console.error('Error deleting version from Supabase:', error);
         } else {
             console.log('Version successfully deleted from Supabase.');
-            fetchSavedVersions(); 
+            fetchSavedVersions();
         }
     };
 
@@ -557,7 +555,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
         return totalIncome.toFixed(2);
     };
-    
+
     const calculateTaxableIncomes = (staticFields, iraDetails, findSsBenefitsByYear, calculateTotalIncomeForYear, calculateStandardDeductionForYear) => {
         let taxableIncomes = {};
 
@@ -589,7 +587,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
 
     const chartData = {
-        labels: ["No Conversion", ...Array.from(new Set(versionData.map(item => item.name)))], 
+        labels: ["No Conversion", ...Array.from(new Set(versionData.map(item => item.name)))],
         datasets: [
             {
                 label: 'Lifetime Tax Paid',
