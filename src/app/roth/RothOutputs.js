@@ -243,14 +243,23 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                         beneficiary0: version.beneficiary0
                     };
                 });
+
+            // Check if the default scenarios exist
+            const defaultScenarios = ["Scenario 1", "Scenario 2", "Scenario 3"];
+            defaultScenarios.forEach(scenario => {
+                if (!uniqueVersions.find(version => version.name === scenario)) {
+                    // If the scenario does not exist, create it
+                    saveVersion(scenario);
+                }
+            });
+
             setSavedVersions(uniqueVersions.map(version => ({ name: version.name })));
             setVersionData(uniqueVersions);
             if (uniqueVersions.length > 0 && !uniqueVersions.find(v => v.name === selectedVersion)) {
                 setSelectedVersion(uniqueVersions[0].name);
             }
         }
-    };
-    const loadVersion = async (version) => {
+    };    const loadVersion = async (version) => {
         if (!user) {
             console.error('User is not logged in');
             return;
