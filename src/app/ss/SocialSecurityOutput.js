@@ -8,23 +8,43 @@ import { calculateBenefitForYear, calculateXNPV } from "../utils/calculations";
 const SocialSecurityOutput = ({ inputs, onInputChange }) => {
     const handleChange = (e) => {
         const { name, value } = e.target;
-        onInputChange(name, value);
+        if (value !== inputs[name]) {
+            onInputChange(name, value);
+        }
     };
 
-    //reference table
+    // Reference table
     const { refTable, benefitsBasedOnAge } = useReferenceTable(inputs);
     const { setSocialSecurityBenefits } = useStore();
 
-    // social security benefits
+    // Social security benefits
     const currentYear = new Date().getFullYear();
     const [tableData, setTableData] = useState([]);
     const [totalCash, setTotalCash] = useState(0);
     const [npv, setNpv] = useState(0);
+    const [userData, setUserData] = useState({
+        labels: [],
+        datasets: [
+            {
+                label: "Husband Benefit",
+                data: [],
+                backgroundColor: "#9fc5e8",
+                borderColor: "black",
+                borderWidth: 1,
+            },
+            {
+                label: "Wife Benefit",
+                data: [],
+                backgroundColor: "#ead1dc",
+                borderColor: "black",
+                borderWidth: 1,
+            },
+        ],
+    });
 
     useEffect(() => {
         const maxLifeExpectancy = Math.max(inputs.hLE, inputs.wLE);
-        const yearsToCover =
-            maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge) + 1;
+        const yearsToCover = maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge) + 1;
 
         let lastYearHusbandBenefit = 0;
         let lastYearWifeBenefit = 0;
@@ -57,10 +77,8 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                 lastYearSpouseBenefit: lastYearHusbandBenefit,
             });
 
-            const totalBenefit = new Decimal(husbandBenefit).add(
-                new Decimal(wifeBenefit)
-            );
-            cumulativeTotal = cumulativeTotal.add(totalBenefit); // Add current year's total benefit to cumulative total
+            const totalBenefit = new Decimal(husbandBenefit).add(new Decimal(wifeBenefit));
+            cumulativeTotal = cumulativeTotal.add(totalBenefit);
 
             lastYearHusbandBenefit = husbandBenefit;
             lastYearWifeBenefit = wifeBenefit;
@@ -80,46 +98,17 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
 
         // Calculate NPV
         const roi = inputs.roi / 100;
-        const cashFlows = newTableData.map(
-            ({ totalBenefit }) => new Decimal(totalBenefit)
-        );
+        const cashFlows = newTableData.map(({ totalBenefit }) => new Decimal(totalBenefit));
         const dates = newTableData.map(({ year }) => new Date(year, 0, 1));
 
         const npvValue = calculateXNPV(roi, cashFlows, dates);
 
         setNpv(npvValue);
         setTotalCash(cumulativeTotal);
-    }, [
-        inputs,
-        currentYear,
-        benefitsBasedOnAge.husbandYearly,
-        benefitsBasedOnAge.wifeYearly,
-        setSocialSecurityBenefits
-    ]);
 
-    // Creating Bar Chart Data
-    const [userData, setUserData] = useState({
-        labels: [],
-        datasets: [
-            {
-                label: "Husband Benefit",
-                data: [],
-            },
-            {
-                label: "Wife Benefit",
-                data: [],
-            },
-        ],
-    });
-
-    useEffect(() => {
-        const yearArray = tableData.map(({ year }) => year.toString());
-        const husbandBenefitArray = tableData.map(({ husbandBenefit }) =>
-            parseInt(husbandBenefit)
-        );
-        const wifeBenefitArray = tableData.map(({ wifeBenefit }) =>
-            parseInt(wifeBenefit)
-        );
+        const yearArray = newTableData.map(({ year }) => year.toString());
+        const husbandBenefitArray = newTableData.map(({ husbandBenefit }) => parseInt(husbandBenefit));
+        const wifeBenefitArray = newTableData.map(({ wifeBenefit }) => parseInt(wifeBenefit));
 
         setUserData({
             labels: yearArray,
@@ -140,7 +129,20 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                 },
             ],
         });
-    }, [tableData]);
+
+    }, [
+        inputs.hLE,
+        inputs.wLE,
+        inputs.husbandAge,
+        inputs.wifeAge,
+        inputs.hSS,
+        inputs.wSS,
+        inputs.roi,
+        currentYear,
+        benefitsBasedOnAge.husbandYearly,
+        benefitsBasedOnAge.wifeYearly,
+        setSocialSecurityBenefits
+    ]);
 
     const benefitChartOptions = {
         tooltips: {
@@ -154,13 +156,11 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                 },
             },
         },
-
         plugins: {
             legend: {
                 position: "bottom",
             },
         },
-
         scales: {
             x: {
                 stacked: true,
@@ -172,7 +172,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                 stacked: true,
                 max: 100000,
                 ticks: {
-                    callback: function (value, index, values) {
+                    callback: function (value) {
                         value = value.toString();
                         value = value.split(/(?=(?:...)*$)/);
                         value = value.join(",");
@@ -183,7 +183,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         },
     };
 
-    console.log(refTable);
+    //console.log(refTable);
     return (
         <div>
             <div className="flex w-full h-auto">
