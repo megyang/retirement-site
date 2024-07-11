@@ -9,16 +9,17 @@ import useRmdCalculations from "@/app/hooks/useRmdCalculations";
 import useReferenceTable from "@/app/hooks/useReferenceTable";
 import {calculateXNPV} from "@/app/utils/calculations";
 import { debounce } from 'lodash';
+import AuthModal from "@/app/login/AuthModal";
 
 const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
     const { refTable, benefitsBasedOnAge } = useReferenceTable(inputs);
     const { socialSecurityBenefits } = useStore();
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); // State for login modal
 
     const [versionName, setVersionName] = useState("");
     const [versionData, setVersionData] = useState([]);
-
     const [savedVersions, setSavedVersions] = useState([
         { name: "Scenario 1" },
         { name: "Scenario 2" },
@@ -26,8 +27,12 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     ]);
 
     const [selectedVersion, setSelectedVersion] = useState("Scenario 1");
-
     const [beneficiaryTaxRate, setBeneficiaryTaxRate] = useState(0.24);
+    useEffect(() => {
+        if (!user) {
+            setIsAuthModalOpen(true);
+        }
+    }, [user]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -895,6 +900,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 </table>
             </div>
 
+            <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
 
             {/*
                 <div className="totals-display"

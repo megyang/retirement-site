@@ -4,6 +4,7 @@ import BarChart from "../components/BarChart";
 import useReferenceTable from "../hooks/useReferenceTable";
 import useStore from "@/app/store/useStore";
 import { calculateBenefitForYear, calculateXNPV } from "../utils/calculations";
+import Modal from "@/app/login/Modal";
 
 const SocialSecurityOutput = ({ inputs, onInputChange }) => {
     const handleChange = (e) => {
@@ -11,6 +12,14 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         if (value !== inputs[name]) {
             onInputChange(name, value);
         }
+    };
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const handleMouseEnter = () => {
+        setIsModalOpen(true);
+    };
+
+    const handleMouseLeave = () => {
+        setIsModalOpen(false);
     };
 
     // Reference table
@@ -348,7 +357,10 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                 </td>
                             </tr>
                             <tr>
-                                <td >Primary Insurance Amount:</td>
+                                <td
+                                    onMouseEnter={handleMouseEnter}
+                                    onMouseLeave={handleMouseLeave}
+                                >Primary Insurance Amount:</td>
                                 <td className="text-right pr-4 p-5">
                                     <input
                                         type="number"
@@ -368,6 +380,13 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                     />
                                 </td>
                             </tr>
+                            <Modal
+                                isOpen={isModalOpen}
+                                onChange={setIsModalOpen}
+                                title="Primary Insurance Amount"
+                                description="This is the monthly amount you would receive if you started collecting Social Security at your full retirement age."
+                            />
+
                             </tbody>
                         </table>
                     </div>
