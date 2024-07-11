@@ -31,16 +31,25 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setInputs1(prevInputs => ({
-            ...prevInputs,
-            [name]: parseFloat(value),
-        }));
+        setInputs1(prevInputs => {
+            const updatedInputs = {
+                ...prevInputs,
+                [name]: parseFloat(value),
+            };
+            debouncedSaveVersion();
+            return updatedInputs;
+        });
     };
 
     const handleTaxRateChange = (e) => {
         const newRate = parseFloat(e.target.value) / 100;
         setBeneficiaryTaxRate(newRate);
+        debouncedSaveVersion();
     };
+
+    const debouncedSaveVersion = debounce(() => {
+        saveVersion(selectedVersion);
+    }, 500);
 
     const autoSaveToDatabase = async (year, fields) => {
         if (!user) {
