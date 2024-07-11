@@ -14,13 +14,27 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         }
     };
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const handleMouseEnter = () => {
+    const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+    const [closeModalTimeout, setCloseModalTimeout] = useState(null);
+
+    const handleMouseEnter = (e) => {
         setIsModalOpen(true);
     };
 
     const handleMouseLeave = () => {
-        setIsModalOpen(false);
+        const timeoutId = setTimeout(() => {
+            setIsModalOpen(false);
+        }, 2500);
+        setCloseModalTimeout(timeoutId);
     };
+
+    useEffect(() => {
+        return () => {
+            if (closeModalTimeout) {
+                clearTimeout(closeModalTimeout);
+            }
+        };
+    }, [closeModalTimeout]);
 
     // Reference table
     const { refTable, benefitsBasedOnAge } = useReferenceTable(inputs);
