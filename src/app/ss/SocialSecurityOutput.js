@@ -8,11 +8,15 @@ import { debounce } from 'lodash';
 import PiaModal from "@/app/modal/PiaModal";
 import useAuthModal from "@/app/hooks/useAuthModal";
 import { useUser } from "@/app/hooks/useUser";
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
 
 const SocialSecurityOutput = ({ inputs, onInputChange }) => {
-    const debouncedSaveInputs = debounce(async () => {
-        await saveInputsToDatabase();
+    const supabaseClient = useSupabaseClient();
+
+    const debouncedSaveInputs = debounce(async (name, value) => {
+        await saveInputToDatabase(name, value);
     }, 500);
+
     const { onOpen } = useAuthModal();
     const { user } = useUser();
 
@@ -21,6 +25,23 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
             debouncedSaveInputs.cancel();
         };
     }, []);
+
+    const saveInputToDatabase = async (name, value) => {
+        if (!user) {
+            console.error('User is not logged in');
+            return;
+        }
+
+        const { data, error } = await supabaseClient
+            .from('social_security_inputs')
+            .upsert({ user_id: user.id, [name]: value, updated_at: new Date().toISOString() }, { onConflict: ['user_id'] });
+
+        if (error) {
+            console.error('Error saving data to Supabase:', error);
+        } else {
+            console.log('Data successfully saved to Supabase.');
+        }
+    };
 
     const saveInputsToDatabase = async () => {
         if (!user) {
@@ -53,7 +74,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         }
     };
 
-    const handleChange = (e) => {
+    const handleChange = async (e) => {
         if (!user) {
             onOpen();
             return;
@@ -61,7 +82,8 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         const { name, value } = e.target;
         if (value !== inputs[name]) {
             onInputChange(name, value);
-            debouncedSaveInputs();
+            debouncedSaveInputs(name, value);
+            await saveInputsToDatabase(name, parseFloat(value));
         }
     };
 

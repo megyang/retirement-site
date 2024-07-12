@@ -5,22 +5,21 @@ import UserProvider from "@/app/providers/UserProvider";
 import Header from "@/app/components/Header";
 import NavBar from "@/app/components/NavBar";
 import ModalProviders from "@/app/providers/ModalProviders";
-import RothConversionCalculator from "@/app/roth/RothConversionCalculator";
 
 // will not be recached and will always be up to date
 export const revalidate = 0;
 
 export default function Page() {
     return (
-        <main className="flex min-h-screen flex-col">
+        <main>
             <SupabaseProvider>
                 <UserProvider>
                     <ModalProviders />
                     <Header />
-                    <div className="flex flex-1">
+                    <div>
                         <NavBar />
-                        <div className="flex-1 flex justify-center items-center">
-                            <div className="w-11/12 max-w-screen-lg">
+                        <div>
+                            <div>
                                 <SocialSecurityCalculator />
                             </div>
                         </div>
