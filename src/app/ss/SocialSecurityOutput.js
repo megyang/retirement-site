@@ -5,14 +5,63 @@ import useReferenceTable from "../hooks/useReferenceTable";
 import useStore from "@/app/store/useStore";
 import { calculateBenefitForYear, calculateXNPV } from "../utils/calculations";
 import Modal from "@/app/login/Modal";
+import { debounce } from 'lodash';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { useUser } from "@/app/hooks/useUser";
 
 const SocialSecurityOutput = ({ inputs, onInputChange }) => {
+    const supabaseClient = useSupabaseClient();
+    const { user } = useUser();
+
+    const debouncedSaveInputs = debounce(async () => {
+        await saveInputsToDatabase();
+    }, 500);
+
+    useEffect(() => {
+        return () => {
+            debouncedSaveInputs.cancel();
+        };
+    }, []);
+
+    const saveInputsToDatabase = async () => {
+        if (!user) {
+            console.error('User is not logged in');
+            return;
+        }
+
+        const dataToSave = {
+            user_id: user.id,
+            husbandAge: inputs.husbandAge,
+            wifeAge: inputs.wifeAge,
+            hLE: inputs.hLE,
+            wLE: inputs.wLE,
+            hPIA: inputs.hPIA,
+            wPIA: inputs.wPIA,
+            hSS: inputs.hSS,
+            wSS: inputs.wSS,
+            roi: inputs.roi,
+            updated_at: new Date().toISOString(),
+        };
+
+        const { error } = await supabaseClient
+            .from('social_security_inputs')
+            .upsert([dataToSave], { onConflict: ['user_id'] });
+
+        if (error) {
+            console.error('Error saving data to Supabase:', error);
+        } else {
+            console.log('Data successfully saved to Supabase.');
+        }
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         if (value !== inputs[name]) {
             onInputChange(name, value);
+            debouncedSaveInputs();
         }
     };
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
     const [closeModalTimeout, setCloseModalTimeout] = useState(null);
@@ -24,7 +73,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
     const handleMouseLeave = () => {
         const timeoutId = setTimeout(() => {
             setIsModalOpen(false);
-        }, 2500);
+        }, 1500);
         setCloseModalTimeout(timeoutId);
     };
 
