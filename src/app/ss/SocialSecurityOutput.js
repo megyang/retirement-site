@@ -129,14 +129,14 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         labels: [],
         datasets: [
             {
-                label: "Husband Benefit",
+                label: "Your Benefit",
                 data: [],
                 backgroundColor: "#9fc5e8",
                 borderColor: "black",
                 borderWidth: 1,
             },
             {
-                label: "Wife Benefit",
+                label: "Your Spouse's Benefit",
                 data: [],
                 backgroundColor: "#ead1dc",
                 borderColor: "black",
@@ -217,14 +217,14 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
             labels: yearArray,
             datasets: [
                 {
-                    label: "Husband Benefit",
+                    label: "Your Benefit",
                     data: husbandBenefitArray,
                     backgroundColor: "#9fc5e8",
                     borderColor: "black",
                     borderWidth: 1,
                 },
                 {
-                    label: "Wife Benefit",
+                    label: "Your Spouse's Benefit",
                     data: wifeBenefitArray,
                     backgroundColor: "#ead1dc",
                     borderColor: "black",
