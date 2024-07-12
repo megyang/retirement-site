@@ -4,10 +4,10 @@ import BarChart from "../components/BarChart";
 import useReferenceTable from "../hooks/useReferenceTable";
 import useStore from "@/app/store/useStore";
 import { calculateBenefitForYear, calculateXNPV } from "../utils/calculations";
-import Modal from "@/app/login/Modal";
 import { debounce } from 'lodash';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
+import PiaModal from "@/app/login/PiaModal";
 
 const SocialSecurityOutput = ({ inputs, onInputChange }) => {
     const supabaseClient = useSupabaseClient();
@@ -62,14 +62,20 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         }
     };
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
     const [closeModalTimeout, setCloseModalTimeout] = useState(null);
 
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+
     const handleMouseEnter = (e) => {
+        const rect = e.target.getBoundingClientRect();
+        const modalWidth = 200; // The width of the modal
+        setModalPosition({
+            top: rect.bottom + window.scrollY,
+            left: rect.left + window.scrollX + rect.width / 2 - modalWidth / 2, // Center the modal
+        });
         setIsModalOpen(true);
     };
-
     const handleMouseLeave = () => {
         const timeoutId = setTimeout(() => {
             setIsModalOpen(false);
@@ -420,10 +426,16 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                 </td>
                             </tr>
                             <tr>
-                                <td
-                                    onMouseEnter={handleMouseEnter}
-                                    onMouseLeave={handleMouseLeave}
-                                >Primary Insurance Amount:</td>
+                                <td>
+                                    Primary Insurance Amount
+                                    <span
+                                        onMouseEnter={handleMouseEnter}
+                                        onMouseLeave={handleMouseLeave}
+                                        style={{ cursor: 'pointer' }}
+                                    >
+                 &#9432;
+            </span>
+                                </td>
                                 <td className="text-right pr-4 p-5">
                                     <input
                                         type="number"
@@ -443,15 +455,15 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                     />
                                 </td>
                             </tr>
-                            <Modal
-                                isOpen={isModalOpen}
-                                onChange={setIsModalOpen}
-                                title="Primary Insurance Amount"
-                                description="This is the monthly amount you would receive if you started collecting Social Security at your full retirement age."
-                            />
-
                             </tbody>
                         </table>
+                        <PiaModal
+                            isOpen={isModalOpen}
+                            onChange={setIsModalOpen}
+                            title="Primary Insurance Amount"
+                            description="This is the monthly amount you would receive if you started collecting Social Security at your full retirement age."
+                            position={modalPosition}
+                        />
                     </div>
                 </div>
             </div>
