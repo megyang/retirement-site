@@ -6,7 +6,7 @@ import { useUser } from "@/app/hooks/useUser";
 import { useRouter } from "next/navigation";
 
 const Header = () => {
-    const { isOpen, onOpen } = useAuthModal();
+    const { isOpen, onOpen, setView } = useAuthModal();
     const router = useRouter();
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
@@ -41,14 +41,20 @@ const Header = () => {
                             ) : (
                                 <>
                                     <button
-                                        onClick={onOpen}
+                                        onClick={() => {
+                                            setView('sign_up');
+                                            onOpen();
+                                        }}
                                         className="bg-clear border border-black text-black font-medium rounded-lg px-4 py-2 transition duration-150 ease-in-out hover:bg-gray-100"
                                     >
                                         Sign up
                                     </button>
 
                                     <button
-                                        onClick={onOpen}
+                                        onClick={() => {
+                                            setView('sign_in');
+                                            onOpen();
+                                        }}
                                         className="bg-clear border border-black text-black font-medium rounded-lg px-4 py-2 transition duration-150 ease-in-out hover:bg-gray-100"
                                     >
                                         Log in

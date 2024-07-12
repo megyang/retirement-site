@@ -5,17 +5,16 @@ import useReferenceTable from "../hooks/useReferenceTable";
 import useStore from "@/app/store/useStore";
 import { calculateBenefitForYear, calculateXNPV } from "../utils/calculations";
 import { debounce } from 'lodash';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
-import { useUser } from "@/app/hooks/useUser";
 import PiaModal from "@/app/modal/PiaModal";
+import useAuthModal from "@/app/hooks/useAuthModal";
+import { useUser } from "@/app/hooks/useUser";
 
 const SocialSecurityOutput = ({ inputs, onInputChange }) => {
-    const supabaseClient = useSupabaseClient();
-    const { user } = useUser();
-
     const debouncedSaveInputs = debounce(async () => {
         await saveInputsToDatabase();
     }, 500);
+    const { onOpen } = useAuthModal();
+    const { user } = useUser();
 
     useEffect(() => {
         return () => {
@@ -55,6 +54,10 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
     };
 
     const handleChange = (e) => {
+        if (!user) {
+            onOpen();
+            return;
+        }
         const { name, value } = e.target;
         if (value !== inputs[name]) {
             onInputChange(name, value);
@@ -283,6 +286,12 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                             max="70"
                                             step="1"
                                             value={inputs.hSS}
+                                            onClick={() => {
+                                                if (!user) {
+                                                    onOpen();
+                                                    return;
+                                                }
+                                            }}
                                             onChange={handleChange}
                                         />
                                         <ul className="flex justify-between w-full px-[10px]">
@@ -327,6 +336,12 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                             max="70"
                                             step="1"
                                             value={inputs.wSS}
+                                            onClick={() => {
+                                                if (!user) {
+                                                    onOpen();
+                                                    return;
+                                                }
+                                            }}
                                             onChange={handleChange}
                                         />
                                         <ul className="flex justify-between w-full px-[10px]">
@@ -390,6 +405,12 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                         type="number"
                                         name="husbandAge"
                                         value={inputs.husbandAge}
+                                        onClick={() => {
+                                            if (!user) {
+                                                onOpen();
+                                                return;
+                                            }
+                                        }}
                                         onChange={handleChange}
                                         className="w-full text-right"
                                     />
@@ -399,6 +420,12 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                         type="number"
                                         name="wifeAge"
                                         value={inputs.wifeAge}
+                                        onClick={() => {
+                                            if (!user) {
+                                                onOpen();
+                                                return;
+                                            }
+                                        }}
                                         onChange={handleChange}
                                         className="w-full text-right"
                                     />
@@ -411,6 +438,13 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                         type="number"
                                         name="hLE"
                                         value={inputs.hLE}
+                                        onClick={() => {
+                                            if (!user) {
+                                                onOpen();
+                                                return;
+                                            }
+                                        }}
+
                                         onChange={handleChange}
                                         className="w-full text-right"
                                     />
@@ -420,6 +454,13 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                         type="number"
                                         name="wLE"
                                         value={inputs.wLE}
+                                        onClick={() => {
+                                            if (!user) {
+                                                onOpen();
+                                                return;
+                                            }
+                                        }}
+
                                         onChange={handleChange}
                                         className="w-full text-right"
                                     />
@@ -441,6 +482,13 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                         type="number"
                                         name="hPIA"
                                         value={inputs.hPIA}
+                                        onClick={() => {
+                                            if (!user) {
+                                                onOpen();
+                                                return;
+                                            }
+                                        }}
+
                                         onChange={handleChange}
                                         className="w-full text-right"
                                     />
@@ -450,6 +498,13 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                         type="number"
                                         name="wPIA"
                                         value={inputs.wPIA}
+                                        onClick={() => {
+                                            if (!user) {
+                                                onOpen();
+                                                return;
+                                            }
+                                        }}
+
                                         onChange={handleChange}
                                         className="w-full text-right"
                                     />

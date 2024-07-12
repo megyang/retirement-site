@@ -9,14 +9,14 @@ import useRmdCalculations from "@/app/hooks/useRmdCalculations";
 import useReferenceTable from "@/app/hooks/useReferenceTable";
 import {calculateXNPV} from "@/app/utils/calculations";
 import { debounce } from 'lodash';
-import AuthModal from "@/app/modal/AuthModal";
+import useAuthModal from "@/app/hooks/useAuthModal";
 
 const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
     const { refTable, benefitsBasedOnAge } = useReferenceTable(inputs);
     const { socialSecurityBenefits } = useStore();
-    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); // State for login modal
+    const { onOpen } = useAuthModal();
 
     const [versionName, setVersionName] = useState("");
     const [versionData, setVersionData] = useState([]);
@@ -28,13 +28,12 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
     const [selectedVersion, setSelectedVersion] = useState("Scenario 1");
     const [beneficiaryTaxRate, setBeneficiaryTaxRate] = useState(0.24);
-    useEffect(() => {
-        if (!user) {
-            setIsAuthModalOpen(true);
-        }
-    }, [user]);
 
     const handleInputChange = (e) => {
+        if (!user) {
+            onOpen();
+            return;
+        }
         const { name, value } = e.target;
         setInputs1(prevInputs => {
             const updatedInputs = {
@@ -371,6 +370,12 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 className="w-full p-1 border border-gray-300 rounded text-right"
                 name={`${year}-${field}`}
                 value={editableFields[year][field]}
+                onClick={() => {
+                    if (!user) {
+                        onOpen();
+                        return;
+                    }
+                }}
                 onChange={(e) => handleEditableFieldChange(year, field, e.target.value)}
             />
         );
@@ -647,17 +652,25 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                         <select
                             className="w-full bg-white border-none"
                             value={selectedVersion}
+                            onClick={() => {
+                                if (!user) {
+                                    onOpen();
+                                    return;
+                                }
+                            }}
                             onChange={(e) => {
-                                setSelectedVersion(e.target.value);
-                                const version = savedVersions.find(v => v.name === e.target.value);
-                                if (version) {
-                                    loadVersion(version);
+                                if (user) {
+                                    setSelectedVersion(e.target.value);
+                                    const version = savedVersions.find(v => v.name === e.target.value);
+                                    if (version) {
+                                        loadVersion(version);
+                                    }
                                 }
                             }}
                         >
                             {savedVersions.map((version, index) => (
                                 <option key={index} value={version.name}>
-                                    Selected: {version.name}
+                                    {version.name}
                                 </option>
                             ))}
                         </select>
@@ -849,8 +862,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                     </tbody>
                 </table>
             </div>
-
-            <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
 
             {/*
                 <div className="totals-display"
