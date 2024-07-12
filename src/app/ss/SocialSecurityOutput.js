@@ -15,7 +15,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
 
     const debouncedSaveInputs = debounce(async (name, value) => {
         await saveInputToDatabase(name, value);
-    }, 500);
+    }, 10);
 
     const { onOpen } = useAuthModal();
     const { user } = useUser();
@@ -421,7 +421,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                             </thead>
                             <tbody>
                             <tr>
-                                <td>Current Age:</td>
+                                <td>Current Age</td>
                                 <td className="text-right pr-4 p-5">
                                     <input
                                         type="number"
@@ -454,7 +454,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                 </td>
                             </tr>
                             <tr>
-                                <td>Life Expectancy:</td>
+                                <td>Life Expectancy</td>
                                 <td className="text-right pr-4 p-5">
                                     <input
                                         type="number"
@@ -496,40 +496,45 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                         onMouseLeave={handleMouseLeave}
                                         style={{ cursor: 'pointer' }}
                                     >
-                 &#9432;
-            </span>
+                                         &#9432;
+                                    </span>
+
                                 </td>
                                 <td className="text-right pr-4 p-5">
-                                    <input
-                                        type="number"
-                                        name="hPIA"
-                                        value={inputs.hPIA}
-                                        onClick={() => {
-                                            if (!user) {
-                                                onOpen();
-                                                return;
-                                            }
-                                        }}
-
-                                        onChange={handleChange}
-                                        className="w-full text-right"
-                                    />
+                                    <div className="flex items-center">
+                                        <span>$</span>
+                                        <input
+                                            type="number"
+                                            name="hPIA"
+                                            value={inputs.hPIA}
+                                            onClick={() => {
+                                                if (!user) {
+                                                    onOpen();
+                                                    return;
+                                                }
+                                            }}
+                                            onChange={handleChange}
+                                            className="w-full text-right"
+                                        />
+                                    </div>
                                 </td>
                                 <td className="text-right p-5">
-                                    <input
-                                        type="number"
-                                        name="wPIA"
-                                        value={inputs.wPIA}
-                                        onClick={() => {
-                                            if (!user) {
-                                                onOpen();
-                                                return;
-                                            }
-                                        }}
-
-                                        onChange={handleChange}
-                                        className="w-full text-right"
-                                    />
+                                    <div className="flex items-center">
+                                        <span>$</span>
+                                        <input
+                                            type="number"
+                                            name="wPIA"
+                                            value={inputs.wPIA}
+                                            onClick={() => {
+                                                if (!user) {
+                                                    onOpen();
+                                                    return;
+                                                }
+                                            }}
+                                            onChange={handleChange}
+                                            className="w-full text-right"
+                                        />
+                                    </div>
                                 </td>
                             </tr>
                             </tbody>

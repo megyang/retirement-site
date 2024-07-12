@@ -12,20 +12,7 @@ export const revalidate = 0;
 export default function Page() {
     return (
         <main>
-            <SupabaseProvider>
-                <UserProvider>
-                    <ModalProviders />
-                    <Header />
-                    <div>
-                        <NavBar />
-                        <div>
-                            <div>
-                                <SocialSecurityCalculator />
-                            </div>
-                        </div>
-                    </div>
-                </UserProvider>
-            </SupabaseProvider>
+            <SocialSecurityCalculator />
         </main>
     );
 }
