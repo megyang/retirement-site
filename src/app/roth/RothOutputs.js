@@ -9,7 +9,7 @@ import useRmdCalculations from "@/app/hooks/useRmdCalculations";
 import useReferenceTable from "@/app/hooks/useReferenceTable";
 import {calculateXNPV} from "@/app/utils/calculations";
 import { debounce } from 'lodash';
-import AuthModal from "@/app/login/AuthModal";
+import AuthModal from "@/app/modal/AuthModal";
 
 const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
@@ -636,16 +636,16 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     return (
         <div className="max-w-4xl mx-auto">
             <div className="flex-col">
-                <div className="bg-[#f8f5f0] p-4 rounded h-auto w-full">
+                <div className="bg-white p-4 rounded h-auto w-full">
                     <h3 className=" text-left text-2xl">
                         Total Taxes Paid
                     </h3>
                     <BarChart chartData={chartData} chartOptions={chartOptions} />
                 </div>
                 <div className="mt-4 text-left flex items-center space-x-2 w-full">
-                    <div className="bg-[#f8f5f0] rounded p-2 flex-grow">
+                    <div className="bg-white rounded p-2 flex-grow">
                         <select
-                            className="w-full bg-[#f8f5f0] border-none"
+                            className="w-full bg-white border-none"
                             value={selectedVersion}
                             onChange={(e) => {
                                 setSelectedVersion(e.target.value);
@@ -664,13 +664,13 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                     </div>
                 </div>
                 <div className="flex mt-4 w-full space-x-4">
-                    <div className="bg-[#f8f5f0] p-6 rounded flex-1 w-2 flex flex-col justify-center">
+                    <div className="bg-white p-6 rounded flex-1 w-2 flex flex-col justify-center">
                         <h3 className="text-2xl text-center mb-4">{selectedVersion}: Total Taxes Saved</h3>
                         <div className="text-4xl font-bold text-center">
                             ${(parseFloat(versionData.find(v => v.name === selectedVersion)?.lifetime_tax || 0) + parseFloat(versionData.find(v => v.name === selectedVersion)?.beneficiary_tax || 0)).toLocaleString()}
                         </div>
                     </div>
-                    <div className="bg-[#f8f5f0] p-6 rounded flex-1 w-2">
+                    <div className="bg-white p-6 rounded flex-1 w-2">
                         <h3 className="text-left text-1xl">Other Inputs</h3>
                         <div className="">
                             <div className="flex items-center justify-between mb-2">
@@ -727,7 +727,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 </div>
             </div>
 
-            <div className="scrollable-container mt-4 bg-[#f8f5f0] overflow-x-auto p-4 rounded">
+            <div className="scrollable-container mt-4 bg-white overflow-x-auto p-4 rounded">
                 <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
                 <table className="border-collapse border border-slate-400">
                     <thead className="bg-gray-100">

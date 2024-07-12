@@ -1,6 +1,6 @@
 "use client";
 import React, {useEffect, useState} from 'react';
-import AuthModal from "@/app/login/AuthModal";
+import AuthModal from "@/app/modal/AuthModal";
 
 const ModalProviders = () => {
     const [isMounted, setIsMounted] = useState(false);

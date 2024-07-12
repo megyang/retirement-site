@@ -6,7 +6,7 @@ const NavBar = () => {
     const pathname = usePathname();
 
     return (
-        <div className="fixed top-16 left-0 h-full w-64 bg-beige z-40">
+        <div className="fixed top-16 left-0 h-full w-64 bg-[#a9bab466] z-40">
             <nav className="mt-4">
                 <ul className="space-y-2">
                     <li>

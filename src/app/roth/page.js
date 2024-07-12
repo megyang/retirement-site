@@ -8,7 +8,7 @@ import SocialSecurityCalculator from "@/app/ss/SocialSecurityCalculator";
 export default function Page() {
     return (
         <main>
-            <div>
+            <div className=" bg-[#f9f9f9]">
                 <SupabaseProvider>
                     <UserProvider>
                         <ModalProviders />

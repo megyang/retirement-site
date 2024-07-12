@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import Modal from "@/app/login/Modal";
+import Modal from "@/app/modal/Modal";
 import { useSessionContext, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/navigation";
 import { Auth } from "@supabase/auth-ui-react";
