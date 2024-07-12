@@ -364,56 +364,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         };
     }, []);
 
-    useEffect(() => {
-        const handleAutoSave = debounce(async () => {
-            if (!user) {
-                console.error('User is not logged in');
-                return;
-            }
-
-            const dataToSave = [];
-
-            for (let year in editableFields) {
-                dataToSave.push({
-                    user_id: user.id,
-                    version_name: selectedVersion,
-                    year: parseInt(year),
-                    rental_income: editableFields[year].rentalIncome,
-                    capital_gains: editableFields[year].capitalGains,
-                    pension: editableFields[year].pension,
-                    roth_1: editableFields[year].rothSpouse1,
-                    roth_2: editableFields[year].rothSpouse2,
-                    salary1: editableFields[year].salary1,
-                    salary2: editableFields[year].salary2,
-                    interest: editableFields[year].interest,
-                    ira1: inputs1.ira1,
-                    ira2: inputs1.ira2,
-                    roi: inputs1.roi,
-                    inflation: inputs1.inflation,
-                    beneficiary_tax_rate: beneficiaryTaxRate,
-                    age1: inputs.husbandAge,
-                    age2: inputs.wifeAge,
-                });
-            }
-
-            const { error } = await supabaseClient
-                .from('roth')
-                .upsert(dataToSave, { onConflict: ['user_id', 'version_name', 'year'] });
-
-            if (error) {
-                console.error('Error saving data to Supabase:', error);
-            } else {
-                console.log('Data successfully saved to Supabase.');
-            }
-        }, 500);
-
-        handleAutoSave();
-
-        return () => {
-            handleAutoSave.cancel();
-        };
-    }, [editableFields, inputs1, beneficiaryTaxRate, user]);
-
     const renderEditableFieldInput = (year, field) => {
         return (
             <input
