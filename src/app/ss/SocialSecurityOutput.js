@@ -8,14 +8,17 @@ import PiaModal from "@/app/modal/PiaModal";
 import { debounce } from 'lodash';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
+import useAuthModal from "@/app/hooks/useAuthModal";
 
 const SocialSecurityOutput = ({ inputs, onInputChange }) => {
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
+    const { onOpen } = useAuthModal();
 
     const debouncedSaveInputs = debounce(async () => {
         await saveInputsToDatabase();
-    }, 500);
+    }, 10);
+
 
     useEffect(() => {
         return () => {
@@ -72,7 +75,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
 
     const handleMouseEnter = (e) => {
         const rect = e.target.getBoundingClientRect();
-        const modalWidth = 200; // The width of the modal
+        const modalWidth = 200;
         setModalPosition({
             top: rect.bottom + window.scrollY,
             left: rect.left + window.scrollX + rect.width / 2 - modalWidth / 2, // Center the modal
@@ -287,7 +290,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                             max="70"
                                             step="1"
                                             value={inputs.hSS}
-                                            onChange={handleChange}
+                                            onInput={handleChange}
                                         />
                                         <ul className="flex justify-between w-full px-[10px]">
                                             <li className="flex justify-center relative">
@@ -331,7 +334,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                             max="70"
                                             step="1"
                                             value={inputs.wSS}
-                                            onChange={handleChange}
+                                            onInput={handleChange}
                                         />
                                         <ul className="flex justify-between w-full px-[10px]">
                                             <li className="flex justify-center relative">
