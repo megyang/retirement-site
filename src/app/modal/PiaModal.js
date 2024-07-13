@@ -3,7 +3,6 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { IoMdClose } from 'react-icons/io';
 
 const PiaModal = ({ isOpen, onChange, title, description, position }) => {
-    // Set default values if position is undefined
     const defaultPosition = { top: 0, left: 0 };
     const pos = position || defaultPosition;
 

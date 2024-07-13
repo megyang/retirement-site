@@ -10,21 +10,23 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
 import useAuthModal from "@/app/hooks/useAuthModal";
 
-const SocialSecurityOutput = ({ inputs, onInputChange }) => {
+const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
     const { onOpen } = useAuthModal();
 
-    const debouncedSaveInputs = debounce(async () => {
-        await saveInputsToDatabase();
-    }, 10);
+    {/*
+        const debouncedSaveInputs = debounce(async () => {
+            await saveInputsToDatabase();
+        }, 100);
 
 
-    useEffect(() => {
-        return () => {
-            debouncedSaveInputs.cancel();
-        };
-    }, []);
+        useEffect(() => {
+            return () => {
+                debouncedSaveInputs.cancel();
+            };
+        }, []);
+    */}
 
     const saveInputsToDatabase = async () => {
         if (!user) {
@@ -57,6 +59,33 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         }
     };
 
+    const loadInputsFromDatabase = async () => {
+        if (!user) {
+            console.error('User is not logged in');
+            return;
+        }
+
+        const { data, error } = await supabaseClient
+            .from('social_security_inputs')
+            .select('*')
+            .eq('user_id', user.id);
+
+        if (error) {
+            console.error('Error loading data from Supabase:', error);
+        } else {
+            console.log('Data successfully loaded from Supabase:', data);
+            if (data && data[0]) {
+                setInputs(data[0]);
+            }
+        }
+    };
+
+    useEffect(() => {
+        if (user) {
+            loadInputsFromDatabase();
+        }
+    }, [user]);
+
     const handleChange = async (e) => {
         if (!user) {
             onOpen();
@@ -65,7 +94,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         const { name, value } = e.target;
         if (value !== inputs[name]) {
             onInputChange(name, value);
-            debouncedSaveInputs();
+            await saveInputsToDatabase();
         }
     };
 
@@ -82,14 +111,12 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         });
         setIsModalOpen(true);
     };
-
     const handleMouseLeave = () => {
         const timeoutId = setTimeout(() => {
             setIsModalOpen(false);
         }, 1500);
         setCloseModalTimeout(timeoutId);
     };
-
     useEffect(() => {
         return () => {
             if (closeModalTimeout) {
@@ -461,6 +488,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                 onChange={setIsModalOpen}
                                 title="Primary Insurance Amount"
                                 description="This is the monthly amount you would receive if you started collecting Social Security at your full retirement age."
+                                position={modalPosition}
                             />
 
                             </tbody>
