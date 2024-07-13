@@ -18,7 +18,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     const { socialSecurityBenefits } = useStore();
     const { onOpen } = useAuthModal();
 
-    const [versionName, setVersionName] = useState("");
     const [versionData, setVersionData] = useState([]);
     const [savedVersions, setSavedVersions] = useState([
         { name: "Scenario 1" },
@@ -27,7 +26,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     ]);
 
     const [selectedVersion, setSelectedVersion] = useState("Scenario 1");
-    const [beneficiaryTaxRate, setBeneficiaryTaxRate] = useState(0.24);
 
     const handleInputChange = (e) => {
         if (!user) {
@@ -44,13 +42,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             return updatedInputs;
         });
     };
-
-    const handleTaxRateChange = (e) => {
-        const newRate = parseFloat(e.target.value) / 100;
-        setBeneficiaryTaxRate(newRate);
-        debouncedSaveVersion();
-    };
-
     const debouncedSaveVersion = debounce(() => {
         saveVersion(selectedVersion);
     }, 500);
@@ -77,10 +68,11 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             ira2: inputs1.ira2,
             roi: inputs1.roi,
             inflation: inputs1.inflation,
-            beneficiary_tax_rate: beneficiaryTaxRate,
+            beneficiary_tax_rate: inputs1.beneficiary_tax_rate,
             age1: inputs.husbandAge,
             age2: inputs.wifeAge,
         };
+
 
         const { error } = await supabaseClient
             .from('roth')
@@ -89,7 +81,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         if (error) {
             console.error('Error saving data to Supabase:', error);
         } else {
-            console.log('Data successfully saved to Supabase.');
+            console.log('Data being saved to the database:', dataToSave);
         }
     };
 
@@ -193,7 +185,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             new Decimal(0)
         );
 
-        const beneficiaryTaxPaidWithZeroRoth = totalInheritedIRA.times(beneficiaryTaxRate).toFixed(2);
+        const beneficiaryTaxPaidWithZeroRoth = totalInheritedIRA.times(inputs1.beneficiary_tax_rate).toFixed(2);
 
         const dataToSave = [];
         for (let year in editableFields) {
@@ -218,7 +210,8 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 lifetime_tax: totalLifetimeTaxPaid.toFixed(2),
                 beneficiary_tax: beneficiaryTaxPaid,
                 lifetime0: totalLifetimeTaxPaidWithZeroRoth.toFixed(2),
-                beneficiary0: beneficiaryTaxPaidWithZeroRoth
+                beneficiary0: beneficiaryTaxPaidWithZeroRoth,
+                beneficiary_tax_rate: inputs1.beneficiary_tax_rate
             });
         }
 
@@ -227,6 +220,8 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             console.error('saveVersion: Error saving data to Supabase:', error);
         } else {
             console.log('Data successfully saved to Supabase.');
+            console.log(dataToSave);
+            console.log(inputs1.beneficiary_tax_rate);
             await fetchSavedVersions();  // Ensure versions are fetched after saving
         }
     };
@@ -293,9 +288,10 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 ira1: 0,
                 ira2: 0,
                 roi: 0,
-                inflation: 0
+                inflation: 0,
+                beneficiary_tax_rate: 0
             };
-            let loadedBeneficiaryTaxRate = 0.24;
+            //let loadedBeneficiaryTaxRate = 0.24;
 
             data.forEach(item => {
                 loadedEditableFields[item.year] = {
@@ -313,15 +309,15 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                     ira1: item.ira1,
                     ira2: item.ira2,
                     roi: item.roi,
-                    inflation: item.inflation
+                    inflation: item.inflation,
+                    beneficiary_tax_rate: item.beneficiary_tax_rate
                 };
 
-                loadedBeneficiaryTaxRate = item.beneficiary_tax_rate;
             });
 
             setEditableFields(loadedEditableFields);
             setInputs1(loadedInputs1);
-            setBeneficiaryTaxRate(loadedBeneficiaryTaxRate);
+            //setBeneficiaryTaxRate(loadedBeneficiaryTaxRate);
         }
     };
 
@@ -514,7 +510,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         calculateStandardDeductionForYear
     );
     const totalInheritedIRA = totals.inheritedIRAHusband.plus(totals.inheritedIRAWife);
-    const beneficiaryTaxPaid = totalInheritedIRA.times(beneficiaryTaxRate).toFixed(2);
+    const beneficiaryTaxPaid = totalInheritedIRA.times(inputs1.beneficiary_tax_rate).toFixed(2);
 
     const totalLifetimeTaxPaid = Object.keys(taxableIncomes).reduce(
         (total, year) => total.plus(new Decimal(taxableIncomes[year])),
@@ -690,8 +686,19 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                                 <label className="flex-grow">Beneficiary Tax Rate:</label>
                                 <input
                                     type="number"
-                                    value={beneficiaryTaxRate * 100}
-                                    onChange={handleTaxRateChange}
+                                    name="beneficiary_tax_rate"
+                                    value={inputs1.beneficiary_tax_rate * 100}
+                                    onChange={(e) => {
+                                        const { name, value } = e.target;
+                                        setInputs1(prevInputs => {
+                                            const updatedInputs = {
+                                                ...prevInputs,
+                                                [name]: parseFloat(value) / 100,
+                                            };
+                                            debouncedSaveVersion();
+                                            return updatedInputs;
+                                        });
+                                    }}
                                     className="border rounded p-1 w-24 text-right"
                                 />%
                             </div>
