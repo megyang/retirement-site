@@ -4,44 +4,24 @@ import BarChart from "../components/BarChart";
 import useReferenceTable from "../hooks/useReferenceTable";
 import useStore from "@/app/store/useStore";
 import { calculateBenefitForYear, calculateXNPV } from "../utils/calculations";
-import { debounce } from 'lodash';
 import PiaModal from "@/app/modal/PiaModal";
-import useAuthModal from "@/app/hooks/useAuthModal";
-import { useUser } from "@/app/hooks/useUser";
+import { debounce } from 'lodash';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { useUser } from "@/app/hooks/useUser";
 
 const SocialSecurityOutput = ({ inputs, onInputChange }) => {
     const supabaseClient = useSupabaseClient();
-
-    const debouncedSaveInputs = debounce(async (name, value) => {
-        await saveInputToDatabase(name, value);
-    }, 10);
-
-    const { onOpen } = useAuthModal();
     const { user } = useUser();
+
+    const debouncedSaveInputs = debounce(async () => {
+        await saveInputsToDatabase();
+    }, 500);
 
     useEffect(() => {
         return () => {
             debouncedSaveInputs.cancel();
         };
     }, []);
-
-    const saveInputToDatabase = async (name, value) => {
-        if (!user) {
-            console.error('User is not logged in');
-            return;
-        }
-
-        const { data, error } = await supabaseClient
-            .from('social_security_inputs')
-            .upsert({ user_id: user.id, [name]: value, updated_at: new Date().toISOString() }, { onConflict: ['user_id'] });
-
-        if (error) {
-            console.error('Error saving data to Supabase:', error);
-        } else {
-            console.log('Data successfully saved to Supabase.');
-        }
-    };
 
     const saveInputsToDatabase = async () => {
         if (!user) {
@@ -82,15 +62,13 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         const { name, value } = e.target;
         if (value !== inputs[name]) {
             onInputChange(name, value);
-            debouncedSaveInputs(name, value);
-            await saveInputsToDatabase(name, parseFloat(value));
+            debouncedSaveInputs();
         }
     };
 
-    const [closeModalTimeout, setCloseModalTimeout] = useState(null);
-
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+    const [closeModalTimeout, setCloseModalTimeout] = useState(null);
 
     const handleMouseEnter = (e) => {
         const rect = e.target.getBoundingClientRect();
@@ -101,6 +79,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         });
         setIsModalOpen(true);
     };
+
     const handleMouseLeave = () => {
         const timeoutId = setTimeout(() => {
             setIsModalOpen(false);
@@ -129,14 +108,14 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
         labels: [],
         datasets: [
             {
-                label: "Your Benefit",
+                label: "Husband Benefit",
                 data: [],
                 backgroundColor: "#9fc5e8",
                 borderColor: "black",
                 borderWidth: 1,
             },
             {
-                label: "Your Spouse's Benefit",
+                label: "Wife Benefit",
                 data: [],
                 backgroundColor: "#ead1dc",
                 borderColor: "black",
@@ -217,14 +196,14 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
             labels: yearArray,
             datasets: [
                 {
-                    label: "Your Benefit",
+                    label: "Husband Benefit",
                     data: husbandBenefitArray,
                     backgroundColor: "#9fc5e8",
                     borderColor: "black",
                     borderWidth: 1,
                 },
                 {
-                    label: "Your Spouse's Benefit",
+                    label: "Wife Benefit",
                     data: wifeBenefitArray,
                     backgroundColor: "#ead1dc",
                     borderColor: "black",
@@ -292,7 +271,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
             <div className="flex w-full h-auto">
                 <div className="left-column flex flex-col gap-5 mr-5 w-1/2 h-auto flex-grow">
 
-                    <div className="rectangle small-rectangle bg-white border-gray-600 rounded-lg w-150 h-250 p-5">
+                    <div className="rectangle small-rectangle bg-[#f8f5f0] rounded-lg w-150 h-250 p-5">
                         <h2 className="text-lg text-center mb-4">Collection Age</h2>
                         <div className="inputs-container ">
                             <table className="table-auto w-full">
@@ -308,12 +287,6 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                             max="70"
                                             step="1"
                                             value={inputs.hSS}
-                                            onClick={() => {
-                                                if (!user) {
-                                                    onOpen();
-                                                    return;
-                                                }
-                                            }}
                                             onChange={handleChange}
                                         />
                                         <ul className="flex justify-between w-full px-[10px]">
@@ -358,12 +331,6 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                             max="70"
                                             step="1"
                                             value={inputs.wSS}
-                                            onClick={() => {
-                                                if (!user) {
-                                                    onOpen();
-                                                    return;
-                                                }
-                                            }}
                                             onChange={handleChange}
                                         />
                                         <ul className="flex justify-between w-full px-[10px]">
@@ -401,7 +368,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                             </table>
                         </div>
                     </div>
-                    <div className="rectangle small-rectangle bg-white border-gray-600 rounded-lg w-full h-auto p-5">
+                    <div className="rectangle small-rectangle bg-[#f8f5f0] rounded-lg w-full h-auto p-5">
                         <h3 className="font-lg text-center">Total Social Security Collected</h3>
                         <h1 className="text-5xl text-center font-extrabold">
                             ${Number(totalCash.toFixed(0)).toLocaleString()}
@@ -409,7 +376,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                     </div>
                 </div>
                 <div className="right-column flex flex-col w-1/2 h-auto flex-grow">
-                    <div className="rectangle large-rectangle bg-white border-gray-600 rounded-lg w-full h-full p-5">
+                    <div className="rectangle large-rectangle bg-[#f8f5f0] rounded-lg w-full h-full p-5">
                         <h2 className="text-xl mb-4 text-center">Your Information</h2>
                         <table className="table-auto w-full">
                             <thead>
@@ -421,18 +388,12 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                             </thead>
                             <tbody>
                             <tr>
-                                <td>Current Age</td>
+                                <td>Current Age:</td>
                                 <td className="text-right pr-4 p-5">
                                     <input
                                         type="number"
                                         name="husbandAge"
                                         value={inputs.husbandAge}
-                                        onClick={() => {
-                                            if (!user) {
-                                                onOpen();
-                                                return;
-                                            }
-                                        }}
                                         onChange={handleChange}
                                         className="w-full text-right"
                                     />
@@ -442,31 +403,18 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                         type="number"
                                         name="wifeAge"
                                         value={inputs.wifeAge}
-                                        onClick={() => {
-                                            if (!user) {
-                                                onOpen();
-                                                return;
-                                            }
-                                        }}
                                         onChange={handleChange}
                                         className="w-full text-right"
                                     />
                                 </td>
                             </tr>
                             <tr>
-                                <td>Life Expectancy</td>
+                                <td>Life Expectancy:</td>
                                 <td className="text-right pr-4 p-5">
                                     <input
                                         type="number"
                                         name="hLE"
                                         value={inputs.hLE}
-                                        onClick={() => {
-                                            if (!user) {
-                                                onOpen();
-                                                return;
-                                            }
-                                        }}
-
                                         onChange={handleChange}
                                         className="w-full text-right"
                                     />
@@ -476,81 +424,49 @@ const SocialSecurityOutput = ({ inputs, onInputChange }) => {
                                         type="number"
                                         name="wLE"
                                         value={inputs.wLE}
-                                        onClick={() => {
-                                            if (!user) {
-                                                onOpen();
-                                                return;
-                                            }
-                                        }}
-
                                         onChange={handleChange}
                                         className="w-full text-right"
                                     />
                                 </td>
                             </tr>
                             <tr>
-                                <td>
-                                    Primary Insurance Amount
-                                    <span
-                                        onMouseEnter={handleMouseEnter}
-                                        onMouseLeave={handleMouseLeave}
-                                        style={{ cursor: 'pointer' }}
-                                    >
-                                         &#9432;
-                                    </span>
-
-                                </td>
+                                <td
+                                    onMouseEnter={handleMouseEnter}
+                                    onMouseLeave={handleMouseLeave}
+                                >Primary Insurance Amount:</td>
                                 <td className="text-right pr-4 p-5">
-                                    <div className="flex items-center">
-                                        <span>$</span>
-                                        <input
-                                            type="number"
-                                            name="hPIA"
-                                            value={inputs.hPIA}
-                                            onClick={() => {
-                                                if (!user) {
-                                                    onOpen();
-                                                    return;
-                                                }
-                                            }}
-                                            onChange={handleChange}
-                                            className="w-full text-right"
-                                        />
-                                    </div>
+                                    <input
+                                        type="number"
+                                        name="hPIA"
+                                        value={inputs.hPIA}
+                                        onChange={handleChange}
+                                        className="w-full text-right"
+                                    />
                                 </td>
                                 <td className="text-right p-5">
-                                    <div className="flex items-center">
-                                        <span>$</span>
-                                        <input
-                                            type="number"
-                                            name="wPIA"
-                                            value={inputs.wPIA}
-                                            onClick={() => {
-                                                if (!user) {
-                                                    onOpen();
-                                                    return;
-                                                }
-                                            }}
-                                            onChange={handleChange}
-                                            className="w-full text-right"
-                                        />
-                                    </div>
+                                    <input
+                                        type="number"
+                                        name="wPIA"
+                                        value={inputs.wPIA}
+                                        onChange={handleChange}
+                                        className="w-full text-right"
+                                    />
                                 </td>
                             </tr>
+                            <PiaModal
+                                isOpen={isModalOpen}
+                                onChange={setIsModalOpen}
+                                title="Primary Insurance Amount"
+                                description="This is the monthly amount you would receive if you started collecting Social Security at your full retirement age."
+                            />
+
                             </tbody>
                         </table>
-                        <PiaModal
-                            isOpen={isModalOpen}
-                            onChange={setIsModalOpen}
-                            title="Primary Insurance Amount"
-                            description="This is the monthly amount you would receive if you started collecting Social Security at your full retirement age."
-                            position={modalPosition}
-                        />
                     </div>
                 </div>
             </div>
 
-            <div className="outputs-container bg-white border-gray-600 p-4 rounded w-full mt-4 border-gray-400">
+            <div className="outputs-container bg-[#f8f5f0] p-4 rounded w-full mt-4">
                 <div className="total-collected mb-6">
 
 

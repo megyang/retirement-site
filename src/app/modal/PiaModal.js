@@ -3,14 +3,18 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { IoMdClose } from 'react-icons/io';
 
 const PiaModal = ({ isOpen, onChange, title, description, position }) => {
+    // Set default values if position is undefined
+    const defaultPosition = { top: 0, left: 0 };
+    const pos = position || defaultPosition;
+
     return (
         <Dialog.Root open={isOpen} onOpenChange={onChange}>
             <Dialog.Portal>
                 <Dialog.Content
                     style={{
                         position: 'absolute',
-                        top: `${position.top}px`,
-                        left: `${position.left}px`,
+                        top: `${pos.top}px`,
+                        left: `${pos.left}px`,
                         backgroundColor: 'rgba(255, 255, 255, 1)',
                         width: '200px',
                         padding: '10px',
