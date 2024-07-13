@@ -44,7 +44,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     };
     const debouncedSaveVersion = debounce(() => {
         saveVersion(selectedVersion);
-    }, 500);
+    }, 10);
 
     const autoSaveToDatabase = async (year, fields) => {
         if (!user) {
@@ -351,7 +351,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     const debouncedSaveAndAutoSave = debounce((year, field, value) => {
         saveVersion(selectedVersion);
         autoSaveToDatabase(year, { ...editableFields[year], [field]: value });
-    }, 500);
+    }, 10);
 
     useEffect(() => {
         return () => {
