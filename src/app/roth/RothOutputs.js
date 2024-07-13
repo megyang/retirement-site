@@ -220,9 +220,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             console.error('saveVersion: Error saving data to Supabase:', error);
         } else {
             console.log('Data successfully saved to Supabase.');
-            console.log(dataToSave);
-            console.log(inputs1.beneficiary_tax_rate);
-            await fetchSavedVersions();  // Ensure versions are fetched after saving
+            await fetchSavedVersions();
         }
     };
 
@@ -277,6 +275,8 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             .select('*')
             .eq('user_id', user.id)
             .eq('version_name', version.name);
+        console.log(user.id);
+        console.log(version.name);
 
         if (error) {
             console.error('Error loading version from Supabase:', error);

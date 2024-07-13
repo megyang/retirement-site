@@ -26,7 +26,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
                 debouncedSaveInputs.cancel();
             };
         }, []);
-    */}
+
 
     const saveInputsToDatabase = async () => {
         if (!user) {
@@ -47,7 +47,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
             roi: inputs.roi,
             updated_at: new Date().toISOString(),
         };
-
+        console.log("this is dataToSave", dataToSave);
         const { error } = await supabaseClient
             .from('social_security_inputs')
             .upsert([dataToSave], { onConflict: ['user_id'] });
@@ -58,7 +58,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
             console.log('Data successfully saved to Supabase.');
         }
     };
-
+*/}
     const loadInputsFromDatabase = async () => {
         if (!user) {
             console.error('User is not logged in');
@@ -86,16 +86,51 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
         }
     }, [user]);
 
-    const handleChange = async (e) => {
+    useEffect(() => {
+        if (!user) {
+            console.error('User is not logged in');
+            return;
+        }
+
+        const dataToSave = {
+            user_id: user.id,
+            husbandAge: inputs.husbandAge,
+            wifeAge: inputs.wifeAge,
+            hLE: inputs.hLE,
+            wLE: inputs.wLE,
+            hPIA: inputs.hPIA,
+            wPIA: inputs.wPIA,
+            hSS: inputs.hSS,
+            wSS: inputs.wSS,
+            roi: inputs.roi,
+            updated_at: new Date().toISOString(),
+        };
+
+        const saveData = async () => {
+            const { error } = await supabaseClient
+                .from('social_security_inputs')
+                .upsert([dataToSave], { onConflict: ['user_id'] });
+
+            if (error) {
+                console.error('Error saving data to Supabase:', error);
+            } else {
+                console.log('Data successfully saved to Supabase.');
+            }
+        };
+
+        saveData();
+    }, [inputs, user]);
+
+    const handleChange = (e) => {
         if (!user) {
             onOpen();
             return;
         }
         const { name, value } = e.target;
-        if (value !== inputs[name]) {
-            onInputChange(name, value);
-            await saveInputsToDatabase();
-        }
+        setInputs(prevInputs => ({
+            ...prevInputs,
+            [name]: parseFloat(value)
+        }));
     };
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -117,6 +152,8 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
         }, 1500);
         setCloseModalTimeout(timeoutId);
     };
+
+
     useEffect(() => {
         return () => {
             if (closeModalTimeout) {
@@ -124,6 +161,8 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
             }
         };
     }, [closeModalTimeout]);
+
+
 
     // Reference table
     const { refTable, benefitsBasedOnAge } = useReferenceTable(inputs);
@@ -208,6 +247,11 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
         setTableData(newTableData);
         setSocialSecurityBenefits(newTableData);
 
+
+
+
+
+
         // Calculate NPV
         const roi = inputs.roi / 100;
         const cashFlows = newTableData.map(({ totalBenefit }) => new Decimal(totalBenefit));
@@ -221,6 +265,9 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
         const yearArray = newTableData.map(({ year }) => year.toString());
         const husbandBenefitArray = newTableData.map(({ husbandBenefit }) => parseInt(husbandBenefit));
         const wifeBenefitArray = newTableData.map(({ wifeBenefit }) => parseInt(wifeBenefit));
+
+
+
 
         setUserData({
             labels: yearArray,
@@ -295,13 +342,12 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
         },
     };
 
-    //console.log(refTable);
     return (
         <div>
             <div className="flex w-full h-auto">
                 <div className="left-column flex flex-col gap-5 mr-5 w-1/2 h-auto flex-grow">
 
-                    <div className="rectangle small-rectangle bg-[#f8f5f0] rounded-lg w-150 h-250 p-5">
+                    <div className="rectangle small-rectangle bg-white rounded-lg w-150 h-250 p-5">
                         <h2 className="text-lg text-center mb-4">Collection Age</h2>
                         <div className="inputs-container ">
                             <table className="table-auto w-full">
@@ -398,7 +444,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
                             </table>
                         </div>
                     </div>
-                    <div className="rectangle small-rectangle bg-[#f8f5f0] rounded-lg w-full h-auto p-5">
+                    <div className="rectangle small-rectangle bg-white rounded-lg w-full h-auto p-5">
                         <h3 className="font-lg text-center">Total Social Security Collected</h3>
                         <h1 className="text-5xl text-center font-extrabold">
                             ${Number(totalCash.toFixed(0)).toLocaleString()}
@@ -406,7 +452,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
                     </div>
                 </div>
                 <div className="right-column flex flex-col w-1/2 h-auto flex-grow">
-                    <div className="rectangle large-rectangle bg-[#f8f5f0] rounded-lg w-full h-full p-5">
+                    <div className="rectangle large-rectangle bg-white rounded-lg w-full h-full p-5">
                         <h2 className="text-xl mb-4 text-center">Your Information</h2>
                         <table className="table-auto w-full">
                             <thead>
@@ -497,7 +543,7 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
                 </div>
             </div>
 
-            <div className="outputs-container bg-[#f8f5f0] p-4 rounded w-full mt-4">
+            <div className="outputs-container bg-white p-4 rounded w-full mt-4">
                 <div className="total-collected mb-6">
 
 
