@@ -14,6 +14,49 @@ const RothConversionCalculator = () => {
         inflation: 2.0,
         beneficiary_tax_rate: 0.24
     });
+    const [isUserInitiated, setIsUserInitiated] = useState(false);
+    const handleInputChange = (e) => {
+        setIsUserInitiated(true);
+        const { name, value } = e.target;
+        setInputs1(prevInputs => ({
+            ...prevInputs,
+            [name]: parseFloat(value),
+        }));
+    };
+
+    useEffect(() => {
+        if (isUserInitiated) {
+            const saveData = async () => {
+                const { user } = useUser();
+                if (!user) {
+                    console.error('User is not logged in');
+                    return;
+                }
+                const dataToSave = {
+                    user_id: user.id,
+                    ira1: inputs1.ira1,
+                    ira2: inputs1.ira2,
+                    roi: inputs1.roi,
+                    inflation: inputs1.inflation,
+                    beneficiary_tax_rate: inputs1.beneficiary_tax_rate,
+                    updated_at: new Date().toISOString(),
+                };
+
+                const { error } = await supabaseClient
+                    .from('roth_conversion_inputs')
+                    .upsert([dataToSave], { onConflict: ['user_id'] });
+
+                if (error) {
+                    console.error('Error saving data to Supabase:', error);
+                } else {
+                    console.log('Data successfully saved to Supabase.');
+                }
+            };
+            saveData();
+            setIsUserInitiated(false); // Reset user-initiated flag
+        }
+    }, [inputs1, isUserInitiated]); // Add isUserInitiated to the dependency array
+
     const [editableFields, setEditableFields] = useState({});
     const [staticFields, setStaticFields] = useState({});
 

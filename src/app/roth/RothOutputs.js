@@ -86,8 +86,8 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     };
 
     useEffect(() => {
-        console.log("Husband's Age: ", socialSecurityInputs.husbandAge, socialSecurityInputs.hSS, socialSecurityInputs.hPIA, socialSecurityInputs.hLE);
-        console.log("Wife's Age: ", socialSecurityInputs.wifeAge, socialSecurityInputs.wSS, socialSecurityInputs.wPIA, socialSecurityInputs.wLE);
+        console.log("Husband's Age: ", inputs.husbandAge, inputs.hSS, inputs.hPIA, socialSecurityInputs.hLE);
+        console.log("Wife's Age: ", inputs.wifeAge, socialSecurityInputs.wSS, socialSecurityInputs.wPIA, socialSecurityInputs.wLE);
     })
 
     const findRmdByYear = (details, year) => {
