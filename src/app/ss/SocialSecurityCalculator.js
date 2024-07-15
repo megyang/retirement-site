@@ -8,10 +8,6 @@ const SocialSecurityCalculator = () => {
     const { socialSecurityInputs, setSocialSecurityInputs } = useStore();
     const [inputs, setInputs] = useState(socialSecurityInputs);
 
-    useEffect(() => {
-        setInputs(socialSecurityInputs);
-    }, [socialSecurityInputs]);
-
     const handleInputChange = (name, value) => {
         const newInputs = {
             ...inputs,
