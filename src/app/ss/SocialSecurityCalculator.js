@@ -21,7 +21,7 @@ const SocialSecurityCalculator = () => {
         <div className="mx-auto">
             <div>
                 <MyUserContextProvider>
-                    <SocialSecurityOutput inputs={inputs} onInputChange={handleInputChange} setInputs={setInputs}/>
+                    <SocialSecurityOutput inputs={inputs} onInputChange={handleInputChange} setInputs={setInputs} setSocialSecurityInputs={setSocialSecurityInputs}/>
                 </MyUserContextProvider>
             </div>
         </div>

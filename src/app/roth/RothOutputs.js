@@ -15,7 +15,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
     const { refTable, benefitsBasedOnAge } = useReferenceTable(inputs);
-    const { socialSecurityBenefits } = useStore();
+    const { socialSecurityInputs, socialSecurityBenefits } = useStore();
     const { onOpen } = useAuthModal();
 
     const [versionData, setVersionData] = useState([]);
@@ -85,6 +85,11 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         }
     };
 
+    useEffect(() => {
+        console.log("Husband's Age: ", socialSecurityInputs.husbandAge, socialSecurityInputs.hSS, socialSecurityInputs.hPIA, socialSecurityInputs.hLE);
+        console.log("Wife's Age: ", socialSecurityInputs.wifeAge, socialSecurityInputs.wSS, socialSecurityInputs.wPIA, socialSecurityInputs.wLE);
+    })
+
     const findRmdByYear = (details, year) => {
         const detail = details.find((detail) => detail.year === year);
         return detail ? detail.rmd : "0.00";
@@ -134,6 +139,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             ageSpouse2: ageSpouse2,
         };
     }
+
 
     // save, load, and delete functions
     const saveVersion = async (versionName) => {

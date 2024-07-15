@@ -10,7 +10,7 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
 import useAuthModal from "@/app/hooks/useAuthModal";
 
-const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
+const SocialSecurityOutput = ({ inputs, onInputChange, setInputs, setSocialSecurityInputs }) => {
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
     const { onOpen } = useAuthModal();
@@ -127,10 +127,12 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs }) => {
             return;
         }
         const { name, value } = e.target;
-        setInputs(prevInputs => ({
-            ...prevInputs,
+        const newInputs = {
+            ...inputs,
             [name]: parseFloat(value)
-        }));
+        };
+        setInputs(newInputs);
+        setSocialSecurityInputs(newInputs);
     };
 
     const [isModalOpen, setIsModalOpen] = useState(false);
