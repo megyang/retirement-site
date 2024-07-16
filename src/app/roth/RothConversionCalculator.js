@@ -14,26 +14,8 @@ const RothConversionCalculator = () => {
         inflation: 2.0,
         beneficiary_tax_rate: 0.24
     });
-    const [editableFields, setEditableFields] = useState(() => {
-        const savedEditableFields = localStorage.getItem('financialPlanDetailsEditableFields');
-        return savedEditableFields ? JSON.parse(savedEditableFields) : {};
-    });
-    const [staticFields, setStaticFields] = useState(() => {
-        const savedStaticFields = localStorage.getItem('financialPlanDetailsStaticFields');
-        return savedStaticFields ? JSON.parse(savedStaticFields) : {};
-    });
-
-    useEffect(() => {
-        localStorage.setItem('financialPlanDetailsInputs1', JSON.stringify(inputs1));
-    }, [inputs1]);
-
-    useEffect(() => {
-        localStorage.setItem('financialPlanDetailsEditableFields', JSON.stringify(editableFields));
-    }, [editableFields]);
-
-    useEffect(() => {
-        localStorage.setItem('financialPlanDetailsStaticFields', JSON.stringify(staticFields));
-    }, [staticFields]);
+    const [editableFields, setEditableFields] = useState({});
+    const [staticFields, setStaticFields] = useState({});
 
     useEffect(() => {
         setInputs(socialSecurityInputs);
