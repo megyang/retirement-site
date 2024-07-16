@@ -5,7 +5,6 @@ import useReferenceTable from "../hooks/useReferenceTable";
 import useStore from "@/app/store/useStore";
 import { calculateBenefitForYear, calculateXNPV } from "../utils/calculations";
 import PiaModal from "@/app/modal/PiaModal";
-import { debounce } from 'lodash';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
 import useAuthModal from "@/app/hooks/useAuthModal";
@@ -14,6 +13,47 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs, setSocialSecur
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
     const { onOpen } = useAuthModal();
+    const [isUserInitiated, setIsUserInitiated] = useState(false);
+
+    useEffect(() => {
+        if (isUserInitiated) {
+
+            const saveData = async () => {
+                if (!user) {
+                    console.error('User is not logged in');
+                    return;
+                }
+                const dataToSave = {
+                    user_id: user.id,
+                    husbandAge: inputs.husbandAge,
+                    wifeAge: inputs.wifeAge,
+                    hLE: inputs.hLE,
+                    wLE: inputs.wLE,
+                    hPIA: inputs.hPIA,
+                    wPIA: inputs.wPIA,
+                    hSS: inputs.hSS,
+                    wSS: inputs.wSS,
+                    roi: inputs.roi,
+                    updated_at: new Date().toISOString(),
+                };
+
+                const { error } = await supabaseClient
+                    .from('social_security_inputs')
+                    .upsert([dataToSave], { onConflict: ['user_id'] });
+
+                if (error) {
+                    console.error('Error saving data to Supabase:', error);
+                } else {
+                    console.log('Data successfully saved to Supabase.');
+                }
+            };
+            saveData();
+            console.log("this is user initiated");
+            setIsUserInitiated(false);
+        }
+    }, [inputs, isUserInitiated]);
+
+
 
     {/*
         const debouncedSaveInputs = debounce(async () => {
