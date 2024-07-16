@@ -262,6 +262,46 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 ...uniqueVersions.filter(version => !defaultScenarios.includes(version.name))
             ];
 
+            // Initialize default scenarios if they don't exist
+            defaultScenarios.forEach(async (scenario) => {
+                if (!sortedVersions.find(version => version.name === scenario)) {
+                    const dataToSave = [];
+                    for (let year = currentYear; year <= currentYear + (maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge)); year++) {
+                        dataToSave.push({
+                            user_id: user.id,
+                            version_name: scenario,
+                            year: year,
+                            rental_income: 0,
+                            capital_gains: 0,
+                            pension: 0,
+                            roth_1: 0,
+                            roth_2: 0,
+                            salary1: 0,
+                            salary2: 0,
+                            interest: 0,
+                            age1: inputs.husbandAge,
+                            age2: inputs.wifeAge,
+                            ira1: inputs1.ira1,
+                            ira2: inputs1.ira2,
+                            roi: inputs1.roi,
+                            inflation: inputs1.inflation,
+                            lifetime_tax: 0,
+                            beneficiary_tax: 0,
+                            lifetime0: 0,
+                            beneficiary0: 0,
+                            beneficiary_tax_rate: inputs1.beneficiary_tax_rate
+                        });
+                    }
+
+                    const { error } = await supabaseClient.from('roth').upsert(dataToSave, { onConflict: ['user_id', 'version_name', 'year'] });
+                    if (error) {
+                        console.error(`Error initializing ${scenario}:`, error);
+                    } else {
+                        console.log(`${scenario} initialized with default values.`);
+                    }
+                }
+            });
+
             setSavedVersions(sortedVersions.map(version => ({ name: version.name })));
             setVersionData(sortedVersions);
             if (sortedVersions.length > 0 && !sortedVersions.find(v => v.name === selectedVersion)) {
@@ -269,6 +309,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             }
         }
     };
+
 
     const loadVersion = async (version) => {
         if (!user) {
