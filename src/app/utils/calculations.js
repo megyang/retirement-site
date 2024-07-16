@@ -71,3 +71,54 @@ export const calculateRMD = (age, startingValue) => {
     const distributionPeriod = rmdDistributionTable[age];
     return distributionPeriod ? new Decimal(startingValue).dividedBy(distributionPeriod) : new Decimal(0);
 };
+export const findRmdByYear = (details, year) => {
+    const detail = details.find((detail) => detail.year === year);
+    return detail ? detail.rmd : "0.00";
+};
+export const findSsBenefitsByYear = (socialSecurityBenefits, year) => {
+    const benefitsForYear = Array.isArray(socialSecurityBenefits)
+        ? socialSecurityBenefits.find(data => data.year === year)
+        : null;
+    return {
+        spouse1Benefit: benefitsForYear ? benefitsForYear.husbandBenefit : "0.00",
+        spouse2Benefit: benefitsForYear ? benefitsForYear.wifeBenefit : "0.00",
+    };
+};
+
+export const calculateTaxesForBrackets = (taxableIncome) => {
+    const brackets = [
+        { threshold: 23200, rate: 0.10 },
+        { threshold: 94300, rate: 0.12 },
+        { threshold: 201050, rate: 0.22 },
+        { threshold: 383900, rate: 0.24 },
+        { threshold: 487450, rate: 0.32 },
+        { threshold: 731200, rate: 0.35 },
+        { threshold: Infinity, rate: 0.37 }
+    ];
+
+    let taxesForBrackets = {
+        '10%': 0,
+        '12%': 0,
+        '22%': 0,
+        '24%': 0,
+        '32%': 0,
+        '35%': 0,
+        '37%': 0
+    };
+
+    let remainingIncome = taxableIncome;
+    brackets.forEach((bracket, index) => {
+        if (index === 0) {
+            const amountInBracket = Math.min(remainingIncome, bracket.threshold);
+            taxesForBrackets['10%'] = amountInBracket * bracket.rate;
+            remainingIncome -= amountInBracket;
+        } else {
+            const prevThreshold = brackets[index - 1].threshold;
+            const amountInBracket = Math.min(remainingIncome, bracket.threshold - prevThreshold);
+            taxesForBrackets[`${bracket.rate * 100}%`] = amountInBracket * bracket.rate;
+            remainingIncome -= amountInBracket;
+        }
+    });
+
+    return taxesForBrackets;
+};

@@ -2,129 +2,17 @@ import React, { useEffect, useState } from "react";
 import Decimal from "decimal.js";
 import BarChart from "../components/BarChart";
 import useReferenceTable from "../hooks/useReferenceTable";
-import useStore from "@/app/store/useStore";
+import useSocialSecurityStore from "@/app/store/useSocialSecurityStore";
 import { calculateBenefitForYear, calculateXNPV } from "../utils/calculations";
 import PiaModal from "@/app/modal/PiaModal";
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
 import useAuthModal from "@/app/hooks/useAuthModal";
 
-const SocialSecurityOutput = ({ inputs, onInputChange, setInputs, setSocialSecurityInputs }) => {
+const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) => {
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
     const { onOpen } = useAuthModal();
-    const [isUserInitiated, setIsUserInitiated] = useState(false);
-
-    useEffect(() => {
-        if (isUserInitiated) {
-
-            const saveData = async () => {
-                if (!user) {
-                    console.error('User is not logged in');
-                    return;
-                }
-                const dataToSave = {
-                    user_id: user.id,
-                    husbandAge: inputs.husbandAge,
-                    wifeAge: inputs.wifeAge,
-                    hLE: inputs.hLE,
-                    wLE: inputs.wLE,
-                    hPIA: inputs.hPIA,
-                    wPIA: inputs.wPIA,
-                    hSS: inputs.hSS,
-                    wSS: inputs.wSS,
-                    roi: inputs.roi,
-                    updated_at: new Date().toISOString(),
-                };
-
-                const { error } = await supabaseClient
-                    .from('social_security_inputs')
-                    .upsert([dataToSave], { onConflict: ['user_id'] });
-
-                if (error) {
-                    console.error('Error saving data to Supabase:', error);
-                } else {
-                    console.log('Data successfully saved to Supabase.');
-                }
-            };
-            saveData();
-            console.log("this is user initiated");
-            setIsUserInitiated(false);
-        }
-    }, [inputs, isUserInitiated]);
-
-
-
-    {/*
-        const debouncedSaveInputs = debounce(async () => {
-            await saveInputsToDatabase();
-        }, 100);
-
-
-        useEffect(() => {
-            return () => {
-                debouncedSaveInputs.cancel();
-            };
-        }, []);
-
-
-    const saveInputsToDatabase = async () => {
-        if (!user) {
-            console.error('User is not logged in');
-            return;
-        }
-
-        const dataToSave = {
-            user_id: user.id,
-            husbandAge: inputs.husbandAge,
-            wifeAge: inputs.wifeAge,
-            hLE: inputs.hLE,
-            wLE: inputs.wLE,
-            hPIA: inputs.hPIA,
-            wPIA: inputs.wPIA,
-            hSS: inputs.hSS,
-            wSS: inputs.wSS,
-            roi: inputs.roi,
-            updated_at: new Date().toISOString(),
-        };
-        console.log("this is dataToSave", dataToSave);
-        const { error } = await supabaseClient
-            .from('social_security_inputs')
-            .upsert([dataToSave], { onConflict: ['user_id'] });
-
-        if (error) {
-            console.error('Error saving data to Supabase:', error);
-        } else {
-            console.log('Data successfully saved to Supabase.');
-        }
-    };
-*/}
-    const loadInputsFromDatabase = async () => {
-        if (!user) {
-            console.error('User is not logged in');
-            return;
-        }
-
-        const { data, error } = await supabaseClient
-            .from('social_security_inputs')
-            .select('*')
-            .eq('user_id', user.id);
-
-        if (error) {
-            console.error('Error loading data from Supabase:', error);
-        } else {
-            console.log('Data successfully loaded from Supabase:', data);
-            if (data && data[0]) {
-                setInputs(data[0]);
-            }
-        }
-    };
-
-    useEffect(() => {
-        if (user) {
-            loadInputsFromDatabase();
-        }
-    }, [user]);
 
     useEffect(() => {
         if (!user) {
@@ -204,11 +92,9 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs, setSocialSecur
         };
     }, [closeModalTimeout]);
 
-
-
     // Reference table
     const { refTable, benefitsBasedOnAge } = useReferenceTable(inputs);
-    const { setSocialSecurityBenefits } = useStore();
+    const { setSocialSecurityBenefits } = useSocialSecurityStore();
 
     // Social security benefits
     const currentYear = new Date().getFullYear();
@@ -291,9 +177,6 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs, setSocialSecur
 
 
 
-
-
-
         // Calculate NPV
         const roi = inputs.roi / 100;
         const cashFlows = newTableData.map(({ totalBenefit }) => new Decimal(totalBenefit));
@@ -307,9 +190,6 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs, setSocialSecur
         const yearArray = newTableData.map(({ year }) => year.toString());
         const husbandBenefitArray = newTableData.map(({ husbandBenefit }) => parseInt(husbandBenefit));
         const wifeBenefitArray = newTableData.map(({ wifeBenefit }) => parseInt(wifeBenefit));
-
-
-
 
         setUserData({
             labels: yearArray,
@@ -344,6 +224,8 @@ const SocialSecurityOutput = ({ inputs, onInputChange, setInputs, setSocialSecur
         benefitsBasedOnAge.wifeYearly,
         setSocialSecurityBenefits
     ]);
+
+
 
     const benefitChartOptions = {
         tooltips: {

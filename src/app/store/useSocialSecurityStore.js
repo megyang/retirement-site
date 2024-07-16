@@ -1,6 +1,7 @@
 import create from 'zustand';
+import { persist } from 'zustand/middleware';
 
-const useStore = create(set => ({
+const useSocialSecurityStore = create(persist((set) => ({
   socialSecurityInputs: {
     husbandAge: 62,
     wifeAge: 60,
@@ -13,9 +14,12 @@ const useStore = create(set => ({
     roi: 2,
   },
   setSocialSecurityInputs: (inputs) => set({ socialSecurityInputs: inputs }),
-  
+
   socialSecurityBenefits: {},
   setSocialSecurityBenefits: (benefits) => set({ socialSecurityBenefits: benefits }),
+}), {
+  name: "socialSecurityStore",
+  getStorage: () => localStorage
 }));
 
-export default useStore;
+export default useSocialSecurityStore;

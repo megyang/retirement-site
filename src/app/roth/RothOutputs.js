@@ -3,19 +3,19 @@ import React, {useEffect, useState} from 'react';
 import Decimal from 'decimal.js';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
-import useStore from "@/app/store/useStore";
+import useSocialSecurityStore from "@/app/store/useSocialSecurityStore";
 import BarChart from "@/app/components/BarChart";
 import useRmdCalculations from "@/app/hooks/useRmdCalculations";
 import useReferenceTable from "@/app/hooks/useReferenceTable";
-import {calculateXNPV} from "@/app/utils/calculations";
+import {calculateTaxesForBrackets, calculateXNPV, findRmdByYear, findSsBenefitsByYear} from "@/app/utils/calculations";
 import { debounce } from 'lodash';
 import useAuthModal from "@/app/hooks/useAuthModal";
 
 const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
-    const { refTable, benefitsBasedOnAge } = useReferenceTable(inputs);
-    const { socialSecurityInputs, socialSecurityBenefits } = useStore();
+    const { benefitsBasedOnAge } = useReferenceTable(inputs);
+    const { socialSecurityBenefits } = useSocialSecurityStore();
     const { onOpen } = useAuthModal();
 
     const [versionData, setVersionData] = useState([]);
@@ -42,6 +42,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             return updatedInputs;
         });
     };
+
     const debouncedSaveVersion = debounce(() => {
         saveVersion(selectedVersion);
     }, 10);
@@ -81,28 +82,11 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         if (error) {
             console.error('Error saving data to Supabase:', error);
         } else {
-            console.log('Data being saved to the database:', dataToSave);
+            console.log('Data being saved to the 000database:', dataToSave);
         }
     };
 
-    useEffect(() => {
-        console.log("Husband's Age: ", inputs.husbandAge, inputs.hSS, inputs.hPIA, socialSecurityInputs.hLE);
-        console.log("Wife's Age: ", inputs.wifeAge, socialSecurityInputs.wSS, socialSecurityInputs.wPIA, socialSecurityInputs.wLE);
-    })
 
-    const findRmdByYear = (details, year) => {
-        const detail = details.find((detail) => detail.year === year);
-        return detail ? detail.rmd : "0.00";
-    };
-    const findSsBenefitsByYear = (year) => {
-        const benefitsForYear = Array.isArray(socialSecurityBenefits)
-            ? socialSecurityBenefits.find(data => data.year === year)
-            : null;
-        return {
-            spouse1Benefit: benefitsForYear ? benefitsForYear.husbandBenefit : "0.00",
-            spouse2Benefit: benefitsForYear ? benefitsForYear.wifeBenefit : "0.00",
-        };
-    };
 
     const { ira1, ira2, roi } = inputs1;
     const age1 = inputs.husbandAge;
@@ -142,6 +126,61 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
 
     // save, load, and delete functions
+    const loadVersion = async (version) => {
+        if (!user) {
+            console.error('User is not logged in');
+            return;
+        }
+
+        const { data, error } = await supabaseClient
+            .from('roth')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('version_name', version.name);
+        console.log(user.id);
+        console.log(version.name);
+
+        if (error) {
+            console.error('Error loading version from Supabase:', error);
+        } else {
+            const loadedEditableFields = {};
+            let loadedInputs1 = {
+                age1: 0,
+                age2: 0,
+                ira1: 0,
+                ira2: 0,
+                roi: 0,
+                inflation: 0,
+                beneficiary_tax_rate: 0
+            };
+
+            data.forEach(item => {
+                loadedEditableFields[item.year] = {
+                    rothSpouse1: item.roth_1,
+                    rothSpouse2: item.roth_2,
+                    salary1: item.salary1,
+                    salary2: item.salary2,
+                    rentalIncome: item.rental_income,
+                    interest: item.interest,
+                    capitalGains: item.capital_gains,
+                    pension: item.pension
+                };
+
+                loadedInputs1 = {
+                    ira1: item.ira1,
+                    ira2: item.ira2,
+                    roi: item.roi,
+                    inflation: item.inflation,
+                    beneficiary_tax_rate: item.beneficiary_tax_rate
+                };
+
+            });
+
+            setEditableFields(loadedEditableFields);
+            setInputs1(loadedInputs1);
+        }
+    };
+
     const saveVersion = async (versionName) => {
         if (!user) {
             console.error('User is not logged in');
@@ -156,7 +195,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         });
 
         const calculateTotalIncomeForYearWithZeroRoth = (year, editableFieldsWithZeroRoth) => {
-            const ssBenefits = findSsBenefitsByYear(parseInt(year));
+            const ssBenefits = findSsBenefitsByYear(socialSecurityBenefits, parseInt(year));
             const editableFieldsForYear = editableFieldsWithZeroRoth[year];
             const rmdSpouse1 = findRmdByYear(iraDetails.spouse1, parseInt(year));
             const rmdSpouse2 = findRmdByYear(iraDetails.spouse2, parseInt(year));
@@ -310,63 +349,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         }
     };
 
-
-    const loadVersion = async (version) => {
-        if (!user) {
-            console.error('User is not logged in');
-            return;
-        }
-
-        const { data, error } = await supabaseClient
-            .from('roth')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('version_name', version.name);
-        console.log(user.id);
-        console.log(version.name);
-
-        if (error) {
-            console.error('Error loading version from Supabase:', error);
-        } else {
-            const loadedEditableFields = {};
-            let loadedInputs1 = {
-                age1: 0,
-                age2: 0,
-                ira1: 0,
-                ira2: 0,
-                roi: 0,
-                inflation: 0,
-                beneficiary_tax_rate: 0
-            };
-            //let loadedBeneficiaryTaxRate = 0.24;
-
-            data.forEach(item => {
-                loadedEditableFields[item.year] = {
-                    rothSpouse1: item.roth_1,
-                    rothSpouse2: item.roth_2,
-                    salary1: item.salary1,
-                    salary2: item.salary2,
-                    rentalIncome: item.rental_income,
-                    interest: item.interest,
-                    capitalGains: item.capital_gains,
-                    pension: item.pension
-                };
-
-                loadedInputs1 = {
-                    ira1: item.ira1,
-                    ira2: item.ira2,
-                    roi: item.roi,
-                    inflation: item.inflation,
-                    beneficiary_tax_rate: item.beneficiary_tax_rate
-                };
-
-            });
-
-            setEditableFields(loadedEditableFields);
-            setInputs1(loadedInputs1);
-            //setBeneficiaryTaxRate(loadedBeneficiaryTaxRate);
-        }
-    };
 
     useEffect(() => {
         if (user) {
@@ -643,43 +625,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
     //ordinary income tax calc -------
     const bracketTitles = ['10%', '12%', '22%', '24%', '32%', '35%', '37%'];
-    const calculateTaxesForBrackets = (taxableIncome) => {
-        const brackets = [
-            { threshold: 23200, rate: 0.10 },
-            { threshold: 94300, rate: 0.12 },
-            { threshold: 201050, rate: 0.22 },
-            { threshold: 383900, rate: 0.24 },
-            { threshold: 487450, rate: 0.32 },
-            { threshold: 731200, rate: 0.35 },
-            { threshold: Infinity, rate: 0.37 }
-        ];
-
-        let taxesForBrackets = {
-            '10%': 0,
-            '12%': 0,
-            '22%': 0,
-            '24%': 0,
-            '32%': 0,
-            '35%': 0,
-            '37%': 0
-        };
-
-        let remainingIncome = taxableIncome;
-        brackets.forEach((bracket, index) => {
-            if (index === 0) {
-                const amountInBracket = Math.min(remainingIncome, bracket.threshold);
-                taxesForBrackets['10%'] = amountInBracket * bracket.rate;
-                remainingIncome -= amountInBracket;
-            } else {
-                const prevThreshold = brackets[index - 1].threshold;
-                const amountInBracket = Math.min(remainingIncome, bracket.threshold - prevThreshold);
-                taxesForBrackets[`${bracket.rate * 100}%`] = amountInBracket * bracket.rate;
-                remainingIncome -= amountInBracket;
-            }
-        });
-
-        return taxesForBrackets;
-    };
 
     return (
         <div className="max-w-4xl mx-auto">
