@@ -25,7 +25,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         { name: "Scenario 3" }
     ]);
 
-    const [selectedVersion, setSelectedVersion] = useState("Scenario 1");
+    const [selectedVersion, setSelectedVersion] = useState("Select a scenario");
 
     const handleInputChange = (e) => {
         if (!user) {
@@ -295,59 +295,17 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                     };
                 });
 
-            const defaultScenarios = ["Scenario 1", "Scenario 2", "Scenario 3"];
+            const defaultScenarios = ["Select a scenario","Scenario 1", "Scenario 2", "Scenario 3"];
             const sortedVersions = [
                 ...defaultScenarios.map(scenario => uniqueVersions.find(version => version.name === scenario)).filter(Boolean),
                 ...uniqueVersions.filter(version => !defaultScenarios.includes(version.name))
             ];
 
-            // Initialize default scenarios if they don't exist
-            defaultScenarios.forEach(async (scenario) => {
-                if (!sortedVersions.find(version => version.name === scenario)) {
-                    const dataToSave = [];
-                    for (let year = currentYear; year <= currentYear + (maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge)); year++) {
-                        dataToSave.push({
-                            user_id: user.id,
-                            version_name: scenario,
-                            year: year,
-                            rental_income: 0,
-                            capital_gains: 0,
-                            pension: 0,
-                            roth_1: 0,
-                            roth_2: 0,
-                            salary1: 0,
-                            salary2: 0,
-                            interest: 0,
-                            age1: inputs.husbandAge,
-                            age2: inputs.wifeAge,
-                            ira1: inputs1.ira1,
-                            ira2: inputs1.ira2,
-                            roi: inputs1.roi,
-                            inflation: inputs1.inflation,
-                            lifetime_tax: 0,
-                            beneficiary_tax: 0,
-                            lifetime0: 0,
-                            beneficiary0: 0,
-                            beneficiary_tax_rate: inputs1.beneficiary_tax_rate
-                        });
-                    }
-
-                    const { error } = await supabaseClient.from('roth').upsert(dataToSave, { onConflict: ['user_id', 'version_name', 'year'] });
-                    if (error) {
-                        console.error(`Error initializing ${scenario}:`, error);
-                    } else {
-                        console.log(`${scenario} initialized with default values.`);
-                    }
-                }
-            });
-
             setSavedVersions(sortedVersions.map(version => ({ name: version.name })));
             setVersionData(sortedVersions);
-            if (sortedVersions.length > 0 && !sortedVersions.find(v => v.name === selectedVersion)) {
-                setSelectedVersion(sortedVersions[0].name);
-            }
         }
     };
+
 
 
     useEffect(() => {
@@ -549,18 +507,18 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
 
     const chartData = {
-        labels: ["No Conversion", ...Array.from(new Set(versionData.map(item => item.name)))],
+        labels: ["No Conversion", ...versionData.filter(item => item.name !== "Select a scenario").map(item => item.name)],
         datasets: [
             {
                 label: 'Lifetime Tax Paid',
-                data: [versionData.length > 0 ? parseFloat(versionData[0].lifetime0) : 0, ...versionData.map(item => item.lifetime_tax)],
+                data: [versionData.length > 0 ? parseFloat(versionData[1].lifetime0) : 0, ...versionData.filter(item => item.name !== "Select a scenario").map(item => item.lifetime_tax)],
                 backgroundColor: 'rgba(173, 216, 230, 0.6)', // Light blue
                 borderColor: 'black',
                 borderWidth: 1,
             },
             {
                 label: 'Beneficiary Tax Paid',
-                data: [versionData.length > 0 ? parseFloat(versionData[0].beneficiary0) : 0, ...versionData.map(item => item.beneficiary_tax)],
+                data: [versionData.length > 0 ? parseFloat(versionData[1].beneficiary0) : 0, ...versionData.filter(item => item.name !== "Select a scenario").map(item => item.beneficiary_tax)],
                 backgroundColor: 'rgba(255, 182, 193, 0.6)', // Light pink
                 borderColor: 'black',
                 borderWidth: 1,
@@ -739,6 +697,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 </div>
             </div>
 
+            {selectedVersion !== "Select a scenario" && (
             <div className="scrollable-container mt-4 bg-white overflow-x-auto p-4 rounded">
                 <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
                 <table className="border-collapse border border-slate-400">
@@ -861,7 +820,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                     </tbody>
                 </table>
             </div>
-
+            )}
             {/*
                 <div className="totals-display"
                      style={{display: 'flex', justifyContent: 'space-around', marginTop: '20px', marginBottom: '20px'}}>
