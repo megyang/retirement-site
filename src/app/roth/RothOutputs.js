@@ -27,6 +27,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
     const [selectedVersion, setSelectedVersion] = useState("Select a scenario");
 
+
     const handleInputChange = (e) => {
         if (!user) {
             onOpen();
@@ -44,17 +45,13 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             onOpen();
             return;
         }
-
-        if (value.trim() === '' || isNaN(value)) {
-            alert('Please enter a valid number');
-            return;
-        }
+        const parsedValue = value === "" ? 0 : parseFloat(value);
 
         setEditableFields(prev => ({
             ...prev,
             [year]: {
                 ...prev[year],
-                [field]: parseFloat(value)
+                [field]: parsedValue
             }
         }));
     };
@@ -477,16 +474,16 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         labels: ["No Conversion", ...versionData.filter(item => item.name !== "Select a scenario").map(item => item.name)],
         datasets: [
             {
-                label: 'Lifetime Tax Paid',
+                label: 'Your Lifetime Taxes',
                 data: [versionData.length > 0 ? parseFloat(versionData[1].lifetime0) : 0, ...versionData.filter(item => item.name !== "Select a scenario").map(item => item.lifetime_tax)],
-                backgroundColor: 'rgba(173, 216, 230, 0.6)', // Light blue
+                backgroundColor: '#E2785B',
                 borderColor: 'black',
                 borderWidth: 1,
             },
             {
-                label: 'Beneficiary Tax Paid',
+                label: 'Beneficiary Lifetime Taxes',
                 data: [versionData.length > 0 ? parseFloat(versionData[1].beneficiary0) : 0, ...versionData.filter(item => item.name !== "Select a scenario").map(item => item.beneficiary_tax)],
-                backgroundColor: 'rgba(255, 182, 193, 0.6)', // Light pink
+                backgroundColor: '#AFBCB7',
                 borderColor: 'black',
                 borderWidth: 1,
             },
@@ -504,7 +501,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 },
             },
             legend: {
-                position: 'top',
+                position: 'bottom',
             },
         },
         scales: {
@@ -552,7 +549,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     const bracketTitles = ['10%', '12%', '22%', '24%', '32%', '35%', '37%'];
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div>
             <div className="flex-col">
                 <div className="bg-white p-4 rounded h-auto w-full">
                     <h3 className=" text-left text-2xl">
