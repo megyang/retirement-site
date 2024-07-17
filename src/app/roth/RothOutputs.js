@@ -38,14 +38,38 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 ...prevInputs,
                 [name]: parseFloat(value),
             };
-            debouncedSaveVersion();
             return updatedInputs;
         });
     };
 
-    const debouncedSaveVersion = debounce(() => {
-        saveVersion(selectedVersion);
-    }, 300);
+    const handleEditableFieldChange = (year, field, value) => {
+        if (!user) {
+            onOpen();
+            return;
+        }
+
+        if (value.trim() === '' || isNaN(value)) {
+            alert('Please enter a valid number');
+            return;
+        }
+
+        setEditableFields(prev => ({
+            ...prev,
+            [year]: {
+                ...prev[year],
+                [field]: parseFloat(value)
+            }
+        }));
+    };
+
+    useEffect(() => {
+        if (Object.keys(inputs1).length > 0 && Object.keys(editableFields).length > 0) {
+            const currentYear = new Date().getFullYear();
+            for (let year = currentYear; year <= currentYear + (maxLifeExpectancy - Math.min(age1, age2)); year++) {
+                autoSaveToDatabase(year, editableFields[year]);
+            }
+        }
+    }, [inputs1, editableFields]);
 
     const autoSaveToDatabase = async (year, fields) => {
         if (!user) {
@@ -74,7 +98,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             age2: inputs.wifeAge,
         };
 
-
         const { error } = await supabaseClient
             .from('roth')
             .upsert([dataToSave], { onConflict: ['user_id', 'version_name', 'year'] });
@@ -86,14 +109,11 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         }
     };
 
-
-
+// ROTH CALCULATIONS START -----------
     const { ira1, ira2, roi } = inputs1;
     const age1 = inputs.husbandAge;
     const age2 = inputs.wifeAge;
     const {iraDetails, totals} = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE);
-
-// ROTH CALCULATIONS START -----------
     const currentYear = new Date().getFullYear();
     const maxLifeExpectancy = Math.max(inputs.hLE, inputs.wLE);
     [editableFields, setEditableFields] = useState(() => {
@@ -370,37 +390,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             }
         }
     }, [user]);
-    const handleEditableFieldChange = (year, field, value) => {
-        console.log(`Updating ${field} for year ${year} to value:`, value);
-        if (value.trim() === '' || isNaN(value)) {
-            alert('Please enter a valid number');
-            return;
-        }
-
-        setEditableFields(prev => {
-            const updatedFields = {
-                ...prev,
-                [year]: {
-                    ...prev[year],
-                    [field]: parseFloat(value)
-                }
-            };
-            console.log('Updated editableFields:', updatedFields);
-            return updatedFields;
-        });
-        debouncedSaveAndAutoSave(year, field, parseFloat(value));
-
-    };
-    const debouncedSaveAndAutoSave = debounce((year, field, value) => {
-        saveVersion(selectedVersion);
-        autoSaveToDatabase(year, { ...editableFields[year], [field]: value });
-    }, 300);
-
-    useEffect(() => {
-        return () => {
-            debouncedSaveAndAutoSave.cancel();
-        };
-    }, []);
 
     const renderEditableFieldInput = (year, field) => {
         return (
@@ -711,7 +700,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                                                 ...prevInputs,
                                                 [name]: parseFloat(value) / 100,
                                             };
-                                            debouncedSaveVersion();
                                             return updatedInputs;
                                         });
                                     }}
