@@ -388,7 +388,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                             </thead>
                             <tbody>
                             <tr>
-                                <td>Current Age:</td>
+                                <td>Current Age</td>
                                 <td className="text-right pr-4 p-5">
                                     <input
                                         type="number"
@@ -409,7 +409,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                 </td>
                             </tr>
                             <tr>
-                                <td>Life Expectancy:</td>
+                                <td>Life Expectancy</td>
                                 <td className="text-right pr-4 p-5">
                                     <input
                                         type="number"
@@ -430,10 +430,16 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                 </td>
                             </tr>
                             <tr>
-                                <td
-                                    onMouseEnter={handleMouseEnter}
-                                    onMouseLeave={handleMouseLeave}
-                                >Primary Insurance Amount:</td>
+                                <td>
+                                    Primary Insurance Amount
+                                    <span
+                                        onMouseEnter={handleMouseEnter}
+                                        onMouseLeave={handleMouseLeave}
+                                        style={{ cursor: 'pointer' }}
+                                    >
+                                    &#9432;
+                                    </span>
+                                </td>
                                 <td className="text-right pr-4 p-5">
                                     <input
                                         type="number"
