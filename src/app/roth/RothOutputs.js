@@ -33,13 +33,10 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             return;
         }
         const { name, value } = e.target;
-        setInputs1(prevInputs => {
-            const updatedInputs = {
-                ...prevInputs,
-                [name]: parseFloat(value),
-            };
-            return updatedInputs;
-        });
+        setInputs1(prevInputs => ({
+            ...prevInputs,
+            [name]: parseFloat(value),
+        }));
     };
 
     const handleEditableFieldChange = (year, field, value) => {
@@ -105,7 +102,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         if (error) {
             console.error('Error saving data to Supabase:', error);
         } else {
-            console.log('Data being saved to the 000database:', dataToSave);
+            //console.log('Data being saved to the 000database:', dataToSave);
         }
     };
 
@@ -157,136 +154,51 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             .select('*')
             .eq('user_id', user.id)
             .eq('version_name', version.name);
-        console.log(user.id);
-        console.log(version.name);
 
         if (error) {
             console.error('Error loading version from Supabase:', error);
-        } else {
-            const loadedEditableFields = {};
-            let loadedInputs1 = {
-                age1: 0,
-                age2: 0,
-                ira1: 0,
-                ira2: 0,
-                roi: 0,
-                inflation: 0,
-                beneficiary_tax_rate: 0
-            };
-
-            data.forEach(item => {
-                loadedEditableFields[item.year] = {
-                    rothSpouse1: item.roth_1,
-                    rothSpouse2: item.roth_2,
-                    salary1: item.salary1,
-                    salary2: item.salary2,
-                    rentalIncome: item.rental_income,
-                    interest: item.interest,
-                    capitalGains: item.capital_gains,
-                    pension: item.pension
-                };
-
-                loadedInputs1 = {
-                    ira1: item.ira1,
-                    ira2: item.ira2,
-                    roi: item.roi,
-                    inflation: item.inflation,
-                    beneficiary_tax_rate: item.beneficiary_tax_rate
-                };
-
-            });
-
-            setEditableFields(loadedEditableFields);
-            setInputs1(loadedInputs1);
-        }
-    };
-
-    const saveVersion = async (versionName) => {
-        if (!user) {
-            console.error('User is not logged in');
             return;
         }
 
-        // Clone editableFields and set roth1 and roth2 to zero for all years
-        const editableFieldsWithZeroRoth = JSON.parse(JSON.stringify(editableFields));
-        Object.keys(editableFieldsWithZeroRoth).forEach(year => {
-            editableFieldsWithZeroRoth[year].rothSpouse1 = 0;
-            editableFieldsWithZeroRoth[year].rothSpouse2 = 0;
-        });
+        console.log('Loaded data:', data);
 
-        const calculateTotalIncomeForYearWithZeroRoth = (year, editableFieldsWithZeroRoth) => {
-            const ssBenefits = findSsBenefitsByYear(socialSecurityBenefits, parseInt(year));
-            const editableFieldsForYear = editableFieldsWithZeroRoth[year];
-            const rmdSpouse1 = findRmdByYear(iraDetails.spouse1, parseInt(year));
-            const rmdSpouse2 = findRmdByYear(iraDetails.spouse2, parseInt(year));
-
-            const totalIncome = new Decimal(editableFieldsForYear.rothSpouse1)
-                .plus(editableFieldsForYear.rothSpouse2)
-                .plus(editableFieldsForYear.salary1)
-                .plus(editableFieldsForYear.salary2)
-                .plus(editableFieldsForYear.rentalIncome)
-                .plus(editableFieldsForYear.interest)
-                .plus(editableFieldsForYear.capitalGains)
-                .plus(editableFieldsForYear.pension)
-                .plus(rmdSpouse1)
-                .plus(rmdSpouse2)
-                .plus(ssBenefits.spouse1Benefit)
-                .plus(ssBenefits.spouse2Benefit);
-
-            return totalIncome.toFixed(2);
+        const loadedEditableFields = {};
+        let loadedInputs1 = {
+            age1: 0,
+            age2: 0,
+            ira1: 0,
+            ira2: 0,
+            roi: 0,
+            inflation: 0,
+            beneficiary_tax_rate: 0
         };
 
-        // Calculate lifetime0 and beneficiary0 with roth1 and roth2 set to zero
-        const taxableIncomesWithZeroRoth = calculateTaxableIncomes(
-            staticFields,
-            iraDetails,
-            findSsBenefitsByYear,
-            (year) => calculateTotalIncomeForYearWithZeroRoth(year, editableFieldsWithZeroRoth),
-            calculateStandardDeductionForYear
-        );
+        data.forEach(item => {
+            loadedEditableFields[item.year] = {
+                rothSpouse1: item.roth_1,
+                rothSpouse2: item.roth_2,
+                salary1: item.salary1,
+                salary2: item.salary2,
+                rentalIncome: item.rental_income,
+                interest: item.interest,
+                capitalGains: item.capital_gains,
+                pension: item.pension
+            };
 
-        const totalLifetimeTaxPaidWithZeroRoth = Object.keys(taxableIncomesWithZeroRoth).reduce(
-            (total, year) => total.plus(new Decimal(taxableIncomesWithZeroRoth[year])),
-            new Decimal(0)
-        );
+            loadedInputs1 = {
+                ira1: item.ira1,
+                ira2: item.ira2,
+                roi: item.roi,
+                inflation: item.inflation,
+                beneficiary_tax_rate: item.beneficiary_tax_rate
+            };
+        });
 
-        const beneficiaryTaxPaidWithZeroRoth = totalInheritedIRA.times(inputs1.beneficiary_tax_rate).toFixed(2);
+        console.log('Loaded editable fields:', loadedEditableFields); // Debugging line to check loaded editable fields
+        console.log('Loaded inputs1:', loadedInputs1); // Debugging line to check loaded inputs1
 
-        const dataToSave = [];
-        for (let year in editableFields) {
-            dataToSave.push({
-                user_id: user.id,
-                version_name: versionName,
-                year: year,
-                rental_income: editableFields[year].rentalIncome,
-                capital_gains: editableFields[year].capitalGains,
-                pension: editableFields[year].pension,
-                roth_1: editableFields[year].rothSpouse1,
-                roth_2: editableFields[year].rothSpouse2,
-                salary1: editableFields[year].salary1,
-                salary2: editableFields[year].salary2,
-                interest: editableFields[year].interest,
-                age1: inputs.husbandAge,
-                age2: inputs.wifeAge,
-                ira1: inputs1.ira1,
-                ira2: inputs1.ira2,
-                roi: inputs1.roi,
-                inflation: inputs1.inflation,
-                lifetime_tax: totalLifetimeTaxPaid.toFixed(2),
-                beneficiary_tax: beneficiaryTaxPaid,
-                lifetime0: totalLifetimeTaxPaidWithZeroRoth.toFixed(2),
-                beneficiary0: beneficiaryTaxPaidWithZeroRoth,
-                beneficiary_tax_rate: inputs1.beneficiary_tax_rate
-            });
-        }
-
-        const { error } = await supabaseClient.from('roth').upsert(dataToSave, { onConflict: ['user_id', 'version_name', 'year'] });
-        if (error) {
-            console.error('saveVersion: Error saving data to Supabase:', error);
-        } else {
-            console.log('Data successfully saved to Supabase.');
-            await fetchSavedVersions();
-        }
+        setEditableFields(loadedEditableFields);
+        setInputs1(loadedInputs1);
     };
 
     const fetchSavedVersions = async () => {
@@ -389,7 +301,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 fetchSavedVersions();
             }
         }
-    }, [user]);
+    }, [user, selectedVersion]);
 
     const renderEditableFieldInput = (year, field) => {
         return (
