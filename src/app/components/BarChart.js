@@ -13,7 +13,12 @@ import {
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 function BarChart({ chartData, chartOptions }) {
-    return <Bar data={chartData} options={chartOptions} />;
+    return (
+        <div className="bg-white p-4 rounded h-auto w-full">
+            <h3 className=" text-left text-2xl">Total Taxes Paid</h3>
+            <Bar data={chartData} options={chartOptions} />
+        </div>
+    );
 }
 
 export default BarChart;

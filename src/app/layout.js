@@ -23,7 +23,7 @@ export default function RootLayout({ children }) {
           <Header />
           <div className="flex">
             <NavBar />
-            <div className="ml-64 mt-16 p-4 flex-1 bg-[#f9f9f9]">{children}</div>
+            <div className="ml-48 mt-16 p-4 flex-1 bg-[#f9f9f9]">{children}</div>
           </div>
         </UserProvider>
       </SupabaseProvider>

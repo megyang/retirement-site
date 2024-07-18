@@ -22,20 +22,18 @@ const RothConversionCalculator = () => {
     }, [socialSecurityInputs]);
 
     return (
-        <div className="mx-auto my-0">
+        <div>
             <div>
                 <MyUserContextProvider>
-                    <div className="mt-8">
-                        <RothOutputs
-                            inputs={inputs}
-                            inputs1={inputs1}
-                            editableFields={editableFields}
-                            setEditableFields={setEditableFields}
-                            staticFields={staticFields}
-                            setStaticFields={setStaticFields}
-                            setInputs1={setInputs1}
-                        />
-                    </div>
+                    <RothOutputs
+                        inputs={inputs}
+                        inputs1={inputs1}
+                        editableFields={editableFields}
+                        setEditableFields={setEditableFields}
+                        staticFields={staticFields}
+                        setStaticFields={setStaticFields}
+                        setInputs1={setInputs1}
+                    />
                 </MyUserContextProvider>
             </div>
         </div>

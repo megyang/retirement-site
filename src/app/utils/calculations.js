@@ -1,6 +1,15 @@
 import Decimal from "decimal.js";
 import rmdDistributionTable from "@/app/utils/rmdDistributionTable";
 
+export const formatCurrency = (value) => {
+    const numberString = value.replace(/[^0-9.]/g, '');
+    const number = parseFloat(numberString);
+    if (isNaN(number)) {
+        return '';
+    }
+    return '$' + number.toLocaleString();
+};
+
 export const getPercentageOfPIAForAge = (age) => {
     const referenceTable = {
         62: new Decimal(70.0),

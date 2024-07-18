@@ -105,16 +105,16 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
         labels: [],
         datasets: [
             {
-                label: "Husband Benefit",
+                label: "Your Benefit",
                 data: [],
-                backgroundColor: "#9fc5e8",
+                backgroundColor: "#E2785B",
                 borderColor: "black",
                 borderWidth: 1,
             },
             {
-                label: "Wife Benefit",
+                label: "Spouse Benefit",
                 data: [],
-                backgroundColor: "#ead1dc",
+                backgroundColor: "#AFBCB7",
                 borderColor: "black",
                 borderWidth: 1,
             },
@@ -195,16 +195,16 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
             labels: yearArray,
             datasets: [
                 {
-                    label: "Husband Benefit",
+                    label: "Your Benefit",
                     data: husbandBenefitArray,
-                    backgroundColor: "#9fc5e8",
+                    backgroundColor: "#E2785B",
                     borderColor: "black",
                     borderWidth: 1,
                 },
                 {
-                    label: "Wife Benefit",
+                    label: "Spouse Benefit",
                     data: wifeBenefitArray,
-                    backgroundColor: "#ead1dc",
+                    backgroundColor: "#AFBCB7",
                     borderColor: "black",
                     borderWidth: 1,
                 },
@@ -271,7 +271,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
             <div className="flex w-full h-auto">
                 <div className="left-column flex flex-col gap-5 mr-5 w-1/2 h-auto flex-grow">
 
-                    <div className="rectangle small-rectangle bg-white rounded-lg w-150 h-250 p-5">
+                    <div className="small-rectangle bg-white rounded-lg w-150 h-250 p-5">
                         <h2 className="text-lg text-center mb-4">Collection Age</h2>
                         <div className="inputs-container ">
                             <table className="table-auto w-full">
@@ -369,7 +369,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                         </div>
                     </div>
                     <div className="rectangle small-rectangle bg-white rounded-lg w-full h-auto p-5">
-                        <h3 className="font-lg text-center">Total Social Security Collected</h3>
+                        <h3 className="text-lg text-center">Total Social Security Collected</h3>
                         <h1 className="text-5xl text-center font-extrabold">
                             ${Number(totalCash.toFixed(0)).toLocaleString()}
                         </h1>
@@ -377,7 +377,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                 </div>
                 <div className="right-column flex flex-col w-1/2 h-auto flex-grow">
                     <div className="rectangle large-rectangle bg-white rounded-lg w-full h-full p-5">
-                        <h2 className="text-xl mb-4 text-center">Your Information</h2>
+                        <h2 className="text-lg mb-4 text-center">Your Information</h2>
                         <table className="table-auto w-full">
                             <thead>
                             <tr>
@@ -395,7 +395,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="husbandAge"
                                         value={inputs.husbandAge}
                                         onChange={handleChange}
-                                        className="w-full text-right"
+                                        className="w-full text-right border border-gray-300"
                                     />
                                 </td>
                                 <td className="text-right p-5">
@@ -404,7 +404,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="wifeAge"
                                         value={inputs.wifeAge}
                                         onChange={handleChange}
-                                        className="w-full text-right"
+                                        className="w-full text-right border border-gray-300"
                                     />
                                 </td>
                             </tr>
@@ -416,7 +416,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="hLE"
                                         value={inputs.hLE}
                                         onChange={handleChange}
-                                        className="w-full text-right"
+                                        className="w-full text-right border border-gray-300"
                                     />
                                 </td>
                                 <td className="text-right p-5">
@@ -425,7 +425,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="wLE"
                                         value={inputs.wLE}
                                         onChange={handleChange}
-                                        className="w-full text-right"
+                                        className="w-full text-right border border-gray-300"
                                     />
                                 </td>
                             </tr>
@@ -436,6 +436,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         onMouseEnter={handleMouseEnter}
                                         onMouseLeave={handleMouseLeave}
                                         style={{ cursor: 'pointer' }}
+                                        className="ml-1"
                                     >
                                     &#9432;
                                     </span>
@@ -446,7 +447,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="hPIA"
                                         value={inputs.hPIA}
                                         onChange={handleChange}
-                                        className="w-full text-right"
+                                        className="w-full text-right border border-gray-300"
                                     />
                                 </td>
                                 <td className="text-right p-5">
@@ -455,7 +456,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="wPIA"
                                         value={inputs.wPIA}
                                         onChange={handleChange}
-                                        className="w-full text-right"
+                                        className="w-full text-right border border-gray-300"
                                     />
                                 </td>
                             </tr>
@@ -488,7 +489,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
 
                 </div>
                 <div className="ss-graph">
-                    <h3 className="font-medium mb-2">Social Security Benefits Graph</h3>
+                    <h3 className="text-lg mb-2 mt-[-12px]">Social Security Benefits Graph</h3>
                     <BarChart chartData={userData} chartOptions={benefitChartOptions} />
                 </div>
             </div>

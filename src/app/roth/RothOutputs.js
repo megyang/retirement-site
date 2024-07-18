@@ -11,6 +11,10 @@ import {calculateTaxesForBrackets, calculateXNPV, findRmdByYear, findSsBenefitsB
 import { debounce } from 'lodash';
 import useAuthModal from "@/app/hooks/useAuthModal";
 
+function OrdinaryIncomeTaxTable(props) {
+    return null;
+}
+
 const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
@@ -569,16 +573,16 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         labels: ["No Conversion", ...versionData.filter(item => item.name !== "Select a scenario").map(item => item.name)],
         datasets: [
             {
-                label: 'Lifetime Tax Paid',
+                label: 'Lifetime Taxes',
                 data: [versionData.length > 0 ? parseFloat(versionData[1].lifetime0) : 0, ...versionData.filter(item => item.name !== "Select a scenario").map(item => item.lifetime_tax)],
-                backgroundColor: 'rgba(173, 216, 230, 0.6)', // Light blue
+                backgroundColor: '#E2785B',
                 borderColor: 'black',
                 borderWidth: 1,
             },
             {
-                label: 'Beneficiary Tax Paid',
+                label: 'Beneficiary Lifetime Taxes',
                 data: [versionData.length > 0 ? parseFloat(versionData[1].beneficiary0) : 0, ...versionData.filter(item => item.name !== "Select a scenario").map(item => item.beneficiary_tax)],
-                backgroundColor: 'rgba(255, 182, 193, 0.6)', // Light pink
+                backgroundColor: '#AFBCB7',
                 borderColor: 'black',
                 borderWidth: 1,
             },
@@ -596,7 +600,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 },
             },
             legend: {
-                position: 'top',
+                position: 'bottom',
             },
         },
         scales: {
@@ -644,7 +648,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     const bracketTitles = ['10%', '12%', '22%', '24%', '32%', '35%', '37%'];
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
             <div className="flex-col">
                 <div className="bg-white p-4 rounded h-auto w-full">
                     <h3 className=" text-left text-2xl">
@@ -756,7 +760,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             </div>
 
             {selectedVersion !== "Select a scenario" && (
-                <div className="scrollable-container mt-4 bg-white overflow-x-auto p-4 rounded">
+                <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
                     <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
                     <table className="border-collapse border border-slate-400">
                         <thead className="bg-gray-100">
@@ -879,134 +883,8 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                     </table>
                 </div>
             )}
-            {/*
-                <div className="totals-display"
-                     style={{display: 'flex', justifyContent: 'space-around', marginTop: '20px', marginBottom: '20px'}}>
-                    <div className="total-rmds" style={{textAlign: 'center', padding: '10px'}}>
-                        <h2 style={{marginBottom: '15px', color: '#333', fontSize: '18px', fontWeight: 'bold'}}>Total
-                            RMDs</h2>
-                        <div
-                            style={{marginBottom: '10px'}}>Husband: <strong>${totals.totalRMDsHusband.toFixed(2)}</strong>
-                        </div>
-                        <div style={{marginBottom: '10px'}}>Wife: <strong>${totals.totalRMDsWife.toFixed(2)}</strong>
-                        </div>
-                        <div>Total: <strong>${totals.totalRMDsHusband.plus(totals.totalRMDsWife).toFixed(2)}</strong>
-                        </div>
-                    </div>
-                    <div className="total-taxes-paid" style={{textAlign: 'center', padding: '10px'}}>
-                        <h2 style={{marginBottom: '15px', color: '#333', fontSize: '18px', fontWeight: 'bold'}}>Total
-                            Taxes Paid </h2>
-                        <h1>Total Cash</h1>
-                        <div>Lifetime Tax Paid: <strong>${totalLifetimeTaxPaid.toFixed(2)}</strong></div>
-                        <div>Beneficiary Tax Paid: <strong>${beneficiaryTaxPaid}</strong></div>
-                        <h1>Net Present Value</h1>
-                        <div>Lifetime Tax NPV: <strong>${npvLifetimeTax.toFixed(2)}</strong></div>
-                        <div>Beneficiary Tax NPV: <strong>${npvBeneficiaryTax.toFixed(2)}</strong></div>
-
-                    </div>
-
-                    <div className="inherited-iras" style={{textAlign: 'center', padding: '10px', width: '30%'}}>
-                        <h2 style={{
-                            marginBottom: '15px',
-                            color: '#333',
-                            fontSize: '18px',
-                            fontWeight: 'bold'
-                        }}>Inherited Pre-Tax IRA</h2>
-                        <div
-                            style={{marginBottom: '10px'}}>Husband: <strong>${totals.inheritedIRAHusband.toFixed(2)}</strong>
-                        </div>
-                        <div style={{marginBottom: '10px'}}>Wife: <strong>${totals.inheritedIRAWife.toFixed(2)}</strong>
-                        </div>
-                        <div>Total: <strong>${totalInheritedIRA.toFixed(2)}</strong></div>
-                        <div>
-                            <label htmlFor="beneficiaryTaxRate"
-                                   style={{fontWeight: 'normal', color: '#333', fontSize: '16px', marginRight: '10px'}}>Beneficiary
-                                Tax Rate:</label>
-                            <input
-                                id="beneficiaryTaxRate"
-                                type="number"
-                                value={beneficiaryTaxRate * 100}
-                                onChange={handleTaxRateChange}
-                                style={{
-                                    flex: '1',
-                                    textAlign: 'right',
-                                    padding: '5px',
-                                    border: '1px solid #ddd',
-                                    borderRadius: '5px'
-                                }}
-                            />%
-                        </div>
-                        <div style={{marginTop: '10px'}}>
-                            Beneficiary Tax Paid: <strong>${beneficiaryTaxPaid}</strong>
-                        </div>
-                    </div>
-                </div>*/}
-
-            {/*
-            <h2 className="text-xl font-semibold mb-3">Financial Plan Details</h2>
-            <table className="min-w-full table-fixed border-collapse border border-slate-400">
-                <thead className="bg-gray-100">
-                <tr>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Year</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Age Spouse 1</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Age Spouse 2</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Roth Conversion 1</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Roth Conversion 2</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Salary 1</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Salary 2</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Rental Income</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Interest / Dividend</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Capital Gains</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Pension</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">RMD Spouse 1</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">RMD Spouse 2</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">ss spouse 1</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">ss spouse 2</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">total ordinary income</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">standard deductions</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">taxable ordinary income</th>
-
-
-                </tr>
-                </thead>
-
-                <tbody>
-                {Object.keys(staticFields).map((year, index) => {
-                    const ssBenefits = findSsBenefitsByYear(parseInt(year));
-                    const totalIncomeForYear = calculateTotalIncomeForYear(year);
-                    const standardDeductionForYear = calculateStandardDeductionForYear(parseInt(year));
-                    const taxableIncomeForYear = totalIncomeForYear - standardDeductionForYear;
-                    return (
-                        <tr key={year}>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{year}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{staticFields[year].ageSpouse1}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{staticFields[year].ageSpouse2}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rothSpouse1')}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rothSpouse2')}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'salary1')}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'salary2')}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rentalIncome')}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'interest')}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'capitalGains')}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'pension')}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{findRmdByYear(iraDetails.spouse1, parseInt(year))}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{findRmdByYear(iraDetails.spouse2, parseInt(year))}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{ssBenefits.spouse1Benefit}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{ssBenefits.spouse2Benefit}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${totalIncomeForYear}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">-${standardDeductionForYear.toFixed(2)}</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${taxableIncomeForYear.toFixed(2)}</td>
-
-
-                        </tr>
-                    )
-                })}
-
-                </tbody>
-            </table>
-*/}
-            {/*ORDINARY INCOME TAX BRACKET*/}
-            Ordinary Income Tax Brackets Table
+            <OrdinaryIncomeTaxTable taxableIncomes={taxableIncomes}/>
+            <h1>Ordinary Income Tax Brackets Table</h1>
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                 <tr>
