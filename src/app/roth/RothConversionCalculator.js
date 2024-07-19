@@ -14,7 +14,6 @@ const RothConversionCalculator = () => {
         inflation: 2.0,
         beneficiary_tax_rate: 0.24
     });
-    const [editableFields, setEditableFields] = useState({});
     const [staticFields, setStaticFields] = useState({});
 
     useEffect(() => {
@@ -28,8 +27,6 @@ const RothConversionCalculator = () => {
                     <RothOutputs
                         inputs={inputs}
                         inputs1={inputs1}
-                        editableFields={editableFields}
-                        setEditableFields={setEditableFields}
                         staticFields={staticFields}
                         setStaticFields={setStaticFields}
                         setInputs1={setInputs1}

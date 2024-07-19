@@ -10,10 +10,7 @@ import useReferenceTable from "@/app/hooks/useReferenceTable";
 import {calculateTaxesForBrackets, calculateXNPV, findRmdByYear, findSsBenefitsByYear} from "@/app/utils/calculations";
 import { debounce } from 'lodash';
 import useAuthModal from "@/app/hooks/useAuthModal";
-
-function OrdinaryIncomeTaxTable(props) {
-    return null;
-}
+import { DataGrid, GridRowsProp, GridColDef } from '@mui/x-data-grid';
 
 const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
@@ -30,7 +27,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     ]);
 
     const [selectedVersion, setSelectedVersion] = useState("Select a scenario");
-
+    const [triggerSave, setTriggerSave] = useState(false);
     const handleInputChange = (e) => {
         if (!user) {
             onOpen();
@@ -41,10 +38,11 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             const updatedInputs = {
                 ...prevInputs,
                 [name]: parseFloat(value),
-            };
+            }
+            console.log("updatedInputs", updatedInputs);
             return updatedInputs;
         });
-        saveVersion(selectedVersion);
+        setTriggerSave(true);
     };
 
     const handleEditableFieldChange = (year, field, value) => {
@@ -53,68 +51,73 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             return;
         }
 
-        if (value.trim() === '' || isNaN(value)) {
-            alert('Please enter a valid number');
-            return;
-        }
+        const newValue = value.trim() === '' ? 0 : parseFloat(value);
 
         setEditableFields(prev => {
             const updatedFields = {
                 ...prev,
                 [year]: {
                     ...prev[year],
-                    [field]: parseFloat(value)
+                    [field]: newValue
                 }
             };
-
-            // Call the debounced save function
-            debouncedAutoSave(year, updatedFields[year]);
             return updatedFields;
         });
+        setTriggerSave(true);
     };
 
-    const debouncedAutoSave = debounce((year, fields) => {
-        saveVersion(selectedVersion);
-        autoSaveToDatabase(year, fields);
-    }, 500);
+    useEffect(() => {
+        if(triggerSave) {
+            saveVersion(selectedVersion)
+            setTriggerSave(false);
 
-    const autoSaveToDatabase = async (year, fields) => {
-        if (!user) {
-            console.error('User is not logged in');
-            return;
         }
+    },[triggerSave, selectedVersion])
 
-        const dataToSave = {
-            user_id: user.id,
-            version_name: selectedVersion,
-            year: year,
-            rental_income: fields.rentalIncome,
-            capital_gains: fields.capitalGains,
-            pension: fields.pension,
-            roth_1: fields.rothSpouse1,
-            roth_2: fields.rothSpouse2,
-            salary1: fields.salary1,
-            salary2: fields.salary2,
-            interest: fields.interest,
-            ira1: inputs1.ira1,
-            ira2: inputs1.ira2,
-            roi: inputs1.roi,
-            inflation: inputs1.inflation,
-            beneficiary_tax_rate: inputs1.beneficiary_tax_rate,
-            age1: inputs.husbandAge,
-            age2: inputs.wifeAge,
+    {/*
+        const debouncedAutoSave = debounce((year, fields) => {
+            saveVersion(selectedVersion);
+            autoSaveToDatabase(year, fields);
+        }, 500);
+
+        const autoSaveToDatabase = async (year, fields) => {
+            if (!user) {
+                console.error('User is not logged in');
+                return;
+            }
+
+            const dataToSave = {
+                user_id: user.id,
+                version_name: selectedVersion,
+                year: year,
+                rental_income: fields.rentalIncome,
+                capital_gains: fields.capitalGains,
+                pension: fields.pension,
+                roth_1: fields.rothSpouse1,
+                roth_2: fields.rothSpouse2,
+                salary1: fields.salary1,
+                salary2: fields.salary2,
+                interest: fields.interest,
+                ira1: inputs1.ira1,
+                ira2: inputs1.ira2,
+                roi: inputs1.roi,
+                inflation: inputs1.inflation,
+                beneficiary_tax_rate: inputs1.beneficiary_tax_rate,
+                age1: inputs.husbandAge,
+                age2: inputs.wifeAge,
+            };
+
+            const {error} = await supabaseClient
+                .from('roth')
+                .upsert([dataToSave], {onConflict: ['user_id', 'version_name', 'year']});
+
+            if (error) {
+                console.error('Error saving data to Supabase:', error);
+            } else {
+                console.log('Data being saved to the 000database:', dataToSave);
+            }
         };
-
-        const { error } = await supabaseClient
-            .from('roth')
-            .upsert([dataToSave], { onConflict: ['user_id', 'version_name', 'year'] });
-
-        if (error) {
-            console.error('Error saving data to Supabase:', error);
-        } else {
-            console.log('Data being saved to the 000database:', dataToSave);
-        }
-    };
+    */}
 
 
 // ROTH CALCULATIONS START -----------
@@ -153,7 +156,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     }
 
 
-    // save, load, and delete functions
+    // save and load
     const loadVersion = async (version) => {
         if (!user) {
             console.error('User is not logged in');
@@ -391,12 +394,10 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
 
     useEffect(() => {
-        // Check if window is defined to ensure this code only runs on the client side
-        if (typeof window !== 'undefined') {
-            if (user) {
-                fetchSavedVersions();
-            }
+        if (user) {
+            fetchSavedVersions();
         }
+
     }, [user]);
 
     const renderEditableFieldInput = (year, field) => {
@@ -498,8 +499,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     }, [inputs, currentYear1, benefitsBasedOnAge.husbandYearly, benefitsBasedOnAge.wifeYearly]);
 
 
-    const [annualInflationRate, setAnnualInflationRate] = useState(inputs1.inflation/100);
-
+    const annualInflationRate = inputs1.inflation/100;
     const startingStandardDeduction = 29200;
 
     const calculateStandardDeductionForYear = (year) => {
@@ -566,6 +566,90 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         (total, year) => total.plus(new Decimal(taxableIncomes[year])),
         new Decimal(0)
     );
+
+
+
+
+
+
+    const transposedRows = [
+        { id: 'ageSpouse1', label: 'Age Spouse 1' },
+        { id: 'ageSpouse2', label: 'Age Spouse 2' },
+        { id: 'rothSpouse1', label: 'Roth Conversion 1' },
+        { id: 'rothSpouse2', label: 'Roth Conversion 2' },
+        { id: 'salary1', label: 'Salary 1' },
+        { id: 'salary2', label: 'Salary 2' },
+        { id: 'rentalIncome', label: 'Rental Income' },
+        { id: 'interest', label: 'Interest / Dividend' },
+        { id: 'capitalGains', label: 'Capital Gains' },
+        { id: 'pension', label: 'Pension' },
+        { id: 'rmdSpouse1', label: 'RMD Spouse 1' },
+        { id: 'rmdSpouse2', label: 'RMD Spouse 2' },
+        { id: 'ssSpouse1', label: 'SS Spouse 1' },
+        { id: 'ssSpouse2', label: 'SS Spouse 2' },
+        { id: 'totalIncome', label: 'Total Ordinary Income' },
+        { id: 'standardDeductions', label: 'Standard Deductions' },
+        { id: 'taxableIncome', label: 'Taxable Ordinary Income' }
+    ];
+
+    const getStaticFieldValue = (id, year) => {
+        switch (id) {
+            case 'ageSpouse1':
+                return staticFields[year].ageSpouse1;
+            case 'ageSpouse2':
+                return staticFields[year].ageSpouse2;
+            case 'rmdSpouse1':
+                return findRmdByYear(iraDetails.spouse1, parseInt(year));
+            case 'rmdSpouse2':
+                return findRmdByYear(iraDetails.spouse2, parseInt(year));
+            case 'ssSpouse1':
+                return findSsBenefitsByYear(socialSecurityBenefits, parseInt(year)).spouse1Benefit;
+            case 'ssSpouse2':
+                return findSsBenefitsByYear(socialSecurityBenefits, parseInt(year)).spouse2Benefit;
+            case 'totalIncome':
+                return calculateTotalIncomeForYear(year);
+            case 'standardDeductions':
+                return calculateStandardDeductionForYear(parseInt(year)).toFixed(2);
+            case 'taxableIncome':
+                return (calculateTotalIncomeForYear(year) - calculateStandardDeductionForYear(parseInt(year))).toFixed(2);
+            default:
+                return 0;
+        }
+    };
+
+    const rows = transposedRows.map(row => {
+        const newRow = { id: row.id, label: row.label };
+        Object.keys(staticFields).forEach(year => {
+            if (row.id.startsWith('age') || row.id.startsWith('rmd') || row.id.startsWith('ss') || row.id === 'totalIncome' || row.id === 'standardDeductions' || row.id === 'taxableIncome') {
+                newRow[year] = getStaticFieldValue(row.id, year);
+            } else {
+                newRow[year] = editableFields[year][row.id] || 0;
+            }
+        });
+        return newRow;
+    });
+
+    const columns = [
+        { field: 'label', headerName: 'Field', width: 200 },
+        ...Object.keys(staticFields).map((year) => ({
+            field: year.toString(),
+            headerName: year.toString(),
+            width: 150,
+            editable: true,
+            sortable:false
+        }))
+    ];
+
+    const editableRowIds = ['rothSpouse1', 'rothSpouse2', 'salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
+    const isCellEditable = (params) => {
+        return editableRowIds.includes(params.row.id);
+    };
+
+    const getRowClassName = (params) => {
+        return editableRowIds.includes(params.row.id) ? 'editable-row' : 'uneditable-row';
+    };
+
+
 
 
 
@@ -644,9 +728,8 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
     }, [inputs.roi, taxableIncomes, beneficiaryTaxPaid, inputs1, currentYear, age1, inputs.hLE, age2, inputs.wLE]);
 
-    //ordinary income tax calc -------
-    const bracketTitles = ['10%', '12%', '22%', '24%', '32%', '35%', '37%'];
 
+    const bracketTitles = ['10%', '12%', '22%', '24%', '32%', '35%', '37%'];
     return (
         <div className="max-w-5xl mx-auto">
             <div className="flex-col">
@@ -758,6 +841,31 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                     </div>
                 </div>
             </div>
+
+            {selectedVersion !== "Select a scenario" && (
+                <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
+                    <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
+                    <div style={{ height: 600, width: '100%' }}>
+                        <DataGrid
+                            rows={rows}
+                            columns={columns}
+                            pageSize={10}
+                            rowsPerPageOptions={[10]}
+                            getRowClassName={getRowClassName}
+                            isCellEditable={isCellEditable}
+                            onCellEditCommit={(params) => {
+                                const { id, field, value } = params;
+                                const year = field;
+                                handleEditableFieldChange(year, id, value);
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
+
+
+
+
 
             {selectedVersion !== "Select a scenario" && (
                 <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
@@ -883,7 +991,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                     </table>
                 </div>
             )}
-            <OrdinaryIncomeTaxTable taxableIncomes={taxableIncomes}/>
+
             <h1>Ordinary Income Tax Brackets Table</h1>
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
