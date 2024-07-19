@@ -3,9 +3,20 @@
 @tailwind utilities;
 
 .editable-row {
-    background-color: #e0ffe0;
+    background-color: white;
 }
 
 .uneditable-row {
-    background-color: #ffe0e0;
+    background-color: lightgrey;
+}
+
+.table-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.table-input {
+    width: 100%;
+    box-sizing: border-box;
 }

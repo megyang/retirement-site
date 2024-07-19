@@ -6,15 +6,13 @@ import { useUser } from "@/app/hooks/useUser";
 import useSocialSecurityStore from "@/app/store/useSocialSecurityStore";
 import BarChart from "@/app/components/BarChart";
 import useRmdCalculations from "@/app/hooks/useRmdCalculations";
-import useReferenceTable from "@/app/hooks/useReferenceTable";
-import { calculateXNPV, findRmdByYear, findSsBenefitsByYear} from "@/app/utils/calculations";
+import {calculateTaxesForBrackets, calculateXNPV, findRmdByYear, findSsBenefitsByYear} from "@/app/utils/calculations";
 import useAuthModal from "@/app/hooks/useAuthModal";
-import { DataGrid } from '@mui/x-data-grid';
+import { DataGrid, GridCellEditStopParams, GridCellEditStopReasons, MuiEvent } from '@mui/x-data-grid';
 
 const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
-    const { benefitsBasedOnAge } = useReferenceTable(inputs);
     const { socialSecurityBenefits } = useSocialSecurityStore();
     const { onOpen } = useAuthModal();
 
@@ -44,20 +42,194 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         setTriggerSave(true);
     };
 
+    const processRowUpdate = async (newRow, oldRow) => {
+        try {
+            const fieldName = newRow.id; // This is the field name like 'capitalGains', 'rothSpouse1', etc.
+            const updatedData = {};
+
+            // Ensure all values in newRow are converted to appropriate types
+            Object.keys(newRow).forEach(year => {
+                if (year !== 'id' && newRow[year] !== oldRow[year]) {
+                    updatedData[year] = newRow[year] === null || newRow[year] === '' ? 0 : parseFloat(newRow[year]);
+                }
+            });
+
+            // Update the editableFields state
+            setEditableFields(prevEditableFields => {
+                const newEditableFields = { ...prevEditableFields };
+                Object.keys(updatedData).forEach(year => {
+                    if (!newEditableFields[year]) {
+                        newEditableFields[year] = {};
+                    }
+                    newEditableFields[year][fieldName] = updatedData[year];
+                });
+                return newEditableFields;
+            });
+
+            // Trigger recalculations
+            setTriggerSave(true);
+
+            // Iterate over each year and save the updated value to the corresponding field in the database
+            for (const year in updatedData) {
+                // Fetch existing data for the year to preserve other fields
+                const existingData = await fetchExistingDataForYear(parseInt(year));
+
+                const dataToSave = {
+                    rentalIncome: existingData.rental_income,
+                    capitalGains: existingData.capital_gains,
+                    pension: existingData.pension,
+                    rothSpouse1: existingData.roth_1,
+                    rothSpouse2: existingData.roth_2,
+                    salary1: existingData.salary1,
+                    salary2: existingData.salary2,
+                    interest: existingData.interest,
+                    lifetime_tax: existingData.lifetime_tax,
+                    beneficiary_tax: existingData.beneficiary_tax,
+                    lifetime0: existingData.lifetime0,
+                    beneficiary0: existingData.beneficiary0,
+                    age1: inputs.husbandAge,
+                    age2: inputs.wifeAge,
+                    ira1: inputs1.ira1,
+                    ira2: inputs1.ira2,
+                    roi: inputs1.roi,
+                    inflation: inputs1.inflation,
+                    beneficiary_tax_rate: inputs1.beneficiary_tax_rate,
+                };
+
+                // Assign the updated value to the corresponding field in dataToSave
+                dataToSave[fieldName] = updatedData[year];
+
+                // Call the saveData function to save the data
+                await saveData(parseInt(year), dataToSave);
+
+                // Fetch the updated data for the year
+                await fetchDataForYear(parseInt(year));
+            }
+
+            return { ...newRow, ...updatedData };
+        } catch (error) {
+            console.error('Error processing row update', error);
+            return oldRow;
+        }
+    };
+
+    const processRowUpdateError = (error) => {
+        console.error("Error updating row", error);
+    };
+
+    const saveData = async (year, data) => {
+        if (!user) {
+            console.error('User is not logged in');
+            return;
+        }
+
+        const { error } = await supabaseClient.from('roth').upsert([{
+            user_id: user.id,
+            version_name: selectedVersion,
+            year: year,
+            rental_income: data.rentalIncome || 0,
+            capital_gains: data.capitalGains || 0,
+            pension: data.pension || 0,
+            roth_1: data.rothSpouse1 || 0,
+            roth_2: data.rothSpouse2 || 0,
+            salary1: data.salary1 || 0,
+            salary2: data.salary2 || 0,
+            interest: data.interest || 0,
+            age1: inputs.husbandAge,
+            age2: inputs.wifeAge,
+            ira1: inputs1.ira1,
+            ira2: inputs1.ira2,
+            roi: inputs1.roi,
+            inflation: inputs1.inflation,
+            lifetime_tax: data.lifetime_tax || 0,
+            beneficiary_tax: data.beneficiary_tax || 0,
+            lifetime0: data.lifetime0 || 0,
+            beneficiary0: data.beneficiary0 || 0,
+            beneficiary_tax_rate: inputs1.beneficiary_tax_rate
+        }], { onConflict: ['user_id', 'version_name', 'year'] });
+
+        if (error) {
+            console.error('Error saving data to Supabase:', error);
+        } else {
+            console.log('Data successfully saved to Supabase.');
+            await fetchSavedVersions();
+        }
+    };
+    const fetchExistingDataForYear = async (year) => {
+        if (!user) {
+            console.error('User is not logged in');
+            return {};
+        }
+
+        const { data, error } = await supabaseClient
+            .from('roth')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('version_name', selectedVersion)
+            .eq('year', year);
+
+        if (error) {
+            console.error('Error fetching existing data for year from Supabase:', error);
+            return {};
+        }
+
+        if (data.length > 0) {
+            return data[0];
+        }
+
+        return {};
+    };
+
+    const fetchDataForYear = async (year) => {
+        if (!user) {
+            console.error('User is not logged in');
+            return;
+        }
+
+        const { data, error } = await supabaseClient
+            .from('roth')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('version_name', selectedVersion)
+            .eq('year', year);
+
+        if (error) {
+            console.error('Error fetching data for year from Supabase:', error);
+            return;
+        }
+
+        if (data.length > 0) {
+            const updatedFields = { ...editableFields };
+            const rowData = data[0];
+            updatedFields[year] = {
+                rothSpouse1: rowData.roth_1,
+                rothSpouse2: rowData.roth_2,
+                salary1: rowData.salary1,
+                salary2: rowData.salary2,
+                rentalIncome: rowData.rental_income,
+                interest: rowData.interest,
+                capitalGains: rowData.capital_gains,
+                pension: rowData.pension
+            };
+
+            setEditableFields(updatedFields);
+        }
+    };
+
     const handleEditableFieldChange = (year, field, value) => {
         if (!user) {
             onOpen();
             return;
         }
 
-        const newValue = value.trim() === '' ? 0 : parseFloat(value);
+        const newValue = (typeof value === 'string' ? value.trim() : value) === '' ? 0 : parseFloat(value);
 
         setEditableFields(prev => {
             const updatedFields = {
                 ...prev,
                 [year]: {
                     ...prev[year],
-                    [field]: newValue
+                    [field]: isNaN(newValue) ? 0 : newValue
                 }
             };
             return updatedFields;
@@ -65,11 +237,65 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         setTriggerSave(true);
     };
 
+
+    const renderEditableFieldInput = (year, field) => {
+        return (
+            <input
+                type="text"
+                className="table-input w-full p-1 border border-gray-300 rounded text-right"
+                name={`${year}-${field}`}
+                value={editableFields[year][field]}
+                onClick={() => {
+                    if (!user) {
+                        onOpen();
+                        return;
+                    }
+                }}
+                onChange={(e) => handleEditableFieldChange(year, field, e.target.value)}
+            />
+        );
+    };
+
+    const fieldNameMap = {
+        rothSpouse1: "Roth Spouse 1",
+        rothSpouse2: "Roth Spouse 2",
+        rentalIncome: "Rental Income",
+        salary1: "Salary 1",
+        salary2: "Salary 2",
+        interest: "Interest / Dividend",
+        capitalGains: "Capital Gains",
+        pension: "Pension",
+    };
+
+    const handleFieldNameClick = (field) => {
+        if (!user) {
+            onOpen();
+            return;
+        }
+        const value = prompt(`Enter the value for ${fieldNameMap[field]}:`);
+        if (value !== null) {
+            const newValue = parseFloat(value);
+            if (isNaN(newValue)) {
+                alert('Please enter a valid number.');
+                return;
+            }
+
+            setEditableFields(prev => {
+                const updatedFields = { ...prev };
+                Object.keys(updatedFields).forEach(year => {
+                    updatedFields[year][field] = newValue;
+                });
+                return updatedFields;
+            });
+            setTriggerSave(true);
+        }
+    };
+
+
     useEffect(() => {
         if(triggerSave) {
             saveVersion(selectedVersion)
             setTriggerSave(false);
-
         }
     },[triggerSave, selectedVersion])
 
@@ -349,26 +575,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         }
 
     }, [user]);
-
-    {/*
-        const renderEditableFieldInput = (year, field) => {
-            return (
-                <input
-                    type="text"
-                    className="w-full p-1 border border-gray-300 rounded text-right"
-                    name={`${year}-${field}`}
-                    value={editableFields[year][field]}
-                    onClick={() => {
-                        if (!user) {
-                            onOpen();
-                            return;
-                        }
-                    }}
-                    onChange={(e) => handleEditableFieldChange(year, field, e.target.value)}
-                />
-            );
-        };
-    */}
 
 
 /////social security benefits
@@ -726,28 +932,25 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                             rowsPerPageOptions={[10]}
                             getRowClassName={getRowClassName}
                             isCellEditable={isCellEditable}
-                            onCellEditCommit={(params) => {
-                                const { id, field, value } = params;
-                                const year = field;
-                                console.log("editing");
-                                handleEditableFieldChange(year, id, value);
-                            }}
+                            processRowUpdate={processRowUpdate}
+                            onProcessRowUpdateError={processRowUpdateError}
                         />
                     </div>
                 </div>
             )}
 
 
-            {/*{selectedVersion !== "Select a scenario" && (
+            {/*
+
+            {selectedVersion !== "Select a scenario" && (
                 <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
                     <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
-                    <table className="border-collapse border border-slate-400">
+                    <table className="border-collapse border border-slate-400 w-full">
                         <thead className="bg-gray-100">
                         <tr>
                             <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 tracking-wider">Field</th>
                             {Object.keys(staticFields).map((year) => (
-                                <th key={year}
-                                    className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">{year}</th>
+                                <th key={year} className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">{year}</th>
                             ))}
                         </tr>
                         </thead>
@@ -755,124 +958,141 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                         <tr>
                             <td className="px-3 py-2 text-left whitespace-nowrap">Age Spouse 1</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">{staticFields[year].ageSpouse1}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {staticFields[year].ageSpouse1}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">Age Spouse 2</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" >Age Spouse 2</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">{staticFields[year].ageSpouse2}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {staticFields[year].ageSpouse2}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">Roth Conversion 1</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" onClick={() => handleFieldNameClick('rothSpouse1')}>Roth Conversion 1</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rothSpouse1')}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {renderEditableFieldInput(year, 'rothSpouse1')}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">Roth Conversion 2</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" onClick={() => handleFieldNameClick('rothSpouse2')}>Roth Conversion 2</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rothSpouse2')}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {renderEditableFieldInput(year, 'rothSpouse2')}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">Salary 1</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" onClick={() => handleFieldNameClick('salary1')}>Salary 1</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'salary1')}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {renderEditableFieldInput(year, 'salary1')}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">Salary 2</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" onClick={() => handleFieldNameClick('salary2')}>Salary 2</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'salary2')}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {renderEditableFieldInput(year, 'salary2')}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">Rental Income</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" onClick={() => handleFieldNameClick('rentalIncome')}>Rental Income</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'rentalIncome')}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {renderEditableFieldInput(year, 'rentalIncome')}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">Interest / Dividend</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" onClick={() => handleFieldNameClick('interest')}>Interest / Dividend</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'interest')}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {renderEditableFieldInput(year, 'interest')}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">Capital Gains</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" onClick={() => handleFieldNameClick('capitalGains')}>Capital Gains</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'capitalGains')}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {renderEditableFieldInput(year, 'capitalGains')}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">Pension</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" onClick={() => handleFieldNameClick('pension')}>Pension</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">{renderEditableFieldInput(year, 'pension')}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {renderEditableFieldInput(year, 'pension')}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">RMD Spouse 1</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" >RMD Spouse 1</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">{findRmdByYear(iraDetails.spouse1, parseInt(year))}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {findRmdByYear(iraDetails.spouse1, parseInt(year))}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">RMD Spouse 2</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" >RMD Spouse 2</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">{findRmdByYear(iraDetails.spouse2, parseInt(year))}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {findRmdByYear(iraDetails.spouse2, parseInt(year))}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">SS Spouse 1</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" >SS Spouse 1</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">{findSsBenefitsByYear(socialSecurityBenefits, parseInt(year)).spouse1Benefit}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {findSsBenefitsByYear(socialSecurityBenefits, parseInt(year)).spouse1Benefit}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">SS Spouse 2</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" >SS Spouse 2</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">{findSsBenefitsByYear(socialSecurityBenefits, parseInt(year)).spouse2Benefit}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {findSsBenefitsByYear(socialSecurityBenefits, parseInt(year)).spouse2Benefit}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">Total Ordinary Income</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" >Total Ordinary Income</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">${calculateTotalIncomeForYear(year)}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    ${calculateTotalIncomeForYear(year)}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">Standard Deductions</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" >Standard Deductions</td>
                             {Object.keys(staticFields).map((year) => (
-                                <td key={year}
-                                    className="px-3 py-2 text-center whitespace-nowrap">-${calculateStandardDeductionForYear(parseInt(year)).toFixed(2)}</td>
+                                <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                    -${calculateStandardDeductionForYear(parseInt(year)).toFixed(2)}
+                                </td>
                             ))}
                         </tr>
                         <tr>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">Taxable Ordinary Income</td>
+                            <td className="px-3 py-2 text-left whitespace-nowrap" >Taxable Ordinary Income</td>
                             {Object.keys(staticFields).map((year) => {
                                 const totalIncomeForYear = calculateTotalIncomeForYear(year);
                                 const standardDeductionForYear = calculateStandardDeductionForYear(parseInt(year));
                                 const taxableIncomeForYear = totalIncomeForYear - standardDeductionForYear;
                                 return (
-                                    <td key={year}
-                                        className="px-3 py-2 text-center whitespace-nowrap">${taxableIncomeForYear.toFixed(2)}</td>
+                                    <td key={year} className="px-3 py-2 text-center whitespace-nowrap">
+                                        ${taxableIncomeForYear.toFixed(2)}
+                                    </td>
                                 );
                             })}
                         </tr>
@@ -883,7 +1103,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             */}
 
 
-            {/*<h1>Ordinary Income Tax Brackets Table</h1>
+            <h1>Ordinary Income Tax Brackets Table</h1>
                 <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                 <tr>
@@ -913,7 +1133,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             })}
                 </tbody>
                 </table>
-            */}
 
         </div>
     );
