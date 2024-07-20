@@ -8,7 +8,7 @@ import BarChart from "@/app/components/BarChart";
 import useRmdCalculations from "@/app/hooks/useRmdCalculations";
 import {calculateTaxesForBrackets, calculateXNPV, findRmdByYear, findSsBenefitsByYear} from "@/app/utils/calculations";
 import useAuthModal from "@/app/hooks/useAuthModal";
-import { DataGrid, GridCellEditStopParams, GridCellEditStopReasons, MuiEvent } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
 
 const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
@@ -69,43 +69,43 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             // Trigger recalculations
             setTriggerSave(true);
 
-            // Iterate over each year and save the updated value to the corresponding field in the database
-            for (const year in updatedData) {
-                // Fetch existing data for the year to preserve other fields
-                const existingData = await fetchExistingDataForYear(parseInt(year));
+            {/*            // Iterate over each year and save the updated value to the corresponding field in the database
+                for (const year in updatedData) {
+                    // Fetch existing data for the year to preserve other fields
+                    const existingData = await fetchDataForYear(parseInt(year));
 
-                const dataToSave = {
-                    rentalIncome: existingData.rental_income,
-                    capitalGains: existingData.capital_gains,
-                    pension: existingData.pension,
-                    rothSpouse1: existingData.roth_1,
-                    rothSpouse2: existingData.roth_2,
-                    salary1: existingData.salary1,
-                    salary2: existingData.salary2,
-                    interest: existingData.interest,
-                    lifetime_tax: existingData.lifetime_tax,
-                    beneficiary_tax: existingData.beneficiary_tax,
-                    lifetime0: existingData.lifetime0,
-                    beneficiary0: existingData.beneficiary0,
-                    age1: inputs.husbandAge,
-                    age2: inputs.wifeAge,
-                    ira1: inputs1.ira1,
-                    ira2: inputs1.ira2,
-                    roi: inputs1.roi,
-                    inflation: inputs1.inflation,
-                    beneficiary_tax_rate: inputs1.beneficiary_tax_rate,
-                };
+                    const dataToSave = {
+                        rentalIncome: existingData.rental_income,
+                        capitalGains: existingData.capital_gains,
+                        pension: existingData.pension,
+                        rothSpouse1: existingData.roth_1,
+                        rothSpouse2: existingData.roth_2,
+                        salary1: existingData.salary1,
+                        salary2: existingData.salary2,
+                        interest: existingData.interest,
+                        lifetime_tax: existingData.lifetime_tax,
+                        beneficiary_tax: existingData.beneficiary_tax,
+                        lifetime0: existingData.lifetime0,
+                        beneficiary0: existingData.beneficiary0,
+                        age1: inputs.husbandAge,
+                        age2: inputs.wifeAge,
+                        ira1: inputs1.ira1,
+                        ira2: inputs1.ira2,
+                        roi: inputs1.roi,
+                        inflation: inputs1.inflation,
+                        beneficiary_tax_rate: inputs1.beneficiary_tax_rate,
+                    };
 
-                // Assign the updated value to the corresponding field in dataToSave
-                dataToSave[fieldName] = updatedData[year];
+                    // Assign the updated value to the corresponding field in dataToSave
+                    dataToSave[fieldName] = updatedData[year];
 
-                // Call the saveData function to save the data
-                await saveData(parseInt(year), dataToSave);
+                    // Call the saveData function to save the data
+                    await saveData(parseInt(year), dataToSave);
 
-                // Fetch the updated data for the year
-                await fetchDataForYear(parseInt(year));
-            }
-
+                    // Fetch the updated data for the year
+                    await fetchDataForYear(parseInt(year));
+                }
+            */}
             return { ...newRow, ...updatedData };
         } catch (error) {
             console.error('Error processing row update', error);
@@ -117,68 +117,73 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         console.error("Error updating row", error);
     };
 
-    const saveData = async (year, data) => {
-        if (!user) {
-            console.error('User is not logged in');
-            return;
-        }
+    {/*
+        const saveData = async (year, data) => {
+            if (!user) {
+                console.error('User is not logged in');
+                return;
+            }
 
-        const { error } = await supabaseClient.from('roth').upsert([{
-            user_id: user.id,
-            version_name: selectedVersion,
-            year: year,
-            rental_income: data.rentalIncome || 0,
-            capital_gains: data.capitalGains || 0,
-            pension: data.pension || 0,
-            roth_1: data.rothSpouse1 || 0,
-            roth_2: data.rothSpouse2 || 0,
-            salary1: data.salary1 || 0,
-            salary2: data.salary2 || 0,
-            interest: data.interest || 0,
-            age1: inputs.husbandAge,
-            age2: inputs.wifeAge,
-            ira1: inputs1.ira1,
-            ira2: inputs1.ira2,
-            roi: inputs1.roi,
-            inflation: inputs1.inflation,
-            lifetime_tax: data.lifetime_tax || 0,
-            beneficiary_tax: data.beneficiary_tax || 0,
-            lifetime0: data.lifetime0 || 0,
-            beneficiary0: data.beneficiary0 || 0,
-            beneficiary_tax_rate: inputs1.beneficiary_tax_rate
-        }], { onConflict: ['user_id', 'version_name', 'year'] });
+            const {error} = await supabaseClient.from('roth').upsert([{
+                user_id: user.id,
+                version_name: selectedVersion,
+                year: year,
+                rental_income: data.rentalIncome || 0,
+                capital_gains: data.capitalGains || 0,
+                pension: data.pension || 0,
+                roth_1: data.rothSpouse1 || 0,
+                roth_2: data.rothSpouse2 || 0,
+                salary1: data.salary1 || 0,
+                salary2: data.salary2 || 0,
+                interest: data.interest || 0,
+                age1: inputs.husbandAge,
+                age2: inputs.wifeAge,
+                ira1: inputs1.ira1,
+                ira2: inputs1.ira2,
+                roi: inputs1.roi,
+                inflation: inputs1.inflation,
+                lifetime_tax: data.lifetime_tax || 0,
+                beneficiary_tax: data.beneficiary_tax || 0,
+                lifetime0: data.lifetime0 || 0,
+                beneficiary0: data.beneficiary0 || 0,
+                beneficiary_tax_rate: inputs1.beneficiary_tax_rate
+            }], {onConflict: ['user_id', 'version_name', 'year']});
 
-        if (error) {
-            console.error('Error saving data to Supabase:', error);
-        } else {
-            console.log('Data successfully saved to Supabase.');
-            await fetchSavedVersions();
-        }
-    };
-    const fetchExistingDataForYear = async (year) => {
-        if (!user) {
-            console.error('User is not logged in');
+            if (error) {
+                console.error('Error saving data to Supabase:', error);
+            } else {
+                console.log('Data successfully saved to Supabase.');
+                await fetchSavedVersions();
+            }
+        };
+    */}
+    {/*
+        const fetchExistingDataForYear = async (year) => {
+            if (!user) {
+                console.error('User is not logged in');
+                return {};
+            }
+
+            const {data, error} = await supabaseClient
+                .from('roth')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('version_name', selectedVersion)
+                .eq('year', year);
+
+            if (error) {
+                console.error('Error fetching existing data for year from Supabase:', error);
+                return {};
+            }
+
+            if (data.length > 0) {
+                return data[0];
+            }
+
             return {};
-        }
+        };
 
-        const { data, error } = await supabaseClient
-            .from('roth')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('version_name', selectedVersion)
-            .eq('year', year);
-
-        if (error) {
-            console.error('Error fetching existing data for year from Supabase:', error);
-            return {};
-        }
-
-        if (data.length > 0) {
-            return data[0];
-        }
-
-        return {};
-    };
+    */}
 
     const fetchDataForYear = async (year) => {
         if (!user) {
@@ -216,6 +221,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         }
     };
 
+    {/*
     const handleEditableFieldChange = (year, field, value) => {
         if (!user) {
             onOpen();
@@ -238,23 +244,24 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
     };
 
 
-    const renderEditableFieldInput = (year, field) => {
-        return (
-            <input
-                type="text"
-                className="table-input w-full p-1 border border-gray-300 rounded text-right"
-                name={`${year}-${field}`}
-                value={editableFields[year][field]}
-                onClick={() => {
-                    if (!user) {
-                        onOpen();
-                        return;
-                    }
-                }}
-                onChange={(e) => handleEditableFieldChange(year, field, e.target.value)}
-            />
-        );
-    };
+        const renderEditableFieldInput = (year, field) => {
+            return (
+                <input
+                    type="text"
+                    className="table-input w-full p-1 border border-gray-300 rounded text-right"
+                    name={`${year}-${field}`}
+                    value={editableFields[year][field]}
+                    onClick={() => {
+                        if (!user) {
+                            onOpen();
+                            return;
+                        }
+                    }}
+                    onChange={(e) => handleEditableFieldChange(year, field, e.target.value)}
+                />
+            );
+        };
+   */ }
 
     const fieldNameMap = {
         rothSpouse1: "Roth Spouse 1",
@@ -265,30 +272,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         interest: "Interest / Dividend",
         capitalGains: "Capital Gains",
         pension: "Pension",
-    };
-
-    const handleFieldNameClick = (field) => {
-        if (!user) {
-            onOpen();
-            return;
-        }
-        const value = prompt(`Enter the value for ${fieldNameMap[field]}:`);
-        if (value !== null) {
-            const newValue = parseFloat(value);
-            if (isNaN(newValue)) {
-                alert('Please enter a valid number.');
-                return;
-            }
-
-            setEditableFields(prev => {
-                const updatedFields = { ...prev };
-                Object.keys(updatedFields).forEach(year => {
-                    updatedFields[year][field] = newValue;
-                });
-                return updatedFields;
-            });
-            setTriggerSave(true);
-        }
     };
 
 
@@ -696,6 +679,33 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         }
     };
 
+    const [selectedCellParams, setSelectedCellParams] = useState([]);
+
+    const handleKeyDown = (event) => {
+        if (event.key === 'Enter' || event.key === 'Tab') {
+            setSelectedCellParams([]);
+        }
+    };
+
+    useEffect(() => {
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
+
+
+    const columns = [
+        { field: 'label', headerName: 'Field', width: 200 },
+        ...Object.keys(staticFields).map((year) => ({
+            field: year.toString(),
+            headerName: year.toString(),
+            width: 150,
+            editable: true,
+            sortable: false,
+        })),
+    ];
+
     const rows = transposedRows.map(row => {
         const newRow = { id: row.id, label: row.label };
         Object.keys(staticFields).forEach(year => {
@@ -707,17 +717,6 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         });
         return newRow;
     });
-
-    const columns = [
-        { field: 'label', headerName: 'Field', width: 200 },
-        ...Object.keys(staticFields).map((year) => ({
-            field: year.toString(),
-            headerName: year.toString(),
-            width: 150,
-            editable: true,
-            sortable:false
-        }))
-    ];
 
     const editableRowIds = ['rothSpouse1', 'rothSpouse2', 'salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
     const isCellEditable = (params) => {

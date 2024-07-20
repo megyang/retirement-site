@@ -20,3 +20,35 @@
     width: 100%;
     box-sizing: border-box;
 }
+
+.custom-range {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    background: #e2785b;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+    border-radius: 10px;
+}
+
+.custom-range:hover {
+    opacity: 1;
+}
+
+.custom-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #e2785b;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.custom-range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #e2785b;
+    cursor: pointer;
+}
