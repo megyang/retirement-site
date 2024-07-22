@@ -336,7 +336,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                     <td>
                                         <input
                                             type="range"
-                                            className="w-full"
+                                            className="w-full custom-range"
                                             name="wSS"
                                             min="62"
                                             max="70"
