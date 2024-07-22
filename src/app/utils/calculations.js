@@ -1,13 +1,11 @@
 import Decimal from "decimal.js";
 import rmdDistributionTable from "@/app/utils/rmdDistributionTable";
 
-export const formatCurrency = (value) => {
-    const numberString = value.replace(/[^0-9.]/g, '');
-    const number = parseFloat(numberString);
-    if (isNaN(number)) {
-        return '';
-    }
-    return '$' + number.toLocaleString();
+export const formatNumberWithCommas = (value) => {
+    if (value === null || value === undefined || isNaN(value) || value === '') return '';
+    const isNegative = value < 0;
+    const absValue = Math.abs(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return isNegative ? `(${absValue})` : absValue;
 };
 
 export const getPercentageOfPIAForAge = (age) => {

@@ -13,20 +13,23 @@ const useReferenceTable = (inputs) => {
         const calculateTableData = () => {
             const newData = [];
 
+            const hPIA = inputs.hPIA != null ? inputs.hPIA : 0;
+            const wPIA = inputs.wPIA != null ? inputs.wPIA : 0;
+
             for (let age = 62; age <= 70; age++) {
                 const percentageOfPIA = getPercentageOfPIAForAge(age);
                 const spousePIA = getSpouse(age);
-                const hBenefit = new Decimal(inputs.hPIA)
+                const hBenefit = new Decimal(hPIA)
                     .times(percentageOfPIA)
                     .dividedBy(100);
-                const wBenefit = new Decimal(inputs.wPIA)
+                const wBenefit = new Decimal(wPIA)
                     .times(spousePIA)
                     .dividedBy(100);
                 const husbandMonthly = Decimal.max(hBenefit, wBenefit);
-                const hBenefit1 = new Decimal(inputs.hPIA)
+                const hBenefit1 = new Decimal(hPIA)
                     .times(spousePIA)
                     .dividedBy(100);
-                const wBenefit1 = new Decimal(inputs.wPIA)
+                const wBenefit1 = new Decimal(wPIA)
                     .times(percentageOfPIA)
                     .dividedBy(100);
                 const wifeMonthly = Decimal.max(hBenefit1, wBenefit1);

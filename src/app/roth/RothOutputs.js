@@ -6,7 +6,13 @@ import { useUser } from "@/app/hooks/useUser";
 import useSocialSecurityStore from "@/app/store/useSocialSecurityStore";
 import BarChart from "@/app/components/BarChart";
 import useRmdCalculations from "@/app/hooks/useRmdCalculations";
-import {calculateTaxesForBrackets, calculateXNPV, findRmdByYear, findSsBenefitsByYear} from "@/app/utils/calculations";
+import {
+    calculateTaxesForBrackets,
+    calculateXNPV,
+    findRmdByYear,
+    findSsBenefitsByYear,
+    formatNumberWithCommas
+} from "@/app/utils/calculations";
 import useAuthModal from "@/app/hooks/useAuthModal";
 import { DataGrid } from '@mui/x-data-grid';
 
@@ -31,15 +37,27 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             return;
         }
         const { name, value } = e.target;
-        setInputs1(prevInputs => {
-            const updatedInputs = {
-                ...prevInputs,
-                [name]: parseFloat(value),
+        let numericValue = value.replace(/[$,%]/g, ''); // Remove dollar sign, commas, and percentage sign
+
+        if (!isNaN(numericValue) && numericValue !== '') {
+            // Convert to a percentage if the input field is a percentage field
+            if (['beneficiary_tax_rate', 'roi', 'inflation'].includes(name)) {
+                numericValue = parseFloat(numericValue) / 100;
+            } else {
+                numericValue = parseFloat(numericValue);
             }
-            console.log("updatedInputs", updatedInputs);
-            return updatedInputs;
-        });
-        setTriggerSave(true);
+            setInputs1(prevInputs => ({
+                ...prevInputs,
+                [name]: numericValue
+            }));
+            setTriggerSave(true);
+        } else if (numericValue === '') {
+            setInputs1(prevInputs => ({
+                ...prevInputs,
+                [name]: 0
+            }));
+            setTriggerSave(true);
+        }
     };
 
     const processRowUpdate = async (newRow, oldRow) => {
@@ -403,7 +421,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 .plus(ssBenefits.spouse1Benefit)
                 .plus(ssBenefits.spouse2Benefit);
 
-            return totalIncome.toFixed(2);
+            return totalIncome.toFixed(0);
         };
 
         // Calculate lifetime0 and beneficiary0 with roth1 and roth2 set to zero
@@ -420,7 +438,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             new Decimal(0)
         );
 
-        const beneficiaryTaxPaidWithZeroRoth = totalInheritedIRA.times(inputs1.beneficiary_tax_rate).toFixed(2);
+        const beneficiaryTaxPaidWithZeroRoth = totalInheritedIRA.times(inputs1.beneficiary_tax_rate).toFixed(0);
 
         const dataToSave = [];
         for (let year in editableFields) {
@@ -442,9 +460,9 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 ira2: inputs1.ira2,
                 roi: inputs1.roi,
                 inflation: inputs1.inflation,
-                lifetime_tax: totalLifetimeTaxPaid.toFixed(2),
+                lifetime_tax: totalLifetimeTaxPaid.toFixed(0),
                 beneficiary_tax: beneficiaryTaxPaid,
-                lifetime0: totalLifetimeTaxPaidWithZeroRoth.toFixed(2),
+                lifetime0: totalLifetimeTaxPaidWithZeroRoth.toFixed(0),
                 beneficiary0: beneficiaryTaxPaidWithZeroRoth,
                 beneficiary_tax_rate: inputs1.beneficiary_tax_rate
             });
@@ -598,7 +616,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             .plus(ssBenefits.spouse1Benefit)
             .plus(ssBenefits.spouse2Benefit);
 
-        return totalIncome.toFixed(2);
+        return totalIncome.toFixed(0);
     };
 
     const calculateTaxableIncomes = (staticFields, iraDetails, findSsBenefitsByYear, calculateTotalIncomeForYear, calculateStandardDeductionForYear) => {
@@ -622,7 +640,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
         calculateStandardDeductionForYear
     );
     const totalInheritedIRA = totals.inheritedIRAHusband.plus(totals.inheritedIRAWife);
-    const beneficiaryTaxPaid = totalInheritedIRA.times(inputs1.beneficiary_tax_rate).toFixed(2);
+    const beneficiaryTaxPaid = totalInheritedIRA.times(inputs1.beneficiary_tax_rate).toFixed(0);
 
     const totalLifetimeTaxPaid = Object.keys(taxableIncomes).reduce(
         (total, year) => total.plus(new Decimal(taxableIncomes[year])),
@@ -671,9 +689,9 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             case 'totalIncome':
                 return calculateTotalIncomeForYear(year);
             case 'standardDeductions':
-                return calculateStandardDeductionForYear(parseInt(year)).toFixed(2);
+                return calculateStandardDeductionForYear(parseInt(year)).toFixed(0);
             case 'taxableIncome':
-                return (calculateTotalIncomeForYear(year) - calculateStandardDeductionForYear(parseInt(year))).toFixed(2);
+                return (calculateTotalIncomeForYear(year) - calculateStandardDeductionForYear(parseInt(year))).toFixed(0);
             default:
                 return 0;
         }
@@ -696,13 +714,19 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
 
 
     const columns = [
-        { field: 'label', headerName: 'Field', width: 200 },
+        { field: 'label', headerName: 'Field', width: 200, headerAlign: 'center' },
         ...Object.keys(staticFields).map((year) => ({
             field: year.toString(),
             headerName: year.toString(),
             width: 150,
             editable: true,
             sortable: false,
+            headerAlign: 'center',
+            renderCell: (params) => (
+                <div style={{ textAlign: 'right', width: '100%' }}>
+                    {formatNumberWithCommas(params.value)}
+                </div>
+            ),
         })),
     ];
 
@@ -855,65 +879,78 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                     </div>
                     <div className="bg-white p-6 rounded flex-1 w-2">
                         <h3 className="text-left text-1xl">Other Inputs</h3>
-                        <div className="">
-                            <div className="flex items-center justify-between mb-2">
+                        <div className="flex flex-col space-y-2">
+                            <div className="flex justify-between items-center">
                                 <label className="flex-grow">Beneficiary Tax Rate:</label>
-                                <input
-                                    type="number"
-                                    name="beneficiary_tax_rate"
-                                    value={inputs1.beneficiary_tax_rate * 100}
-                                    onChange={(e) => {
-                                        const { name, value } = e.target;
-                                        setInputs1(prevInputs => {
-                                            const updatedInputs = {
-                                                ...prevInputs,
-                                                [name]: parseFloat(value) / 100,
-                                            };
-                                            return updatedInputs;
-                                        });
-                                    }}
-                                    className="border rounded p-1 w-24 text-right"
-                                />%
+                                <div className="relative w-32">
+                                    <input
+                                        type="text"
+                                        name="beneficiary_tax_rate"
+                                        value={`${inputs1.beneficiary_tax_rate * 100}`}
+                                        onChange={(e) => {
+                                            const { name, value } = e.target;
+                                            setInputs1(prevInputs => {
+                                                const updatedInputs = {
+                                                    ...prevInputs,
+                                                    [name]: parseFloat(value) / 100,
+                                                };
+                                                return updatedInputs;
+                                            });
+                                        }}
+                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded pr-6"
+                                    />
+                                    <span className="absolute right-2 top-1">%</span>
+                                </div>
                             </div>
-                            <div className="flex items-center justify-between mb-2">
+                            <div className="flex justify-between items-center">
                                 <label className="flex-grow">Your IRA:</label>
-                                <input
-                                    type="number"
-                                    name="ira2"
-                                    value={inputs1.ira2}
-                                    onChange={handleInputChange}
-                                    className="border rounded w-24 text-right"
-                                />
+                                <div className="w-32 ml-4">
+                                    <input
+                                        type="text"
+                                        name="ira1"
+                                        value={`$${formatNumberWithCommas(inputs1.ira1 || '')}`}
+                                        onChange={handleInputChange}
+                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
+                                    />
+                                </div>
                             </div>
-                            <div className="flex items-center justify-between mb-2">
+                            <div className="flex justify-between items-center">
                                 <label className="flex-grow">Your Spouse’s IRA:</label>
-                                <input
-                                    type="number"
-                                    name="ira1"
-                                    value={inputs1.ira1}
-                                    onChange={handleInputChange}
-                                    className="border rounded w-24 text-right"
-                                />
+                                <div className="w-32 ml-4">
+                                    <input
+                                        type="text"
+                                        name="ira2"
+                                        value={`$${formatNumberWithCommas(inputs1.ira2 || '')}`}
+                                        onChange={handleInputChange}
+                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
+                                    />
+                                </div>
                             </div>
-                            <div className="flex items-center justify-between mb-2">
+                            <div className="flex justify-between items-center">
                                 <label className="flex-grow">Investment Return:</label>
-                                <input
-                                    type="number"
-                                    name="roi"
-                                    value={inputs1.roi}
-                                    onChange={handleInputChange}
-                                    className="border rounded w-24 text-right"
-                                />%
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        name="roi"
+                                        value={`${(inputs1.roi) * 100}`}
+                                        onChange={handleInputChange}
+                                        className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
+                                    />
+                                    <span className="absolute right-2 top-1">%</span>
+                                </div>
                             </div>
-                            <div className="flex items-center justify-between">
+                            <div className="flex justify-between items-center">
                                 <label className="flex-grow">Inflation Rate:</label>
-                                <input
-                                    type="number"
-                                    name="inflation"
-                                    value={inputs1.inflation}
-                                    onChange={handleInputChange}
-                                    className="border rounded w-24 text-right"
-                                />%
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        name="inflation"
+                                        value={`${(inputs1.inflation) * 100}`}
+                                        onChange={handleInputChange}
+                                        className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
+                                    />
+                                    <span className="absolute right-2 top-1">%</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1123,10 +1160,10 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
                 <td className="px-3 py-2 text-center whitespace-nowrap">{year}</td>
             {bracketTitles.map((title) => (
                 <td key={`${year}-${title}`} className="px-3 py-2 text-center whitespace-nowrap">
-                ${taxesForBrackets[title].toFixed(2)}
+                ${taxesForBrackets[title].toFixed(0)}
                 </td>
                 ))}
-                <td className="px-3 py-2 text-center whitespace-nowrap">${totalTax.toFixed(2)}</td>
+                <td className="px-3 py-2 text-center whitespace-nowrap">${totalTax.toFixed(0)}</td>
                 </tr>
                 );
             })}

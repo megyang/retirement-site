@@ -3,7 +3,7 @@ import Decimal from "decimal.js";
 import BarChart from "../components/BarChart";
 import useReferenceTable from "../hooks/useReferenceTable";
 import useSocialSecurityStore from "@/app/store/useSocialSecurityStore";
-import { calculateBenefitForYear, calculateXNPV } from "../utils/calculations";
+import {calculateBenefitForYear, calculateXNPV, formatNumberWithCommas} from "../utils/calculations";
 import PiaModal from "@/app/modal/PiaModal";
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
@@ -55,12 +55,23 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
             return;
         }
         const { name, value } = e.target;
-        const newInputs = {
-            ...inputs,
-            [name]: parseFloat(value)
-        };
-        setInputs(newInputs);
-        setSocialSecurityInputs(newInputs);
+        const numericValue = value.replace(/[$,]/g, '');
+
+        if (!isNaN(numericValue) && numericValue !== '') {
+            const newInputs = {
+                ...inputs,
+                [name]: numericValue
+            };
+            setInputs(newInputs);
+            setSocialSecurityInputs(newInputs);
+        } else if (numericValue === '') {
+            const newInputs = {
+                ...inputs,
+                [name]: ''
+            };
+            setInputs(newInputs);
+            setSocialSecurityInputs(newInputs);
+        }
     };
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -395,7 +406,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="husbandAge"
                                         value={inputs.husbandAge}
                                         onChange={handleChange}
-                                        className="w-full text-right border border-gray-300"
+                                        className="input-box w-full text-right border border-gray-300"
                                     />
                                 </td>
                                 <td className="text-right p-5">
@@ -404,7 +415,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="wifeAge"
                                         value={inputs.wifeAge}
                                         onChange={handleChange}
-                                        className="w-full text-right border border-gray-300"
+                                        className="input-box w-full text-right border border-gray-300"
                                     />
                                 </td>
                             </tr>
@@ -416,7 +427,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="hLE"
                                         value={inputs.hLE}
                                         onChange={handleChange}
-                                        className="w-full text-right border border-gray-300"
+                                        className="input-box w-full text-right border border-gray-300"
                                     />
                                 </td>
                                 <td className="text-right p-5">
@@ -425,7 +436,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="wLE"
                                         value={inputs.wLE}
                                         onChange={handleChange}
-                                        className="w-full text-right border border-gray-300"
+                                        className="input-box w-full text-right border border-gray-300"
                                     />
                                 </td>
                             </tr>
@@ -443,18 +454,18 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                 </td>
                                 <td className="text-right pr-4 p-5">
                                     <input
-                                        type="number"
+                                        type="text"
                                         name="hPIA"
-                                        value={inputs.hPIA}
+                                        value={`$${formatNumberWithCommas(inputs.hPIA || '')}`}
                                         onChange={handleChange}
                                         className="w-full text-right border border-gray-300"
                                     />
                                 </td>
                                 <td className="text-right p-5">
                                     <input
-                                        type="number"
+                                        type="text"
                                         name="wPIA"
-                                        value={inputs.wPIA}
+                                        value={`$${formatNumberWithCommas(inputs.wPIA || '')}`}
                                         onChange={handleChange}
                                         className="w-full text-right border border-gray-300"
                                     />
