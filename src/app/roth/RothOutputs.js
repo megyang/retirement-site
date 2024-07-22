@@ -36,6 +36,7 @@ const RothOutputs = ({ inputs, inputs1, editableFields, setEditableFields, stati
             onOpen();
             return;
         }
+        console.log("inputs1");
         const { name, value } = e.target;
         let numericValue = value.replace(/[$,%]/g, ''); // Remove dollar sign, commas, and percentage sign
 
