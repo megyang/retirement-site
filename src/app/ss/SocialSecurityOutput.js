@@ -55,19 +55,29 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
             return;
         }
         const { name, value } = e.target;
-        const numericValue = value.replace(/[$,]/g, '');
 
-        if (!isNaN(numericValue) && numericValue !== '') {
+        if (name === 'hPIA' || name === 'wPIA') {
+            const numericValue = value.replace(/[$,]/g, '');
+            if (!isNaN(numericValue) && numericValue !== '') {
+                const formattedValue = `$${formatNumberWithCommas(numericValue)}`;
+                const newInputs = {
+                    ...inputs,
+                    [name]: numericValue
+                };
+                setInputs(newInputs);
+                setSocialSecurityInputs(newInputs);
+            } else if (numericValue === '') {
+                const newInputs = {
+                    ...inputs,
+                    [name]: ''
+                };
+                setInputs(newInputs);
+                setSocialSecurityInputs(newInputs);
+            }
+        } else {
             const newInputs = {
                 ...inputs,
-                [name]: numericValue
-            };
-            setInputs(newInputs);
-            setSocialSecurityInputs(newInputs);
-        } else if (numericValue === '') {
-            const newInputs = {
-                ...inputs,
-                [name]: ''
+                [name]: parseFloat(value)
             };
             setInputs(newInputs);
             setSocialSecurityInputs(newInputs);
@@ -223,6 +233,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
         });
 
     }, [
+        inputs,
         inputs.hLE,
         inputs.wLE,
         inputs.husbandAge,
