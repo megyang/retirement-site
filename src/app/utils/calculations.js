@@ -13,8 +13,8 @@ export const getPercentageOfPIAForAge = (age) => {
         62: new Decimal(70.0),
         63: new Decimal(75.0),
         64: new Decimal(80.0),
-        65: new Decimal(86.7),
-        66: new Decimal(93.3),
+        65: new Decimal(86.666666666666666666667),
+        66: new Decimal(93.333333333333333333333),
         67: new Decimal(100.0),
         68: new Decimal(108.0),
         69: new Decimal(116.0),
@@ -73,15 +73,18 @@ export const calculateXNPV = (rate, cashFlows, dates) => {
     return xnpv;
 };
 
+
 export const calculateRMD = (age, startingValue) => {
-    if (age < 75) return new Decimal(0); // RMD is 0 for ages below 75
+    if (age < 75) return new Decimal(0);
     const distributionPeriod = rmdDistributionTable[age];
     return distributionPeriod ? new Decimal(startingValue).dividedBy(distributionPeriod) : new Decimal(0);
 };
+
 export const findRmdByYear = (details, year) => {
     const detail = details.find((detail) => detail.year === year);
     return detail ? detail.rmd : "0.00";
 };
+
 export const findSsBenefitsByYear = (socialSecurityBenefits, year) => {
     const benefitsForYear = Array.isArray(socialSecurityBenefits)
         ? socialSecurityBenefits.find(data => data.year === year)
@@ -92,7 +95,7 @@ export const findSsBenefitsByYear = (socialSecurityBenefits, year) => {
     };
 };
 
-export const calculateTaxesForBrackets = (taxableIncome) => {
+export const calculateTaxesForBrackets = (taxableIncome, inflationRate, currentYear, taxYear) => {
     const brackets = [
         { threshold: 23200, rate: 0.10 },
         { threshold: 94300, rate: 0.12 },
@@ -115,13 +118,16 @@ export const calculateTaxesForBrackets = (taxableIncome) => {
 
     let remainingIncome = taxableIncome;
     brackets.forEach((bracket, index) => {
+        // Adjust the threshold for inflation
+        const adjustedThreshold = bracket.threshold * Math.pow(1 + inflationRate, taxYear - currentYear);
+
         if (index === 0) {
-            const amountInBracket = Math.min(remainingIncome, bracket.threshold);
+            const amountInBracket = Math.min(remainingIncome, adjustedThreshold);
             taxesForBrackets['10%'] = amountInBracket * bracket.rate;
             remainingIncome -= amountInBracket;
         } else {
-            const prevThreshold = brackets[index - 1].threshold;
-            const amountInBracket = Math.min(remainingIncome, bracket.threshold - prevThreshold);
+            const prevThreshold = brackets[index - 1].threshold * Math.pow(1 + inflationRate, taxYear - currentYear);
+            const amountInBracket = Math.min(remainingIncome, adjustedThreshold - prevThreshold);
             taxesForBrackets[`${bracket.rate * 100}%`] = amountInBracket * bracket.rate;
             remainingIncome -= amountInBracket;
         }

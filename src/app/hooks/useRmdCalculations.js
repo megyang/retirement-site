@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import Decimal from 'decimal.js';
-import {calculateRMD} from "@/app/utils/calculations";
+import { calculateRMD } from "@/app/utils/calculations";
 
-const useRmdCalculations = (age1, age2, ira1, ira2, roi, hLE, wLE) => {
+const useRmdCalculations = (age1, age2, ira1, ira2, roi, hLE, wLE, editableFields) => {
     const [iraDetails, setIraDetails] = useState({ spouse1: [], spouse2: [] });
     const [totals, setTotals] = useState({
         totalRMDsHusband: new Decimal(0),
@@ -12,22 +12,24 @@ const useRmdCalculations = (age1, age2, ira1, ira2, roi, hLE, wLE) => {
     });
 
     useEffect(() => {
-        const calculateIraDetails = (startingAge, lifeExpectancy, currentIraValue) => {
+        const calculateIraDetails = (startingAge, lifeExpectancy, currentIraValue, roi, rothConversions) => {
             let year = new Date().getFullYear();
             let age = startingAge;
             let startingValue = new Decimal(currentIraValue);
             const details = [];
 
             while (age <= lifeExpectancy) {
-                const investmentReturns = startingValue.times(Decimal(roi).dividedBy(100));
+                const investmentReturns = startingValue.times(Decimal(roi));
                 const rmd = calculateRMD(age, startingValue);
-                const endingValue = startingValue.plus(investmentReturns).minus(rmd);
+                const rothConversion = new Decimal(rothConversions[year] || 0);
+                const endingValue = startingValue.plus(investmentReturns).minus(rmd).minus(rothConversion);
 
                 details.push({
                     year,
                     age,
                     startingValue: startingValue.toFixed(2),
                     investmentReturns: investmentReturns.toFixed(2),
+                    rothConversion: rothConversion.toFixed(2),
                     rmd: rmd.toFixed(2),
                     endingValue: endingValue.toFixed(2)
                 });
@@ -39,8 +41,18 @@ const useRmdCalculations = (age1, age2, ira1, ira2, roi, hLE, wLE) => {
             return details;
         };
 
-        const spouse1Details = calculateIraDetails(age1, hLE, ira1);
-        const spouse2Details = calculateIraDetails(age2, wLE, ira2);
+        const spouse1RothConversions = Object.keys(editableFields).reduce((acc, year) => {
+            acc[year] = editableFields[year].rothSpouse1;
+            return acc;
+        }, {});
+
+        const spouse2RothConversions = Object.keys(editableFields).reduce((acc, year) => {
+            acc[year] = editableFields[year].rothSpouse2;
+            return acc;
+        }, {});
+
+        const spouse1Details = calculateIraDetails(age1, hLE, ira1, roi, spouse1RothConversions);
+        const spouse2Details = calculateIraDetails(age2, wLE, ira2, roi, spouse2RothConversions);
 
         setIraDetails({
             spouse1: spouse1Details,
@@ -59,7 +71,7 @@ const useRmdCalculations = (age1, age2, ira1, ira2, roi, hLE, wLE) => {
             inheritedIRAHusband,
             inheritedIRAWife
         });
-    }, [age1, age2, ira1, ira2, roi, hLE, wLE]);
+    }, [age1, age2, ira1, ira2, roi, hLE, wLE, editableFields]);
 
     return { iraDetails, totals };
 };

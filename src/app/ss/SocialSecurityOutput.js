@@ -59,7 +59,6 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
         if (name === 'hPIA' || name === 'wPIA') {
             const numericValue = value.replace(/[$,]/g, '');
             if (!isNaN(numericValue) && numericValue !== '') {
-                const formattedValue = `$${formatNumberWithCommas(numericValue)}`;
                 const newInputs = {
                     ...inputs,
                     [name]: numericValue
