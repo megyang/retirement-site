@@ -1094,7 +1094,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             */}
 
 
-            {/* Table for Husband
+            {/* Table for Husband */}
 
             <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
                 <h2 className="text-xl font-semi-bold mb-3">Husbands IRA Details</h2>
@@ -1119,8 +1119,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     </tbody>
                 </table>
             </div>
-*/}
-            {/* Table for Wife
+
+            {/* Table for Wife*/}
             <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
                 <h2 className="text-xl font-semi-bold mb-3">Wifes IRA Details</h2>
                 <table className="min-w-full divide-y divide-gray-200">
@@ -1175,7 +1175,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                 })}
                 </tbody>
             </table>
-*/}
+
         </div>
         );
 
