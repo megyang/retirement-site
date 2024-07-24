@@ -130,19 +130,19 @@ export const calculateTaxesForBrackets = (taxableIncome, inflationRate, currentY
         '37%': 0
     };
 
-    let remainingIncome = taxableIncome;
+    let remainingIncome = Math.max(0, taxableIncome); // Ensure taxable income is not negative
     brackets.forEach((bracket, index) => {
         // Adjust the threshold for inflation
         const adjustedThreshold = bracket.threshold * Math.pow(1 + inflationRate, taxYear - currentYear);
 
         if (index === 0) {
             const amountInBracket = Math.min(remainingIncome, adjustedThreshold);
-            taxesForBrackets['10%'] = amountInBracket * bracket.rate;
+            taxesForBrackets['10%'] = Math.max(0, amountInBracket * bracket.rate);
             remainingIncome -= amountInBracket;
         } else {
             const prevThreshold = brackets[index - 1].threshold * Math.pow(1 + inflationRate, taxYear - currentYear);
             const amountInBracket = Math.min(remainingIncome, adjustedThreshold - prevThreshold);
-            taxesForBrackets[`${bracket.rate * 100}%`] = amountInBracket * bracket.rate;
+            taxesForBrackets[`${bracket.rate * 100}%`] = Math.max(0, amountInBracket * bracket.rate);
             remainingIncome -= amountInBracket;
         }
     });

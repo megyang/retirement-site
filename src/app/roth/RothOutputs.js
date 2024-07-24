@@ -461,7 +461,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             const totalIncomeForYear = calculateTotalIncomeForYear(year);
             const standardDeductionForYear = calculateStandardDeductionForYear(parseInt(year));
 
-            taxableIncomes[year] = totalIncomeForYear - standardDeductionForYear;
+            taxableIncomes[year] = Math.max(0, totalIncomeForYear - standardDeductionForYear);
         });
 
         return taxableIncomes;
@@ -478,7 +478,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const calculateTotalLifetimeTaxPaid = (taxableIncomes, inflation, currentYear) => {
         let totalSum = 0;
         Object.keys(taxableIncomes).forEach((year) => {
-            const taxesForBrackets = calculateTaxesForBrackets(taxableIncomes[year], inflation, currentYear, year);
+            const taxesForBrackets = calculateTaxesForBrackets(Math.max(0, taxableIncomes[year]), inflation, currentYear, year);
             const totalTax = Object.values(taxesForBrackets).reduce((sum, tax) => sum + tax, 0);
             totalSum += totalTax;
         });
@@ -557,7 +557,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const calculateTotalLifetimeTaxPaidWithZeroRoth = (taxableIncomesWithZeroRoth, inflation, currentYear) => {
         let totalSum = 0;
         Object.keys(taxableIncomesWithZeroRoth).forEach((year) => {
-            const taxesForBrackets = calculateTaxesForBrackets(taxableIncomesWithZeroRoth[year], inflation, currentYear, year);
+            const taxesForBrackets = calculateTaxesForBrackets(Math.max(0, taxableIncomesWithZeroRoth[year]), inflation, currentYear, year);
             const totalTax = Object.values(taxesForBrackets).reduce((sum, tax) => sum + tax, 0);
             totalSum += totalTax;
         });
@@ -613,7 +613,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             case 'standardDeductions':
                 return calculateStandardDeductionForYear(parseInt(year)).toFixed(0);
             case 'taxableIncome':
-                return Math.max(0, calculateTotalIncomeForYear(year) - calculateStandardDeductionForYear(parseInt(year))).toFixed(0);            default:
+                return Math.max(0, calculateTotalIncomeForYear(year) - calculateStandardDeductionForYear(parseInt(year))).toFixed(0);
+            default:
                 return 0;
         }
     };
