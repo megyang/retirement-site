@@ -185,7 +185,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
 // ROTH CALCULATIONS START -----------
     const { ira1, ira2, roi } = inputs1;
-    const {iraDetails, totals} = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE, editableFields);
+    const {iraDetails, iraDetailsZeroRoth, totals} = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE, editableFields);
 
     staticFields = {};
     for (let year = currentYear, ageSpouse1 = inputs.husbandAge, ageSpouse2 = inputs.wifeAge;
@@ -256,6 +256,24 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             console.error('User is not logged in');
             return;
         }
+
+        const husbandLEYear = currentYear + inputs.hLE - inputs.husbandAge;
+        const wifeLEYear = currentYear + inputs.wLE - inputs.wifeAge;
+        const husbandEndingValue = iraDetails.spouse1.find(detail => detail.year === husbandLEYear)?.endingValue || 0;
+        const wifeEndingValue = iraDetails.spouse2.find(detail => detail.year === wifeLEYear)?.endingValue || 0;
+        const totalEndingValue = new Decimal(husbandEndingValue).plus(new Decimal(wifeEndingValue));
+        const beneficiaryTaxPaid = totalEndingValue.times(new Decimal(inputs1.beneficiary_tax_rate));
+
+        let totalSum = 0;
+        Object.keys(taxableIncomes).forEach((year) => {
+            const taxesForBrackets = calculateTaxesForBrackets(taxableIncomes[year], inputs1.inflation, currentYear, year);
+            const totalTax = Object.values(taxesForBrackets).reduce((sum, tax) => sum + tax, 0);
+            totalSum += totalTax;
+        });
+        const totalLifetimeTaxPaid = totalSum;
+
+        console.log("Calculated totalLifetimeTaxPaid:", totalLifetimeTaxPaid);
+        console.log("Calculated beneficiaryTaxPaid:", beneficiaryTaxPaid);
 
         // Clone editableFields and set roth1 and roth2 to zero for all years
         const editableFieldsWithZeroRoth = JSON.parse(JSON.stringify(editableFields));
@@ -480,7 +498,72 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     });
     const totalLifetimeTaxPaid = totalSum;
 
+    const calculateTotalIncomeForYearWithZeroRoth = (year) => {
+        const ssBenefits = findSsBenefitsByYear(socialSecurityBenefits, parseInt(year));
+        const editableFieldsForYear = editableFields[year] || {
+            salary1: 0,
+            salary2: 0,
+            rentalIncome: 0,
+            interest: 0,
+            capitalGains: 0,
+            pension: 0
+        };
 
+        const rmdSpouse1 = findRmdByYear(iraDetailsZeroRoth.spouse1, parseInt(year));
+        const rmdSpouse2 = findRmdByYear(iraDetailsZeroRoth.spouse2, parseInt(year));
+
+        const totalIncome = new Decimal(0)
+            .plus(editableFieldsForYear.salary1)
+            .plus(editableFieldsForYear.salary2)
+            .plus(editableFieldsForYear.rentalIncome)
+            .plus(editableFieldsForYear.interest)
+            .plus(editableFieldsForYear.capitalGains)
+            .plus(editableFieldsForYear.pension)
+            .plus(rmdSpouse1)
+            .plus(rmdSpouse2)
+            .plus(ssBenefits.spouse1Benefit)
+            .plus(ssBenefits.spouse2Benefit);
+
+        return totalIncome.toFixed(0);
+    };
+
+    const calculateTaxableIncomesWithZeroRoth = (staticFields, iraDetailsZeroRoth, findSsBenefitsByYear, calculateTotalIncomeForYearWithZeroRoth, calculateStandardDeductionForYear) => {
+        let taxableIncomes = {};
+
+        Object.keys(staticFields).forEach(year => {
+            const totalIncomeForYear = calculateTotalIncomeForYearWithZeroRoth(year);
+            const standardDeductionForYear = calculateStandardDeductionForYear(parseInt(year));
+
+            taxableIncomes[year] = totalIncomeForYear - standardDeductionForYear;
+        });
+
+        return taxableIncomes;
+    };
+
+    const taxableIncomesWithZeroRoth = calculateTaxableIncomesWithZeroRoth(
+        staticFields,
+        iraDetailsZeroRoth,
+        findSsBenefitsByYear,
+        calculateTotalIncomeForYearWithZeroRoth,
+        calculateStandardDeductionForYear
+    );
+
+    const totalSumWithZeroRoth = Object.keys(taxableIncomesWithZeroRoth).reduce((totalSum, year) => {
+        const taxesForBrackets = calculateTaxesForBrackets(taxableIncomesWithZeroRoth[year], inputs1.inflation, currentYear, year);
+        const totalTax = Object.values(taxesForBrackets).reduce((sum, tax) => sum + tax, 0);
+        return totalSum + totalTax;
+    }, 0);
+    const totalLifetimeTaxPaidWithZeroRoth = new Decimal(totalSumWithZeroRoth);
+
+    const husbandLEYearZeroRoth = currentYear + inputs.hLE - inputs.husbandAge;
+    const wifeLEYearZeroRoth = currentYear + inputs.wLE - inputs.wifeAge;
+    const husbandEndingValueZeroRoth = iraDetailsZeroRoth.spouse1.find(detail => detail.year === husbandLEYearZeroRoth)?.endingValue || 0;
+    const wifeEndingValueZeroRoth = iraDetailsZeroRoth.spouse2.find(detail => detail.year === wifeLEYearZeroRoth)?.endingValue || 0;
+    const totalEndingValueZeroRoth = new Decimal(husbandEndingValueZeroRoth).plus(new Decimal(wifeEndingValueZeroRoth));
+    const beneficiaryTaxPaidWithZeroRoth = totalEndingValueZeroRoth.times(new Decimal(inputs1.beneficiary_tax_rate));
+
+    console.log("outside", totalLifetimeTaxPaid);
+    console.log("outside", beneficiaryTaxPaid);
     const transposedRows = [
         { id: 'ageSpouse1', label: 'Age Spouse 1' },
         { id: 'ageSpouse2', label: 'Age Spouse 2' },
@@ -1002,7 +1085,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             */}
 
 
-            {/* Table for Husband
+            {/* Table for Husband */}
 
             <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
                 <h2 className="text-xl font-semi-bold mb-3">Husbands IRA Details</h2>
@@ -1026,9 +1109,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     ))}
                     </tbody>
                 </table>
-            </div>*/}
+            </div>
 
-            {/* Table for Wife
+            {/* Table for Wife */}
             <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
                 <h2 className="text-xl font-semi-bold mb-3">Wifes IRA Details</h2>
                 <table className="min-w-full divide-y divide-gray-200">
@@ -1082,7 +1165,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     );
                 })}
                 </tbody>
-            </table>*/}
+            </table>
 
         </div>
         );

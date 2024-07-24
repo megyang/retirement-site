@@ -95,6 +95,20 @@ export const findSsBenefitsByYear = (socialSecurityBenefits, year) => {
     };
 };
 
+export const calculateTaxableIncomes = (staticFields, iraDetails, findSsBenefitsByYear, calculateTotalIncomeForYear, calculateStandardDeductionForYear) => {
+    let taxableIncomes = {};
+
+    Object.keys(staticFields).forEach(year => {
+        const totalIncomeForYear = calculateTotalIncomeForYear(year);
+        const standardDeductionForYear = calculateStandardDeductionForYear(parseInt(year));
+
+        taxableIncomes[year] = totalIncomeForYear - standardDeductionForYear;
+    });
+
+    return taxableIncomes;
+};
+
+
 export const calculateTaxesForBrackets = (taxableIncome, inflationRate, currentYear, taxYear) => {
     const brackets = [
         { threshold: 23200, rate: 0.10 },

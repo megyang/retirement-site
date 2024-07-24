@@ -4,11 +4,16 @@ import { calculateRMD } from "@/app/utils/calculations";
 
 const useRmdCalculations = (age1, age2, ira1, ira2, roi, hLE, wLE, editableFields) => {
     const [iraDetails, setIraDetails] = useState({ spouse1: [], spouse2: [] });
+    const [iraDetailsZeroRoth, setIraDetailsZeroRoth] = useState({ spouse1: [], spouse2: [] });
     const [totals, setTotals] = useState({
         totalRMDsHusband: new Decimal(0),
         totalRMDsWife: new Decimal(0),
         inheritedIRAHusband: new Decimal(0),
-        inheritedIRAWife: new Decimal(0)
+        inheritedIRAWife: new Decimal(0),
+        totalLifetimeTaxPaid: new Decimal(0),
+        totalLifetimeTaxPaidWithZeroRoth: new Decimal(0),
+        beneficiaryTaxPaid: new Decimal(0),
+        beneficiaryTaxPaidWithZeroRoth: new Decimal(0)
     });
 
     useEffect(() => {
@@ -59,6 +64,14 @@ const useRmdCalculations = (age1, age2, ira1, ira2, roi, hLE, wLE, editableField
             spouse2: spouse2Details
         });
 
+        const spouse1DetailsZeroRoth = calculateIraDetails(age1, hLE, ira1, roi, {});
+        const spouse2DetailsZeroRoth = calculateIraDetails(age2, wLE, ira2, roi, {});
+
+        setIraDetailsZeroRoth({
+            spouse1: spouse1DetailsZeroRoth,
+            spouse2: spouse2DetailsZeroRoth
+        });
+
         const totalRMDsHusband = spouse1Details.reduce((total, detail) => total.plus(new Decimal(detail.rmd)), new Decimal(0));
         const totalRMDsWife = spouse2Details.reduce((total, detail) => total.plus(new Decimal(detail.rmd)), new Decimal(0));
 
@@ -73,7 +86,7 @@ const useRmdCalculations = (age1, age2, ira1, ira2, roi, hLE, wLE, editableField
         });
     }, [age1, age2, ira1, ira2, roi, hLE, wLE, editableFields]);
 
-    return { iraDetails, totals };
+    return { iraDetails, iraDetailsZeroRoth, totals };
 };
 
 export default useRmdCalculations;
