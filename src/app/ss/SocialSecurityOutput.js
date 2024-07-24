@@ -342,7 +342,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                     </td>
                                 </tr>
                                 <tr style={{height: "50px"}}>
-                                    <td>Your spouse</td>
+                                    <td>Your Spouse</td>
                                     <td>
                                         <input
                                             type="range"
@@ -485,7 +485,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                 isOpen={isModalOpen}
                                 onChange={setIsModalOpen}
                                 title="Primary Insurance Amount"
-                                description="This is the monthly amount you would receive if you started collecting Social Security at your full retirement age."
+                                description='Your PIA is the benefit you’d receive at full retirement age. To be as accurate as possible, look up your PIA on <a href="https://ssa.gov/myaccount" target="_blank" rel="noopener noreferrer" style="color: blue; text-decoration: underline;">ssa.gov/myaccount</a>.'
                                 position={modalPosition}
                             />
 
@@ -510,7 +510,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
 
                 </div>
                 <div className="ss-graph">
-                    <h3 className="text-lg mb-2 mt-[-12px]">Social Security Benefits Graph</h3>
+                    <h3 className="text-lg mb-2 mt-[-12px]">Social Security Collected By Year</h3>
                     <BarChart chartData={userData} chartOptions={benefitChartOptions} />
                 </div>
             </div>

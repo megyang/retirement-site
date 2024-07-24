@@ -41,9 +41,9 @@ const PiaModal = ({ isOpen, onChange, title, description, position }) => {
                             text-sm
                             leading-normal
                             text-center
-                        ">
-                        {description}
-                    </Dialog.Description>
+                        "
+                        dangerouslySetInnerHTML={{ __html: description }}
+                    />
                     <Dialog.Close asChild>
                         <button
                             className="

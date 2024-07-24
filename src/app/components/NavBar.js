@@ -19,7 +19,7 @@ const NavBar = () => {
                     <li>
                         <Link href="/roth" passHref>
                             <div className={`block px-4 py-2 ${pathname === '/roth' ? 'font-bold' : ''}`}>
-                                Roth
+                                Roth Conversion
                             </div>
                         </Link>
                     </li>
