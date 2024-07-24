@@ -554,23 +554,25 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         calculateStandardDeductionForYear
     );
 
-    const totalSumWithZeroRoth = Object.keys(taxableIncomesWithZeroRoth).reduce((totalSum, year) => {
-        const taxesForBrackets = calculateTaxesForBrackets(taxableIncomesWithZeroRoth[year], inputs1.inflation, currentYear, year);
-        const totalTax = Object.values(taxesForBrackets).reduce((sum, tax) => sum + tax, 0);
-        return totalSum + totalTax;
-    }, 0);
-    const totalLifetimeTaxPaidWithZeroRoth = new Decimal(totalSumWithZeroRoth);
+    const calculateTotalLifetimeTaxPaidWithZeroRoth = (taxableIncomesWithZeroRoth, inflation, currentYear) => {
+        let totalSum = 0;
+        Object.keys(taxableIncomesWithZeroRoth).forEach((year) => {
+            const taxesForBrackets = calculateTaxesForBrackets(taxableIncomesWithZeroRoth[year], inflation, currentYear, year);
+            const totalTax = Object.values(taxesForBrackets).reduce((sum, tax) => sum + tax, 0);
+            totalSum += totalTax;
+        });
+        return totalSum;
+    };
 
-    const husbandLEYearZeroRoth = currentYear + inputs.hLE - inputs.husbandAge;
-    const wifeLEYearZeroRoth = currentYear + inputs.wLE - inputs.wifeAge;
-    const husbandEndingValueZeroRoth = iraDetailsZeroRoth.spouse1.find(detail => detail.year === husbandLEYearZeroRoth)?.endingValue || 0;
-    const wifeEndingValueZeroRoth = iraDetailsZeroRoth.spouse2.find(detail => detail.year === wifeLEYearZeroRoth)?.endingValue || 0;
-    const totalEndingValueZeroRoth = new Decimal(husbandEndingValueZeroRoth).plus(new Decimal(wifeEndingValueZeroRoth));
-    const beneficiaryTaxPaidWithZeroRoth = totalEndingValueZeroRoth.times(new Decimal(inputs1.beneficiary_tax_rate));
+    const calculateBeneficiaryTaxPaidWithZeroRoth = (iraDetailsZeroRoth, currentYear, husbandLEYear, wifeLEYear, beneficiary_tax_rate) => {
+        const husbandEndingValueZeroRoth = iraDetailsZeroRoth.spouse1.find(detail => detail.year === husbandLEYear)?.endingValue || 0;
+        const wifeEndingValueZeroRoth = iraDetailsZeroRoth.spouse2.find(detail => detail.year === wifeLEYear)?.endingValue || 0;
+        const totalEndingValueZeroRoth = new Decimal(husbandEndingValueZeroRoth).plus(new Decimal(wifeEndingValueZeroRoth));
+        return totalEndingValueZeroRoth.times(new Decimal(beneficiary_tax_rate));
+    };
 
-    console.log("Total Lifetime Tax Paid with Zero Roth:", totalLifetimeTaxPaidWithZeroRoth.toFixed(0));
-    console.log("Beneficiary Tax Paid with Zero Roth:", beneficiaryTaxPaidWithZeroRoth.toFixed(0));
-
+    const totalLifetimeTaxPaidWithZeroRoth = calculateTotalLifetimeTaxPaidWithZeroRoth(taxableIncomesWithZeroRoth, inputs1.inflation, currentYear);
+    const beneficiaryTaxPaidWithZeroRoth = calculateBeneficiaryTaxPaidWithZeroRoth(iraDetailsZeroRoth, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
 
     const transposedRows = [
         { id: 'ageSpouse1', label: 'Age Spouse 1' },
@@ -599,9 +601,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             case 'ageSpouse2':
                 return staticFields[year].ageSpouse2;
             case 'rmdSpouse1':
-                return findRmdByYear(iraDetails.spouse1, parseInt(year));
+                return Math.round(findRmdByYear(iraDetails.spouse1, parseInt(year)));
             case 'rmdSpouse2':
-                return findRmdByYear(iraDetails.spouse2, parseInt(year));
+                return Math.round(findRmdByYear(iraDetails.spouse2, parseInt(year)));
             case 'ssSpouse1':
                 return findSsBenefitsByYear(socialSecurityBenefits, parseInt(year)).spouse1Benefit;
             case 'ssSpouse2':
@@ -685,12 +687,15 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
 
     const chartData = {
-        labels: ["No Conversion", ...versionData.filter(item => item.name !== "Select a scenario").map(item => item.name)],
+        labels: [
+            [`No Conversion`, ` (${selectedVersion})`],
+            ...versionData.filter(item => item.name !== "Select a scenario").map(item => item.name)
+        ],
         datasets: [
             {
                 label: 'Lifetime Taxes',
                 data: [
-                    versionData.length > 0 ? parseFloat(versionData[1].lifetime0).toFixed(0).toLocaleString() : 0,
+                    totalLifetimeTaxPaidWithZeroRoth.toFixed(0).toLocaleString(),
                     ...versionData.filter(item => item.name !== "Select a scenario").map(item => {
                         return item.name === selectedVersion ? totalLifetimeTaxPaid.toFixed(0).toLocaleString() : parseFloat(item.lifetime_tax).toFixed(0).toLocaleString();
                     })
@@ -702,7 +707,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             {
                 label: 'Beneficiary Lifetime Taxes',
                 data: [
-                    versionData.length > 0 ? parseFloat(versionData[1].beneficiary0).toFixed(0).toLocaleString() : 0,
+                    beneficiaryTaxPaidWithZeroRoth.toFixed(0).toLocaleString(),
                     ...versionData.filter(item => item.name !== "Select a scenario").map(item => {
                         return item.name === selectedVersion ? beneficiaryTaxPaid.toFixed(0).toLocaleString() : parseFloat(item.beneficiary_tax).toFixed(0).toLocaleString();
                     })
@@ -713,6 +718,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             },
         ],
     };
+
 
     const chartOptions = {
         responsive: true,
@@ -801,6 +807,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         <div className="max-w-5xl mx-auto">
             <div className="flex-col">
                 <div className="bg-white p-4 rounded h-auto w-full">
+                    <div className="text-lg text-left">
+                        Total Taxes Paid
+                    </div>
 
                     <BarChart chartData={chartData} chartOptions={chartOptions} />
                 </div>
@@ -1094,7 +1103,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             */}
 
 
-            {/* Table for Husband */}
+            {/* Table for Husband
 
             <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
                 <h2 className="text-xl font-semi-bold mb-3">Husbands IRA Details</h2>
@@ -1119,8 +1128,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     </tbody>
                 </table>
             </div>
-
-            {/* Table for Wife*/}
+*/}
+            {/* Table for Wife
             <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
                 <h2 className="text-xl font-semi-bold mb-3">Wifes IRA Details</h2>
                 <table className="min-w-full divide-y divide-gray-200">
@@ -1175,7 +1184,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                 })}
                 </tbody>
             </table>
-
+*/}
         </div>
         );
 
