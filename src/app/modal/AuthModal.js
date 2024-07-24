@@ -46,6 +46,10 @@ const AuthModal = () => {
                 email_label: 'Email',
                 password_label: 'Password',
                 password_input_placeholder: 'Create a password'
+            },
+            sign_in: {
+                email_label: 'Email',
+                password_label: 'Password'
             }
         }
     };
@@ -72,7 +76,7 @@ const AuthModal = () => {
                         }
                     }
                 }}
-                localization={view === 'sign_up' ? localization : {}}
+                localization={view === 'sign_up' || view === 'sign_in' ? localization : {}}
             />
         </Modal>
     );

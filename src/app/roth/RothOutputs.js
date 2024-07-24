@@ -215,6 +215,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             return;
         }
 
+        console.log('Loading version:', version.name);
+
         const { data, error } = await supabaseClient
             .from('roth')
             .select('*')
@@ -226,8 +228,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         } else {
             const loadedEditableFields = {};
             let loadedInputs1 = {
-                age1: 0,
-                age2: 0,
                 ira1: 0,
                 ira2: 0,
                 roi: 0,
@@ -236,30 +236,66 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             };
 
             data.forEach(item => {
+                if (!loadedEditableFields[item.year]) {
+                    loadedEditableFields[item.year] = {
+                        rothSpouse1: 0,
+                        rothSpouse2: 0,
+                        salary1: 0,
+                        salary2: 0,
+                        rentalIncome: 0,
+                        interest: 0,
+                        capitalGains: 0,
+                        pension: 0
+                    };
+                }
+
                 loadedEditableFields[item.year] = {
-                    rothSpouse1: item.roth_1,
-                    rothSpouse2: item.roth_2,
-                    salary1: item.salary1,
-                    salary2: item.salary2,
-                    rentalIncome: item.rental_income,
-                    interest: item.interest,
-                    capitalGains: item.capital_gains,
-                    pension: item.pension
+                    rothSpouse1: item.roth_1 || 0,
+                    rothSpouse2: item.roth_2 || 0,
+                    salary1: item.salary1 || 0,
+                    salary2: item.salary2 || 0,
+                    rentalIncome: item.rental_income || 0,
+                    interest: item.interest || 0,
+                    capitalGains: item.capital_gains || 0,
+                    pension: item.pension || 0
                 };
 
                 loadedInputs1 = {
-                    ira1: item.ira1,
-                    ira2: item.ira2,
-                    roi: item.roi,
-                    inflation: item.inflation,
-                    beneficiary_tax_rate: item.beneficiary_tax_rate
+                    ira1: item.ira1 || 0,
+                    ira2: item.ira2 || 0,
+                    roi: item.roi || 0,
+                    inflation: item.inflation || 0,
+                    beneficiary_tax_rate: item.beneficiary_tax_rate || 0
                 };
-
             });
+
+            // Log the loaded data
+            console.log('Loaded editable fields:', loadedEditableFields);
+            console.log('Loaded inputs1:', loadedInputs1);
+
+            // Initialize missing years or fields in editableFields
+            const currentYear = new Date().getFullYear();
+            const maxLifeExpectancy = Math.max(inputs.hLE, inputs.wLE);
+            for (let year = currentYear; year <= currentYear + (maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge)); year++) {
+                if (!loadedEditableFields[year]) {
+                    loadedEditableFields[year] = {
+                        rothSpouse1: 0,
+                        rothSpouse2: 0,
+                        salary1: 0,
+                        salary2: 0,
+                        rentalIncome: 0,
+                        interest: 0,
+                        capitalGains: 0,
+                        pension: 0
+                    };
+                }
+            }
+
             setEditableFields(loadedEditableFields);
             setInputs1(loadedInputs1);
         }
     };
+
 
     const saveVersion = async (versionName) => {
         if (!user) {
