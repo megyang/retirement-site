@@ -1,4 +1,4 @@
-// AuthModal.js
+"use client";
 import React, { useEffect } from 'react';
 import Modal from "@/app/modal/Modal";
 import { useSessionContext, useSupabaseClient } from "@supabase/auth-helpers-react";
@@ -25,8 +25,6 @@ const AuthModal = () => {
             return 'Log In';
         } else if (view === 'sign_up') {
             return 'Sign Up';
-        } else if (view === 'forgot_password') {
-            return 'Reset Password';
         } else {
             return 'Welcome';
         }
@@ -37,8 +35,6 @@ const AuthModal = () => {
             return 'Please log in to continue';
         } else if (view === 'sign_up') {
             return 'Create an account to plan for retirement';
-        } else if (view === 'forgot_password') {
-            return 'Enter your email to reset your password';
         } else {
             return 'Please sign in to continue';
         }
@@ -50,10 +46,6 @@ const AuthModal = () => {
                 email_label: 'Email',
                 password_label: 'Password',
                 password_input_placeholder: 'Create a password'
-            },
-            sign_in: {
-                email_label: 'Email',
-                password_label: 'Password'
             }
         }
     };
@@ -80,7 +72,7 @@ const AuthModal = () => {
                         }
                     }
                 }}
-                localization={view === 'sign_up' || view === 'sign_in' ? localization : {}}
+                localization={view === 'sign_up' ? localization : {}}
             />
         </Modal>
     );
