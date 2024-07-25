@@ -9,16 +9,8 @@ import useAuthModal from "@/app/hooks/useAuthModal";
 
 const AuthModal = () => {
     const supabaseClient = useSupabaseClient();
-    const router = useRouter();
-    const { session } = useSessionContext();
     const { onClose, isOpen, view } = useAuthModal();
 
-    useEffect(() => {
-        if (session) {
-            router.refresh();
-            onClose();
-        }
-    }, [session, router, onClose]);
 
     const getTitle = () => {
         if (view === 'sign_in') {
