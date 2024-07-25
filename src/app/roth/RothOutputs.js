@@ -185,14 +185,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         }
     },[triggerSave, selectedVersion])
 
-    const debouncedSaveVersion = useCallback(
-        debounce((version) => saveVersion(version), 5000),
-        []
-    );
-
-    useEffect(() => {
-        debouncedSaveVersion(selectedVersion);
-    }, [selectedVersion]);
 
 // ROTH CALCULATIONS START -----------
     const { ira1, ira2, roi } = inputs1;
@@ -532,6 +524,17 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const totalLifetimeTaxPaid = calculateTotalLifetimeTaxPaid(taxableIncomes, inputs1.inflation, currentYear);
 
     const beneficiaryTaxPaid = calculateBeneficiaryTaxPaid(iraDetails, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
+
+    const debouncedSaveVersion = useCallback(
+        debounce((versionName) => saveVersion(versionName), 500), // 500ms delay
+        []
+    );
+
+    useEffect(() => {
+        debouncedSaveVersion(selectedVersion);
+    }, [totalLifetimeTaxPaid, beneficiaryTaxPaid]);
+
+
     const calculateTotalTaxesPaid = (totalLifetimeTaxPaid, beneficiaryTaxPaid) => {
         return new Decimal(totalLifetimeTaxPaid).plus(new Decimal(beneficiaryTaxPaid)).toNumber();
     };
@@ -731,9 +734,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         ],
         datasets: [
             {
-                label: 'Lifetime Taxes',
+                label: 'Your Lifetime Taxes',
                 data: [
-                    totalLifetimeTaxPaidWithZeroRoth.toFixed(0).toLocaleString(),
+                    selectedVersion !== "Select a scenario"
+                        ? totalLifetimeTaxPaidWithZeroRoth.toFixed(0).toLocaleString()
+                        : 0,
                     ...versionData.filter(item => item.name !== "Select a scenario").map(item => {
                         return item.name === selectedVersion ? totalLifetimeTaxPaid.toFixed(0).toLocaleString() : parseFloat(item.lifetime_tax).toFixed(0).toLocaleString();
                     })
@@ -745,7 +750,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             {
                 label: 'Beneficiary Lifetime Taxes',
                 data: [
-                    beneficiaryTaxPaidWithZeroRoth.toFixed(0).toLocaleString(),
+                    selectedVersion !== "Select a scenario"
+                        ? beneficiaryTaxPaidWithZeroRoth.toFixed(0).toLocaleString()
+                        : 0,
                     ...versionData.filter(item => item.name !== "Select a scenario").map(item => {
                         return item.name === selectedVersion ? beneficiaryTaxPaid.toFixed(0).toLocaleString() : parseFloat(item.beneficiary_tax).toFixed(0).toLocaleString();
                     })
@@ -764,7 +771,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             tooltip: {
                 callbacks: {
                     label: function (context) {
-                        return `$${context.raw.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+                        const label = context.dataset.label || '';
+                        return `${label}: $${context.raw.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
                     },
                 },
             },
@@ -838,20 +846,43 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         };
     });
 
-    const taxBracketDataByYear = Object.keys(taxableIncomes).map(year => {
-        const taxesForBrackets = calculateTaxesForBrackets(taxableIncomes[year], inputs1.inflation, currentYear, year);
-        const bracketData = bracketTitles.map((title, index) => {
-            const filled = taxesForBrackets[title];
-            const threshold = initialBrackets[index].threshold;
-            const remaining = threshold === Infinity ? Infinity : threshold - filled;
+    const adjustThresholdsForInflation = (initialBrackets, inflationRate, currentYear, targetYear) => {
+        const yearsDifference = targetYear - currentYear;
+        return initialBrackets.map(bracket => ({
+            ...bracket,
+            adjustedThreshold: bracket.threshold * Math.pow(1 + inflationRate, yearsDifference)
+        }));
+    };
 
-            return {
-                label: title,
+    const taxBracketDataByYear = Object.keys(taxableIncomes).map(year => {
+        const taxableIncome = taxableIncomes[year];
+        const adjustedBrackets = adjustThresholdsForInflation(initialBrackets, inputs1.inflation, currentYear, year);
+        const bracketData = [];
+        let previousThreshold = 0;
+
+        for (let i = 0; i < adjustedBrackets.length; i++) {
+            const { adjustedThreshold, rate, color } = adjustedBrackets[i];
+            let filled = 0;
+            let remaining = 0;
+
+            if (taxableIncome > previousThreshold) {
+                filled = Math.min(taxableIncome - previousThreshold, adjustedThreshold - previousThreshold);
+                remaining = adjustedThreshold - taxableIncome;
+                if (remaining < 0) remaining = 0;
+            } else {
+                remaining = adjustedThreshold - previousThreshold;
+            }
+
+            bracketData.push({
+                label: bracketTitles[i],
                 filled: filled,
                 remaining: remaining,
-                color: initialBrackets[index].color,
-            };
-        });
+                color: color,
+            });
+
+            previousThreshold = adjustedThreshold;
+        }
+
         return {
             year,
             data: bracketData,
@@ -885,6 +916,35 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     return (
         <div className="max-w-5xl mx-auto">
+            <div className="mb-5 text-left flex items-center space-x-2 w-full">
+                <div className="bg-white rounded p-2 flex-grow">
+                    <select
+                        className="w-full bg-white border-none"
+                        value={selectedVersion}
+                        onClick={() => {
+                            if (!user)
+                                onOpen();
+                            return;
+                        }}
+                        onChange={(e) => {
+                            if (user) {
+                                setSelectedVersion(e.target.value);
+                                const version = savedVersions.find(v => v.name === e.target.value);
+                                if (version) {
+                                    loadVersion(version);
+                                }
+                            }
+                        }}
+                    >
+                        {savedVersions.map((version, index) => (
+                            <option key={index} value={version.name}>
+                                {version.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
             <div className="flex-col">
                 <div className="bg-white p-4 rounded h-auto w-full">
                     <div className="text-lg text-left">
@@ -893,139 +953,112 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
                     <BarChart chartData={chartData} chartOptions={chartOptions} />
                 </div>
-                <div className="mt-4 text-left flex items-center space-x-2 w-full">
-                    <div className="bg-white rounded p-2 flex-grow">
-                        <select
-                            className="w-full bg-white border-none"
-                            value={selectedVersion}
-                            onClick={() => {
-                                if (!user)
-                                    onOpen();
-                                    return;
-                                }
-                            }
-                            onChange={(e) => {
-                                if (user) {
-                                    setSelectedVersion(e.target.value);
-                                    const version = savedVersions.find(v => v.name === e.target.value);
-                                    if (version) {
-                                        loadVersion(version);
-                                    }
-                                }
-                            }}
-                        >
-                            {savedVersions.map((version, index) => (
-                                <option key={index} value={version.name}>
-                                    {version.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-                <div className="flex mt-4 w-full space-x-4">
-                    <div className="bg-white p-6 rounded flex-1 w-2 flex flex-col justify-center">
-                        <h3 className="text-2xl text-center mb-4">{selectedVersion}: Total Taxes Paid</h3>
-                        <div className="text-4xl font-bold text-center">
-                            ${(totalTaxesPaid)}
-                        </div>
-                    </div>
-                    <div className="bg-white p-6 rounded flex-1 w-2">
-                        <h3 className="text-left text-1xl">Other Inputs</h3>
-                        <div className="flex flex-col space-y-2">
-                            <div className="flex justify-between items-center">
-                                <label className="flex-grow">Beneficiary Tax Rate:</label>
-                                <div className="relative w-32">
-                                    <input
-                                        type="text"
-                                        name="beneficiary_tax_rate"
-                                        value={`${(inputs1.beneficiary_tax_rate) * 100}`}
-                                        onChange={handleInputChange}
-                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded pr-6"
-                                    />
-                                    <span className="absolute right-2 top-1">%</span>
+
+                {selectedVersion !== "Select a scenario" && (
+                    <>
+                        <div className="flex mt-4 w-full space-x-4">
+                            <div className="bg-white p-6 rounded flex-1 w-2 flex flex-col justify-center">
+                                <h3 className="text-2xl text-center mb-4">{selectedVersion}: Total Taxes Paid</h3>
+                                <div className="text-4xl font-bold text-center">
+                                    ${(totalTaxesPaid)}
                                 </div>
                             </div>
-                            <div className="flex justify-between items-center">
-                                <label className="flex-grow">Your IRA:</label>
-                                <div className="w-32 ml-4">
-                                    <input
-                                        type="text"
-                                        name="ira1"
-                                        value={`$${formatNumberWithCommas(inputs1.ira1 || '')}`}
-                                        onChange={handleInputChange}
-                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <label className="flex-grow">Your Spouse’s IRA:</label>
-                                <div className="w-32 ml-4">
-                                    <input
-                                        type="text"
-                                        name="ira2"
-                                        value={`$${formatNumberWithCommas(inputs1.ira2 || '')}`}
-                                        onChange={handleInputChange}
-                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <label className="flex-grow">Investment Return:</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        name="roi"
-                                        value={`${(inputs1.roi) * 100}`}
-                                        onChange={handleInputChange}
-                                        className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
-                                    />
-                                    <span className="absolute right-2 top-1">%</span>
-                                </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <label className="flex-grow">Inflation Rate:</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        name="inflation"
-                                        value={`${(inputs1.inflation) * 100}`}
-                                        onChange={handleInputChange}
-                                        className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
-                                    />
-                                    <span className="absolute right-2 top-1">%</span>
+                            <div className="bg-white p-6 rounded flex-1 w-2">
+                                <h3 className="text-left text-1xl">Other Inputs</h3>
+                                <div className="flex flex-col space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <label className="flex-grow">Beneficiary Tax Rate:</label>
+                                        <div className="relative w-32">
+                                            <input
+                                                type="text"
+                                                name="beneficiary_tax_rate"
+                                                value={`${(inputs1.beneficiary_tax_rate) * 100}`}
+                                                onChange={handleInputChange}
+                                                className="w-full h-8 text-right border border-gray-300 p-2 rounded pr-6"
+                                            />
+                                            <span className="absolute right-2 top-1">%</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <label className="flex-grow">Your IRA:</label>
+                                        <div className="w-32 ml-4">
+                                            <input
+                                                type="text"
+                                                name="ira1"
+                                                value={`$${formatNumberWithCommas(inputs1.ira1 || '')}`}
+                                                onChange={handleInputChange}
+                                                className="w-full h-8 text-right border border-gray-300 p-2 rounded"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <label className="flex-grow">Your Spouse’s IRA:</label>
+                                        <div className="w-32 ml-4">
+                                            <input
+                                                type="text"
+                                                name="ira2"
+                                                value={`$${formatNumberWithCommas(inputs1.ira2 || '')}`}
+                                                onChange={handleInputChange}
+                                                className="w-full h-8 text-right border border-gray-300 p-2 rounded"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <label className="flex-grow">Investment Return:</label>
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                name="roi"
+                                                value={`${(inputs1.roi) * 100}`}
+                                                onChange={handleInputChange}
+                                                className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
+                                            />
+                                            <span className="absolute right-2 top-1">%</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <label className="flex-grow">Inflation Rate:</label>
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                name="inflation"
+                                                value={`${(inputs1.inflation) * 100}`}
+                                                onChange={handleInputChange}
+                                                className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
+                                            />
+                                            <span className="absolute right-2 top-1">%</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
+
+                        <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
+                            <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
+                            <div style={{ height: 600, width: '100%' }}>
+                                <DataGrid
+                                    rows={rows}
+                                    rowHeight={40}
+                                    columns={columns}
+                                    pageSize={10}
+                                    rowsPerPageOptions={[10]}
+                                    getRowClassName={getRowClassName}
+                                    isCellEditable={isCellEditable}
+                                    processRowUpdate={processRowUpdate}
+                                    onProcessRowUpdateError={processRowUpdateError}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="mt-4 bg-white p-4 rounded">
+                            <h2 className="text-lg mb-3">Ordinary Income Tax Brackets</h2>
+                            <TaxBarChart data={dataForChart} />
+                        </div>
+                    </>
+                )}
             </div>
 
-            {selectedVersion !== "Select a scenario" && (
-                <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
-                    <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
-                    <div style={{ height: 600, width: '100%' }}>
-                        <DataGrid
-                            rows={rows}
-                            rowHeight={40}
-                            columns={columns}
-                            pageSize={10}
-                            rowsPerPageOptions={[10]}
-                            getRowClassName={getRowClassName}
-                            isCellEditable={isCellEditable}
-                            processRowUpdate={processRowUpdate}
-                            onProcessRowUpdateError={processRowUpdateError}
-                        />
-                    </div>
-                </div>
-            )}
-
-            <div className="mt-4 bg-white p-4 rounded">
-                <h2 className="text-lg mb-3">Ordinary Income Tax Brackets</h2>
-                <TaxBarChart data={dataForChart} />
-            </div>
-
-
-            {/*
+    {/*
 
             {selectedVersion !== "Select a scenario" && (
                 <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
@@ -1271,7 +1304,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             </table>
 */}
         </div>
-        );
+
+    );
 
 };
 

@@ -18,9 +18,9 @@ const TaxBarChart = ({ data }) => {
                 callbacks: {
                     label: function (context) {
                         const item = data[context.dataIndex].data[context.datasetIndex];
-                        const filled = item.filled.toLocaleString();
+                        const filled = Math.round(item.filled).toLocaleString();
                         const remaining = item.remaining === Infinity ? "Infinity" : Math.round(item.remaining).toLocaleString();
-                        return `${context.dataset.label}: Filled: ${filled}, Remaining: ${remaining}`;
+                        return `${context.dataset.label}: Filled: ${filled} | Remaining: ${remaining}`;
                     },
                 },
             },
