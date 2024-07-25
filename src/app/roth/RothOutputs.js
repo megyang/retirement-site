@@ -16,6 +16,7 @@ import {
 import useAuthModal from "@/app/hooks/useAuthModal";
 import { DataGrid } from '@mui/x-data-grid';
 import debounce from 'lodash.debounce';
+import TaxBarChart from "@/app/components/TaxBarChart";
 
 const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
@@ -814,8 +815,50 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
 
     const bracketTitles = ['10%', '12%', '22%', '24%', '32%', '35%', '37%'];
+    const initialBrackets = [
+        { threshold: 23200, rate: 0.10, color: '#F4D03F' }, // Yellow
+        { threshold: 94300, rate: 0.12, color: '#F5B041' }, // Light Orange
+        { threshold: 201050, rate: 0.22, color: '#DC7633' }, // Dark Orange
+        { threshold: 383900, rate: 0.24, color: '#5D6D7E' }, // Light Green
+        { threshold: 487450, rate: 0.32, color: '#34495E' }, // Dark Green
+        { threshold: 731200, rate: 0.35, color: '#1F618D' }, // Darker Green
+        { threshold: Infinity, rate: 0.37, color: '#154360' } // Darkest Green
+    ];
 
+    const zeroTaxBracketDataByYear = Object.keys(taxableIncomes).map(year => {
+        const bracketData = bracketTitles.map((title, index) => ({
+            label: title,
+            filled: 0,
+            remaining: initialBrackets[index].threshold,
+            color: initialBrackets[index].color,
+        }));
+        return {
+            year,
+            data: bracketData,
+        };
+    });
 
+    const taxBracketDataByYear = Object.keys(taxableIncomes).map(year => {
+        const taxesForBrackets = calculateTaxesForBrackets(taxableIncomes[year], inputs1.inflation, currentYear, year);
+        const bracketData = bracketTitles.map((title, index) => {
+            const filled = taxesForBrackets[title];
+            const threshold = initialBrackets[index].threshold;
+            const remaining = threshold === Infinity ? Infinity : threshold - filled;
+
+            return {
+                label: title,
+                filled: filled,
+                remaining: remaining,
+                color: initialBrackets[index].color,
+            };
+        });
+        return {
+            year,
+            data: bracketData,
+        };
+    });
+
+    const dataForChart = selectedVersion === "Select a scenario" ? zeroTaxBracketDataByYear : taxBracketDataByYear;
 
     const createTableData = (details) => {
         const rows = {
@@ -975,6 +1018,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     </div>
                 </div>
             )}
+
+            <div className="mt-4 bg-white p-4 rounded">
+                <h2 className="text-lg mb-3">Ordinary Income Tax Brackets</h2>
+                <TaxBarChart data={dataForChart} />
+            </div>
 
 
             {/*
