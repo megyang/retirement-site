@@ -19,7 +19,7 @@ const TaxBarChart = ({ data }) => {
                     label: function (context) {
                         const item = data[context.dataIndex].data[context.datasetIndex];
                         const filled = item.filled.toLocaleString();
-                        const remaining = item.remaining === Infinity ? "Infinity" : item.remaining.toLocaleString();
+                        const remaining = item.remaining === Infinity ? "Infinity" : Math.round(item.remaining).toLocaleString();
                         return `${context.dataset.label}: Filled: ${filled}, Remaining: ${remaining}`;
                     },
                 },
