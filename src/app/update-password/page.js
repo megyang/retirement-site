@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/navigation';
+import useAuthModal from "@/app/hooks/useAuthModal";
 
 const UpdatePassword = () => {
     const supabaseClient = useSupabaseClient();
     const router = useRouter();
+    const { onOpen, setView } = useAuthModal();
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
@@ -54,7 +56,6 @@ const UpdatePassword = () => {
                 onOpen();
                 router.push('/');
             }, 2000);
-
         }
     };
 
