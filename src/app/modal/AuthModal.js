@@ -10,6 +10,12 @@ import useAuthModal from "@/app/hooks/useAuthModal";
 const AuthModal = () => {
     const supabaseClient = useSupabaseClient();
     const { onClose, isOpen, view } = useAuthModal();
+    const { session } = useSessionContext();
+    useEffect(() => {
+        if (session) {
+            onClose();
+        }
+    }, [session, onClose]);
 
 
     const getTitle = () => {

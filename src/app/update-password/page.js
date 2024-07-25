@@ -50,8 +50,11 @@ const UpdatePassword = () => {
         } else {
             setSuccessMessage('Password updated successfully');
             setTimeout(() => {
-                router.push('/signin');
+                setView('sign_in');
+                onOpen();
+                router.push('/');
             }, 2000);
+
         }
     };
 
