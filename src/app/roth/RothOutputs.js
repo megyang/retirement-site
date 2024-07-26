@@ -14,9 +14,12 @@ import {
     formatNumberWithCommas
 } from "@/app/utils/calculations";
 import useAuthModal from "@/app/hooks/useAuthModal";
-import { DataGrid } from '@mui/x-data-grid';
+import {DataGrid, useGridApiRef} from '@mui/x-data-grid';
 import debounce from 'lodash.debounce';
 import TaxBarChart from "@/app/components/TaxBarChart";
+import CustomColumnMenu from "@/app/components/CustomColumnMenu";
+import CustomToolbar from "@/app/components/CustomToolbar";
+import CustomPagination from "@/app/components/CustomPagination";
 
 const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
@@ -46,6 +49,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         }
         return fields;
     });
+    const apiRef = useGridApiRef();
 
     const [versionData, setVersionData] = useState([]);
     const [savedVersions, setSavedVersions] = useState([
@@ -230,16 +234,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
             data.forEach(item => {
                 if (!loadedEditableFields[item.year]) {
-                    loadedEditableFields[item.year] = {
-                        rothSpouse1: 0,
-                        rothSpouse2: 0,
-                        salary1: 0,
-                        salary2: 0,
-                        rentalIncome: 0,
-                        interest: 0,
-                        capitalGains: 0,
-                        pension: 0
-                    };
+                    loadedEditableFields[item.year] = {};
                 }
 
                 loadedEditableFields[item.year] = {
@@ -531,8 +526,10 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     );
 
     useEffect(() => {
-        debouncedSaveVersion(selectedVersion);
-    }, [totalLifetimeTaxPaid, beneficiaryTaxPaid]);
+        if (selectedVersion !== "Select a scenario") {
+            debouncedSaveVersion(selectedVersion);
+        }
+    }, [totalLifetimeTaxPaid, beneficiaryTaxPaid, selectedVersion]);
 
 
     const calculateTotalTaxesPaid = (totalLifetimeTaxPaid, beneficiaryTaxPaid) => {
@@ -661,6 +658,77 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const [selectedCellParams, setSelectedCellParams] = useState([]);
 
+    const handleCellClick = (params) => {
+        setSelectedCellParams((prevSelected) => {
+            const isSelected = prevSelected.some(cell => cell.id === params.id && cell.field === params.field);
+            if (isSelected) {
+                return prevSelected.filter(cell => !(cell.id === params.id && cell.field === params.field));
+            }
+            return [...prevSelected, params];
+        });
+    };
+
+    const handleMultiEdit = async () => {
+        const value = prompt('Enter the value to set for selected cells:');
+        if (value !== null) {
+            const updatedFields = { ...editableFields };
+            const updates = selectedCellParams.map(({ id, field }) => {
+                const year = parseInt(field);
+                if (updatedFields[year]) {
+                    updatedFields[year][id] = parseFloat(value);
+                }
+                return { id, field, value: parseFloat(value) };
+            });
+
+            // Update state
+            setEditableFields(updatedFields);
+
+            // Clear selection after update
+            setSelectedCellParams([]);
+
+            // Update cells in the grid
+            for (const update of updates) {
+                await apiRef.current.setEditCellValue({ id: update.id, field: update.field, value: update.value, debounceMs: 200 });
+                apiRef.current.stopCellEditMode({ id: update.id, field: update.field });
+            }
+        }
+    };
+
+    const handleRowEdit = async () => {
+        const value = prompt('Enter the value to set for the entire row:');
+        if (value !== null) {
+            const selectedRows = new Set(selectedCellParams.map(param => param.id));
+            const updates = columns.filter(column => column.field !== 'label').map(column => {
+                return { field: column.field, value: parseFloat(value) };
+            });
+
+            // Update state
+            const updatedFields = { ...editableFields };
+            selectedRows.forEach(rowId => {
+                updates.forEach(({ field, value }) => {
+                    const year = parseInt(field);
+                    if (updatedFields[year]) {
+                        updatedFields[year][rowId] = value;
+                    }
+                });
+            });
+
+            setEditableFields(updatedFields);
+
+            // Clear selection after update
+            setSelectedCellParams([]);
+
+            // Update cells in the grid
+            for (const rowId of selectedRows) {
+                for (const update of updates) {
+                    apiRef.current.startCellEditMode({ id: rowId, field: update.field });
+                    await apiRef.current.setEditCellValue({ id: rowId, field: update.field, value: update.value });
+                    apiRef.current.stopCellEditMode({ id: rowId, field: update.field });
+                }
+            }
+        }
+    };
+
     const handleKeyDown = (event) => {
         if (event.key === 'Enter' || event.key === 'Tab') {
             setSelectedCellParams([]);
@@ -721,6 +789,10 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const getRowClassName = (params) => {
         return editableRowIds.includes(params.row.id) ? 'editable-row' : 'uneditable-row';
+    };
+
+    const getCellClassName = (params) => {
+        return selectedCellParams.some(cell => cell.id === params.id && cell.field === params.field) ? 'selected-cell' : '';
     };
 
 
@@ -1037,15 +1109,32 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                             <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
                             <div style={{ height: 600, width: '100%' }}>
                                 <DataGrid
+                                    apiRef={apiRef}
                                     rows={rows}
                                     rowHeight={40}
                                     columns={columns}
                                     pageSize={10}
                                     rowsPerPageOptions={[10]}
                                     getRowClassName={getRowClassName}
+                                    getCellClassName={getCellClassName} // Add this line
                                     isCellEditable={isCellEditable}
                                     processRowUpdate={processRowUpdate}
                                     onProcessRowUpdateError={processRowUpdateError}
+                                    onCellClick={handleCellClick}
+                                    slots={{
+                                        toolbar: CustomToolbar,
+                                        columnMenu: CustomColumnMenu,
+                                        pagination: CustomPagination,
+                                    }}
+                                    slotProps={{
+                                        toolbar: {
+                                            someCustomString: 'Hello',
+                                            someCustomNumber: 42,
+                                            onMultiEdit: handleMultiEdit, // Add this handler function
+                                            onRowEdit: handleRowEdit, // Add this handler function
+                                        },
+                                        columnMenu: { background: 'red', counter: rows.length }
+                                    }}
                                 />
                             </div>
                         </div>

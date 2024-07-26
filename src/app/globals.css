@@ -17,6 +17,10 @@ html, body {
     width: 100%;
 }
 
+.selected-cell {
+    background-color: #acbdb7;
+}
+
 .editable-row {
     background-color: white;
 }
