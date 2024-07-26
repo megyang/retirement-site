@@ -631,20 +631,20 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const beneficiaryTaxPaidWithZeroRoth = calculateBeneficiaryTaxPaidWithZeroRoth(iraDetailsZeroRoth, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
 
     const transposedRows = [
-        { id: 'ageSpouse1', label: 'Age Spouse 1' },
-        { id: 'ageSpouse2', label: 'Age Spouse 2' },
-        { id: 'rothSpouse1', label: 'Roth Conversion 1' },
-        { id: 'rothSpouse2', label: 'Roth Conversion 2' },
-        { id: 'salary1', label: 'Salary 1' },
-        { id: 'salary2', label: 'Salary 2' },
+        { id: 'ageSpouse1', label: 'Age (You)' },
+        { id: 'ageSpouse2', label: 'Age (Spouse)' },
+        { id: 'rothSpouse1', label: 'Roth Conversion (You)' },
+        { id: 'rothSpouse2', label: 'Roth Conversion (Spouse)' },
+        { id: 'salary1', label: 'Salary (You)' },
+        { id: 'salary2', label: 'Salary (Spouse)' },
         { id: 'rentalIncome', label: 'Rental Income' },
-        { id: 'interest', label: 'Interest / Dividend' },
+        { id: 'interest', label: 'Interest / Dividends' },
         { id: 'capitalGains', label: 'Capital Gains' },
-        { id: 'pension', label: 'Pension' },
-        { id: 'rmdSpouse1', label: 'RMD Spouse 1' },
-        { id: 'rmdSpouse2', label: 'RMD Spouse 2' },
-        { id: 'ssSpouse1', label: 'SS Spouse 1' },
-        { id: 'ssSpouse2', label: 'SS Spouse 2' },
+        { id: 'pension', label: 'Pension Withdrawals' },
+        { id: 'rmdSpouse1', label: 'RMD (You)' },
+        { id: 'rmdSpouse2', label: 'RMD (Spouse)' },
+        { id: 'ssSpouse1', label: 'Social Security (You)' },
+        { id: 'ssSpouse2', label: 'Social Security (Spouse)' },
         { id: 'totalIncome', label: 'Total Ordinary Income' },
         { id: 'standardDeductions', label: 'Standard Deductions' },
         { id: 'taxableIncome', label: 'Taxable Ordinary Income' }
@@ -779,13 +779,13 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
 
     const columns = [
-        { field: 'label', headerName: 'Field', width: 200, headerAlign: 'center' },
+        { field: 'label', headerName: 'Label', width: 200, headerAlign: 'center', pinned: 'left' },  // Pin the 'Label' column and set width to 250px
         ...Object.keys(staticFields).map((year) => ({
             field: year.toString(),
             headerName: year.toString(),
-            width: 150,
+            width: 80,  // Thinner columns
             editable: true,
-            sortable: false,
+            sortable: false, // Disable sorting
             headerAlign: 'center',
             renderCell: (params) => {
                 if (params.row.id === 'standardDeductions') {
@@ -802,11 +802,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     );
                 }
             },
-        })),
+        }))
     ];
 
     const rows = transposedRows.map(row => {
-        const newRow = { id: row.id, label: row.label };
+        const newRow = { id: row.id, label: row.label };  // Include 'label' field
         Object.keys(staticFields).forEach(year => {
             if (row.id.startsWith('age') || row.id.startsWith('rmd') || row.id.startsWith('ss') || row.id === 'totalIncome' || row.id === 'standardDeductions' || row.id === 'taxableIncome') {
                 newRow[year] = getStaticFieldValue(row.id, year);
@@ -816,6 +816,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         });
         return newRow;
     });
+
+    const initialState = {
+        pinnedColumns: { left: ['label'] }  // Pin 'label' column
+    };
+
 
     const editableRowIds = ['rothSpouse1', 'rothSpouse2', 'salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
     const isCellEditable = (params) => {
@@ -1194,7 +1199,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                                     processRowUpdate={processRowUpdate}
                                     onProcessRowUpdateError={processRowUpdateError}
                                     onCellClick={handleCellClick}
-                                    onCellEditCommit={handleCellEditCommit} // Add this handler function
+                                    onCellEditCommit={handleCellEditCommit}
+                                    initialState={initialState}  // Pin 'Field' column
+                                    disableColumnPinning={false}
                                     slots={{
                                         toolbar: CustomToolbar,
                                         columnMenu: CustomColumnMenu,
