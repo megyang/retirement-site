@@ -740,12 +740,28 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             // Update cells in the grid
             for (const rowId of selectedRows) {
                 for (const update of updates) {
-                    apiRef.current.startCellEditMode({ id: rowId, field: update.field });
+                    //apiRef.current.startCellEditMode({ id: rowId, field: update.field });
                     await apiRef.current.setEditCellValue({ id: rowId, field: update.field, value: update.value });
                     apiRef.current.stopCellEditMode({ id: rowId, field: update.field });
                 }
             }
         }
+    };
+
+    const handleCellEditCommit = (params) => {
+        const { id, field, value } = params;
+        const year = parseInt(field);
+
+        setEditableFields(prev => {
+            const updatedFields = {
+                ...prev,
+                [year]: {
+                    ...prev[year],
+                    [id]: value
+                }
+            };
+            return updatedFields;
+        });
     };
 
     const handleKeyDown = (event) => {
@@ -811,10 +827,21 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     };
 
     const getRowClassName = (params) => {
-        const nonEditableFields = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
-        if ((selectedVersion === 'Scenario 2' || selectedVersion === 'Scenario 3') && nonEditableFields.includes(params.row.id)) {
-            return 'uneditable-row'; // Ensure you have a CSS class for this style
+        const salaryAndIncomeFields = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
+        const rothFields = ['rothSpouse1', 'rothSpouse2'];
+
+        if (salaryAndIncomeFields.includes(params.row.id)) {
+            if (selectedVersion === 'Scenario 1') {
+                return 'yellow-row';
+            } else if (selectedVersion === 'Scenario 2' || selectedVersion === 'Scenario 3') {
+                return 'uneditable-row';
+            }
         }
+
+        if (rothFields.includes(params.row.id)) {
+            return 'blue-row';
+        }
+
         return editableRowIds.includes(params.row.id) ? 'editable-row' : 'uneditable-row';
     };
 
@@ -1167,6 +1194,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                                     processRowUpdate={processRowUpdate}
                                     onProcessRowUpdateError={processRowUpdateError}
                                     onCellClick={handleCellClick}
+                                    onCellEditCommit={handleCellEditCommit} // Add this handler function
                                     slots={{
                                         toolbar: CustomToolbar,
                                         columnMenu: CustomColumnMenu,
@@ -1176,8 +1204,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                                         toolbar: {
                                             someCustomString: 'Hello',
                                             someCustomNumber: 42,
-                                            onMultiEdit: handleMultiEdit, // Add this handler function
-                                            onRowEdit: handleRowEdit, // Add this handler function
+                                            onMultiEdit: handleMultiEdit,
+                                            onRowEdit: handleRowEdit,
                                         },
                                         columnMenu: { background: 'red', counter: rows.length }
                                     }}
