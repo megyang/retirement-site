@@ -520,18 +520,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const beneficiaryTaxPaid = calculateBeneficiaryTaxPaid(iraDetails, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
 
-    const debouncedSaveVersion = useCallback(
-        debounce((versionName) => saveVersion(versionName), 500), // 500ms delay
-        []
-    );
-
-    useEffect(() => {
-        if (selectedVersion !== "Select a scenario") {
-            debouncedSaveVersion(selectedVersion);
-        }
-    }, [totalLifetimeTaxPaid, beneficiaryTaxPaid, selectedVersion]);
-
-
     const calculateTotalTaxesPaid = (totalLifetimeTaxPaid, beneficiaryTaxPaid) => {
         return new Decimal(totalLifetimeTaxPaid).plus(new Decimal(beneficiaryTaxPaid)).toNumber();
     };
@@ -685,7 +673,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
             // Clear selection after update
             setSelectedCellParams([]);
-
+            setTriggerSave(true);
             // Update cells in the grid
             for (const update of updates) {
                 await apiRef.current.setEditCellValue({ id: update.id, field: update.field, value: update.value, debounceMs: 200 });
@@ -717,7 +705,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
             // Clear selection after update
             setSelectedCellParams([]);
-
+            setTriggerSave(true);
             // Update cells in the grid
             for (const rowId of selectedRows) {
                 for (const update of updates) {
@@ -831,7 +819,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                 ],
                 backgroundColor: '#AFBCB7',
                 borderColor: 'black',
-                borderWidth: 1,
+                borderWidth: 1
             },
         ],
     };
