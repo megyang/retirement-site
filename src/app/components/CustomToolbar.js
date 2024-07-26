@@ -35,6 +35,8 @@ const CustomToolbar = ({ onMultiEdit, onRowEdit }) => {
             >
                 Edit Row
             </button>
+            {/*<GridToolbarExport slotProps={{tooltip: {title: 'Export data'}, button: {variant: 'outlined'}}}/>
+            */}
         </GridToolbarContainer>
     );
 };
