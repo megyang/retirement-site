@@ -26,7 +26,9 @@ html, body {
 }
 
 .uneditable-row {
-    background-color: lightgrey;
+    background-color: #f0f0f0; /* Light gray color */
+    pointer-events: none; /* Disable interaction */
+    opacity: 0.6; /* Make it look disabled */
 }
 
 label:after {

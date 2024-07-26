@@ -75,11 +75,28 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             } else {
                 numericValue = parseFloat(numericValue);
             }
-            setInputs1(prevInputs => ({
-                ...prevInputs,
-                [name]: numericValue
-            }));
-            setTriggerSave(true);
+
+            if (selectedVersion === 'Scenario 1' && ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'].includes(name)) {
+                // Update the fields for Scenario 2 and Scenario 3 as well
+                setInputs1(prevInputs => ({
+                    ...prevInputs,
+                    [name]: numericValue
+                }));
+                setEditableFields(prevEditableFields => {
+                    const updatedFields = { ...prevEditableFields };
+                    for (let year in updatedFields) {
+                        updatedFields[year][name] = numericValue;
+                    }
+                    return updatedFields;
+                });
+                setTriggerSave(true);
+            } else {
+                setInputs1(prevInputs => ({
+                    ...prevInputs,
+                    [name]: numericValue
+                }));
+                setTriggerSave(true);
+            }
         } else if (numericValue === '') {
             setInputs1(prevInputs => ({
                 ...prevInputs,
@@ -298,41 +315,44 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             editableFieldsWithZeroRoth[year].rothSpouse2 = 0;
         });
 
+        const scenarios = ['Scenario 1', 'Scenario 2', 'Scenario 3'];
 
-        const dataToSave = [];
-        for (let year in editableFields) {
-            dataToSave.push({
-                user_id: user.id,
-                version_name: versionName,
-                year: year,
-                rental_income: editableFields[year].rentalIncome,
-                capital_gains: editableFields[year].capitalGains,
-                pension: editableFields[year].pension,
-                roth_1: editableFields[year].rothSpouse1,
-                roth_2: editableFields[year].rothSpouse2,
-                salary1: editableFields[year].salary1,
-                salary2: editableFields[year].salary2,
-                interest: editableFields[year].interest,
-                age1: inputs.husbandAge,
-                age2: inputs.wifeAge,
-                ira1: inputs1.ira1,
-                ira2: inputs1.ira2,
-                roi: inputs1.roi,
-                inflation: inputs1.inflation,
-                lifetime_tax: totalLifetimeTaxPaid.toFixed(0),
-                beneficiary_tax: beneficiaryTaxPaid,
-                lifetime0: totalLifetimeTaxPaidWithZeroRoth.toFixed(0),
-                beneficiary0: beneficiaryTaxPaidWithZeroRoth,
-                beneficiary_tax_rate: inputs1.beneficiary_tax_rate
-            });
-        }
+        for (let scenario of scenarios) {
+            const dataToSave = [];
+            for (let year in editableFields) {
+                dataToSave.push({
+                    user_id: user.id,
+                    version_name: scenario,
+                    year: year,
+                    rental_income: editableFields[year].rentalIncome,
+                    capital_gains: editableFields[year].capitalGains,
+                    pension: editableFields[year].pension,
+                    roth_1: scenario === 'Scenario 1' ? editableFields[year].rothSpouse1 : 0,
+                    roth_2: scenario === 'Scenario 1' ? editableFields[year].rothSpouse2 : 0,
+                    salary1: editableFields[year].salary1,
+                    salary2: editableFields[year].salary2,
+                    interest: editableFields[year].interest,
+                    age1: inputs.husbandAge,
+                    age2: inputs.wifeAge,
+                    ira1: inputs1.ira1,
+                    ira2: inputs1.ira2,
+                    roi: inputs1.roi,
+                    inflation: inputs1.inflation,
+                    lifetime_tax: totalLifetimeTaxPaid.toFixed(0),
+                    beneficiary_tax: beneficiaryTaxPaid,
+                    lifetime0: totalLifetimeTaxPaidWithZeroRoth.toFixed(0),
+                    beneficiary0: beneficiaryTaxPaidWithZeroRoth,
+                    beneficiary_tax_rate: inputs1.beneficiary_tax_rate
+                });
+            }
 
-        const { error } = await supabaseClient.from('roth').upsert(dataToSave, { onConflict: ['user_id', 'version_name', 'year'] });
-        if (error) {
-            console.error('saveVersion: Error saving data to Supabase:', error);
-        } else {
-            console.log('Data successfully saved to Supabase.', dataToSave);
-            await fetchSavedVersions();
+            const { error } = await supabaseClient.from('roth').upsert(dataToSave, { onConflict: ['user_id', 'version_name', 'year'] });
+            if (error) {
+                console.error(`saveVersion: Error saving data to Supabase for ${scenario}:`, error);
+            } else {
+                console.log(`Data successfully saved to Supabase for ${scenario}.`, dataToSave);
+                await fetchSavedVersions();
+            }
         }
     };
 
@@ -783,10 +803,18 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const editableRowIds = ['rothSpouse1', 'rothSpouse2', 'salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
     const isCellEditable = (params) => {
+        const nonEditableFields = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
+        if ((selectedVersion === 'Scenario 2' || selectedVersion === 'Scenario 3') && nonEditableFields.includes(params.row.id)) {
+            return false;
+        }
         return editableRowIds.includes(params.row.id);
     };
 
     const getRowClassName = (params) => {
+        const nonEditableFields = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
+        if ((selectedVersion === 'Scenario 2' || selectedVersion === 'Scenario 3') && nonEditableFields.includes(params.row.id)) {
+            return 'uneditable-row'; // Ensure you have a CSS class for this style
+        }
         return editableRowIds.includes(params.row.id) ? 'editable-row' : 'uneditable-row';
     };
 
@@ -1134,7 +1162,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                                     pageSize={10}
                                     rowsPerPageOptions={[10]}
                                     getRowClassName={getRowClassName}
-                                    getCellClassName={getCellClassName} // Add this line
+                                    getCellClassName={getCellClassName}
                                     isCellEditable={isCellEditable}
                                     processRowUpdate={processRowUpdate}
                                     onProcessRowUpdateError={processRowUpdateError}
