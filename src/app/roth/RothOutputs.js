@@ -101,7 +101,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                 }
             });
 
-            // Update the editableFields state
+            // Update Scenario 1
             setEditableFields(prevEditableFields => {
                 const newEditableFields = { ...prevEditableFields };
                 Object.keys(updatedData).forEach(year => {
@@ -113,7 +113,27 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                 return newEditableFields;
             });
 
-            // Trigger recalculations
+            // Propagate changes to Scenario 2 and 3 if the field is in the list of fields to propagate
+            const fieldsToPropagate = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
+            if (fieldsToPropagate.includes(fieldName)) {
+                ['Scenario 2', 'Scenario 3'].forEach(scenario => {
+                    setEditableFields(prevEditableFields => {
+                        const newEditableFields = { ...prevEditableFields };
+                        Object.keys(updatedData).forEach(year => {
+                            if (!newEditableFields[year]) {
+                                newEditableFields[year] = {};
+                            }
+                            newEditableFields[year][fieldName] = updatedData[year];
+                        });
+                        return newEditableFields;
+                    });
+
+                    // Save the updated scenario
+                    saveVersion(scenario);
+                });
+            }
+
+            // Trigger recalculations and save for Scenario 1
             setTriggerSave(true);
             return { ...newRow, ...updatedData };
         } catch (error) {
@@ -659,8 +679,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const handleCellClick = (params) => {
         setSelectedCellParams((prevSelected) => {
-            const isSelected = prevSelected.some(cell => cell.id === params.id && cell.field === params.field);
-            if (isSelected) {
+            const alreadySelected = prevSelected.some(cell => cell.id === params.id && cell.field === params.field);
+            if (alreadySelected) {
                 return prevSelected.filter(cell => !(cell.id === params.id && cell.field === params.field));
             }
             return [...prevSelected, params];
@@ -682,6 +702,28 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             // Update state
             setEditableFields(updatedFields);
 
+            // Propagate changes to Scenario 2 and 3 if necessary
+            const fieldsToPropagate = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
+            const selectedRows = Array.from(new Set(selectedCellParams.map(param => param.id))); // Convert Set to Array
+            if (selectedRows.some(rowId => fieldsToPropagate.includes(rowId))) {
+                ['Scenario 2', 'Scenario 3'].forEach(scenario => {
+                    setEditableFields(prevEditableFields => {
+                        const newEditableFields = { ...prevEditableFields };
+                        selectedCellParams.forEach(({ id, field }) => {
+                            const year = parseInt(field);
+                            if (!newEditableFields[year]) {
+                                newEditableFields[year] = {};
+                            }
+                            newEditableFields[year][id] = parseFloat(value);
+                        });
+                        return newEditableFields;
+                    });
+
+                    // Save the updated scenario
+                    saveVersion(scenario);
+                });
+            }
+
             // Clear selection after update
             setSelectedCellParams([]);
             setTriggerSave(true);
@@ -696,7 +738,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const handleRowEdit = async () => {
         const value = prompt('Enter the value to set for the entire row:');
         if (value !== null) {
-            const selectedRows = new Set(selectedCellParams.map(param => param.id));
+            const selectedRows = Array.from(new Set(selectedCellParams.map(param => param.id))); // Convert Set to Array
             const updates = columns.filter(column => column.field !== 'label').map(column => {
                 return { field: column.field, value: parseFloat(value) };
             });
@@ -714,13 +756,35 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
             setEditableFields(updatedFields);
 
+            // Propagate changes to Scenario 2 and 3 if necessary
+            const fieldsToPropagate = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
+            if (selectedRows.some(rowId => fieldsToPropagate.includes(rowId))) {
+                ['Scenario 2', 'Scenario 3'].forEach(scenario => {
+                    setEditableFields(prevEditableFields => {
+                        const newEditableFields = { ...prevEditableFields };
+                        selectedRows.forEach(rowId => {
+                            updates.forEach(({ field, value }) => {
+                                const year = parseInt(field);
+                                if (!newEditableFields[year]) {
+                                    newEditableFields[year] = {};
+                                }
+                                newEditableFields[year][rowId] = value;
+                            });
+                        });
+                        return newEditableFields;
+                    });
+
+                    // Save the updated scenario
+                    saveVersion(scenario);
+                });
+            }
+
             // Clear selection after update
             setSelectedCellParams([]);
             setTriggerSave(true);
             // Update cells in the grid
             for (const rowId of selectedRows) {
                 for (const update of updates) {
-                    //apiRef.current.startCellEditMode({ id: rowId, field: update.field });
                     await apiRef.current.setEditCellValue({ id: rowId, field: update.field, value: update.value });
                     apiRef.current.stopCellEditMode({ id: rowId, field: update.field });
                 }
@@ -784,7 +848,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const editableRowIds = ['rothSpouse1', 'rothSpouse2', 'salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
     const isCellEditable = (params) => {
-        return editableRowIds.includes(params.row.id);
+        const scenario = selectedVersion;
+        const fieldsToDisable = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
+        return !((scenario === 'Scenario 2' || scenario === 'Scenario 3') && fieldsToDisable.includes(params.row.id));
     };
 
     const getRowClassName = (params) => {
@@ -792,9 +858,20 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     };
 
     const getCellClassName = (params) => {
-        return selectedCellParams.some(cell => cell.id === params.id && cell.field === params.field) ? 'selected-cell' : '';
-    };
+        const scenario = selectedVersion;
+        const fieldsToDisable = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
+        const isSelected = selectedCellParams.some(cell => cell.id === params.id && cell.field === params.field);
+        const isUneditable = (scenario === 'Scenario 2' || scenario === 'Scenario 3') && fieldsToDisable.includes(params.row.id);
 
+        if (isSelected && isUneditable) {
+            return 'selected-cell uneditable-row';
+        } else if (isSelected) {
+            return 'selected-cell';
+        } else if (isUneditable) {
+            return 'uneditable-row';
+        }
+        return '';
+    };
 
 
 
