@@ -17,8 +17,16 @@ html, body {
     width: 100%;
 }
 
+.salary-row {
+    background-color: rgba(172, 189, 183, 0.6); /* #acbdb7 at 40% opacity */
+}
+
+.roth-row {
+    background-color: rgba(226, 120, 91, 0.6); /* #e2785b at 40% opacity */
+}
+
 .selected-cell {
-    background-color: rgba(226, 120, 91, 0.5);
+    background-color: rgba(0, 123, 255, 0.5); /* Highlight selected cells */
 }
 
 
@@ -80,13 +88,6 @@ label:after {
     cursor: pointer;
 }
 
-.yellow-row {
-    background-color: rgba(244, 208, 63, 0.5);
-}
-
-.blue-row {
-    background-color: rgba(31, 97, 141, 0.5);
-}
 
 .MuiDataGrid-row:hover {
     background-color: inherit !important;

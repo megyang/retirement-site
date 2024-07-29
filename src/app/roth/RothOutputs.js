@@ -863,14 +863,20 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         const isSelected = selectedCellParams.some(cell => cell.id === params.id && cell.field === params.field);
         const isUneditable = (scenario === 'Scenario 2' || scenario === 'Scenario 3') && fieldsToDisable.includes(params.row.id);
 
-        if (isSelected && isUneditable) {
-            return 'selected-cell uneditable-row';
-        } else if (isSelected) {
-            return 'selected-cell';
-        } else if (isUneditable) {
-            return 'uneditable-row';
+        let className = '';
+        if (isSelected) {
+            className += 'selected-cell ';
         }
-        return '';
+        if (isUneditable) {
+            className += 'uneditable-row ';
+        }
+        if (fieldsToDisable.includes(params.row.id)) {
+            className += 'salary-row ';
+        } else if (params.row.id === 'rothSpouse1' || params.row.id === 'rothSpouse2') {
+            className += 'roth-row ';
+        }
+
+        return className.trim();
     };
 
 
