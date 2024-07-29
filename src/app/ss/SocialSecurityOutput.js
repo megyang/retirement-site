@@ -99,7 +99,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
     const handleMouseLeave = () => {
         const timeoutId = setTimeout(() => {
             setIsModalOpen(false);
-        }, 1500);
+        }, 10000);
         setCloseModalTimeout(timeoutId);
     };
 
@@ -452,7 +452,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                             </tr>
                             <tr>
                                 <td>
-                                    Primary Insurance Amount
+                                    Benefit at Full Retirement Age
                                     <span
                                         onMouseEnter={handleMouseEnter}
                                         onMouseLeave={handleMouseLeave}
@@ -484,8 +484,8 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                             <PiaModal
                                 isOpen={isModalOpen}
                                 onChange={setIsModalOpen}
-                                title="Primary Insurance Amount"
-                                description='Your PIA is the benefit you’d receive at full retirement age. To be as accurate as possible, look up your PIA on <a href="https://ssa.gov/myaccount" target="_blank" rel="noopener noreferrer" style="color: blue; text-decoration: underline;">ssa.gov/myaccount</a>.'
+                                title="Benefit at Full Retirement Age"
+                                description='The monthly benefit you’d receive at full retirement age. To be as accurate as possible, look it up on <a href="https://ssa.gov/myaccount" target="_blank" rel="noopener noreferrer" style="color: blue; text-decoration: underline;">ssa.gov/myaccount</a>.'
                                 position={modalPosition}
                             />
 
