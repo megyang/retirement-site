@@ -18,15 +18,18 @@ html, body {
 }
 
 .selected-cell {
-    background-color: #e2785b;
+    background-color: rgba(226, 120, 91, 0.5);
 }
+
 
 .editable-row {
     background-color: white;
 }
 
 .uneditable-row {
-    background-color: lightgrey;
+    background-color: #f0f0f0; /* Light gray color */
+    pointer-events: none; /* Disable interaction */
+    opacity: 0.6; /* Make it look disabled */
 }
 
 label:after {
@@ -75,4 +78,24 @@ label:after {
     height: 16px;
     background: #e2785b;
     cursor: pointer;
+}
+
+.yellow-row {
+    background-color: rgba(244, 208, 63, 0.5);
+}
+
+.blue-row {
+    background-color: rgba(31, 97, 141, 0.5);
+}
+
+.MuiDataGrid-row:hover {
+    background-color: inherit !important;
+}
+
+.MuiDataGrid-row.Mui-selected {
+    background-color: inherit !important;
+}
+
+.MuiDataGrid-row.Mui-selected:hover {
+    background-color: inherit !important;
 }

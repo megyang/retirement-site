@@ -10,8 +10,16 @@ const NavBar = () => {
             <nav className="mt-4">
                 <ul className="space-y-2">
                     <li>
+                        <Link href="/" passHref>
+                            <div className={`block px-4 py-2 ${pathname === '/' ? 'font-bold' : ''}`}>
+                                Home
+                            </div>
+                        </Link>
+                    </li>
+
+                    <li>
                         <Link href="/ss" passHref>
-                            <div className={`block px-4 py-2 ${pathname === '/ss' || pathname === '/' ? 'font-bold' : ''}`}>
+                            <div className={`block px-4 py-2 ${pathname === '/ss' ? 'font-bold' : ''}`}>
                                 Social Security
                             </div>
                         </Link>
