@@ -1,18 +1,17 @@
 import React from 'react';
-import SocialSecurityCalculator from "@/app/ss/SocialSecurityCalculator";
-import SupabaseProvider from "@/app/providers/SupabaseProvider";
-import UserProvider from "@/app/providers/UserProvider";
-import Header from "@/app/components/Header";
-import NavBar from "@/app/components/NavBar";
-import ModalProviders from "@/app/providers/ModalProviders";
+import {MyUserContextProvider} from "@/app/hooks/useUser";
+import LandingPage from "@/app/components/LandingPage";
 
 // will not be recached and will always be up to date
 export const revalidate = 0;
 
 export default function Page() {
+
     return (
         <main>
-            <SocialSecurityCalculator />
+            <MyUserContextProvider>
+                <LandingPage />
+            </MyUserContextProvider>
         </main>
     );
 }

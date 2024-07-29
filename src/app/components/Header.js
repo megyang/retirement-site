@@ -29,7 +29,7 @@ const Header = () => {
                             Savewell Finance
                         </div>
                     </div>
-                    <div className="flex items-center space-x-4">
+                    <div className="ml-auto flex items-center space-x-4">
                         {!isOpen && (
                             user ? (
                                 <button
