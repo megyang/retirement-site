@@ -26,9 +26,12 @@ html, body {
 }
 
 .selected-cell {
-    background-color: rgba(0, 123, 255, 0.5); /* Highlight selected cells */
+    background-color: rgba(70, 130, 220, 0.5); /* Slightly darker blue color */
 }
 
+.ss-spouse-row {
+    border-bottom: 1px solid black; /* Apply black border to the bottom */
+}
 
 .editable-row {
     background-color: white;
