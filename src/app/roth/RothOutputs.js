@@ -901,7 +901,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                         return item.name === selectedVersion ? totalLifetimeTaxPaid.toFixed(0).toLocaleString() : parseFloat(data.lifetime_tax).toFixed(0).toLocaleString();
                     })
                 ],
-                backgroundColor: '#E2785B',
+                backgroundColor: "#d95448",
             },
             {
                 label: 'Beneficiary Lifetime Taxes',
@@ -914,7 +914,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                         return item.name === selectedVersion ? beneficiaryTaxPaid.toFixed(0).toLocaleString() : parseFloat(data.beneficiary_tax).toFixed(0).toLocaleString();
                     })
                 ],
-                backgroundColor: '#AFBCB7',
+                backgroundColor: "#f2cd88",
             },
         ],
     };
@@ -979,13 +979,13 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const bracketTitles = ['10%', '12%', '22%', '24%', '32%', '35%', '37%'];
     const initialBrackets = [
-        { threshold: 23200, rate: 0.10, color: '#F4D03F' }, // Yellow
-        { threshold: 94300, rate: 0.12, color: '#F5B041' }, // Light Orange
-        { threshold: 201050, rate: 0.22, color: '#DC7633' }, // Dark Orange
-        { threshold: 383900, rate: 0.24, color: '#5D6D7E' }, // Light Green
-        { threshold: 487450, rate: 0.32, color: '#34495E' }, // Dark Green
-        { threshold: 731200, rate: 0.35, color: '#1F618D' }, // Darker Green
-        { threshold: Infinity, rate: 0.37, color: '#154360' } // Darkest Green
+        { threshold: 23200, rate: 0.10, color: '#465EA6' }, // Dark Blue
+        { threshold: 94300, rate: 0.12, color: '#D95448' }, // Light Blue
+        { threshold: 201050, rate: 0.22, color: '#F2CD88' }, // Light Yellow
+        { threshold: 383900, rate: 0.24, color: '#8DAEF2' }, // Red
+        { threshold: 487450, rate: 0.32, color: '#AFBCB7' }, // Greyish Blue
+        { threshold: 731200, rate: 0.35, color: '#E2785B' }, // Light Red (or another color from your palette)
+        { threshold: Infinity, rate: 0.37, color: '#366CD9' }  // Medium Blue (or another color from your palette)
     ];
 
     const zeroTaxBracketDataByYear = Object.keys(taxableIncomes).map(year => {
@@ -1104,12 +1104,12 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             {
                 label: 'Your IRA',
                 data: extendedHusbandEndingValues.map(item => item.value),
-                backgroundColor: 'rgba(226, 120, 91, 1)',
+                backgroundColor: '#d95448',
             },
             {
                 label: 'Spouse IRA',
                 data: extendedWifeEndingValues.map(item => item.value),
-                backgroundColor: 'rgba(172, 189, 183, 1)',
+                backgroundColor: '#f2cd88',
             }
         ]
     };

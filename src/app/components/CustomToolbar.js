@@ -14,7 +14,7 @@ const CustomToolbar = ({ onMultiEdit, onRowEdit }) => {
                 style={{
                     marginLeft: 8,
                     padding: '6px 16px',
-                    background: '#e2785b',
+                    background: '#465ea6',
                     color: 'white',
                     border: 'none',
                     borderRadius: 4
@@ -27,7 +27,7 @@ const CustomToolbar = ({ onMultiEdit, onRowEdit }) => {
                 style={{
                     marginLeft: 8,
                     padding: '6px 16px',
-                    background: '#e2785b',
+                    background: '#465ea6',
                     color: 'white',
                     border: 'none',
                     borderRadius: 4
