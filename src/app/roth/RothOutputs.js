@@ -703,26 +703,21 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             // Update state
             setEditableFields(updatedFields);
 
-            // Propagate changes to Scenario 2 and 3 if necessary
+            // Prepare data for propagation
+            const updatedData = {};
+            updates.forEach(({ id, field, value }) => {
+                const year = parseInt(field);
+                if (!updatedData[year]) {
+                    updatedData[year] = {};
+                }
+                updatedData[year][id] = value;
+            });
+
+            // Fields to propagate
             const fieldsToPropagate = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
             const selectedRows = Array.from(new Set(selectedCellParams.map(param => param.id))); // Convert Set to Array
             if (selectedRows.some(rowId => fieldsToPropagate.includes(rowId))) {
-                ['Scenario 2', 'Scenario 3'].forEach(scenario => {
-                    setEditableFields(prevEditableFields => {
-                        const newEditableFields = { ...prevEditableFields };
-                        selectedCellParams.forEach(({ id, field }) => {
-                            const year = parseInt(field);
-                            if (!newEditableFields[year]) {
-                                newEditableFields[year] = {};
-                            }
-                            newEditableFields[year][id] = parseFloat(value);
-                        });
-                        return newEditableFields;
-                    });
-
-                    // Save the updated scenario
-                    saveVersion(scenario);
-                });
+                await propagateUpdatesToScenarios(updatedData, fieldsToPropagate);
             }
 
             // Clear selection after update
@@ -757,27 +752,22 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
             setEditableFields(updatedFields);
 
-            // Propagate changes to Scenario 2 and 3 if necessary
+            // Prepare data for propagation
+            const updatedData = {};
+            selectedRows.forEach(rowId => {
+                updates.forEach(({ field, value }) => {
+                    const year = parseInt(field);
+                    if (!updatedData[year]) {
+                        updatedData[year] = {};
+                    }
+                    updatedData[year][rowId] = value;
+                });
+            });
+
+            // Fields to propagate
             const fieldsToPropagate = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
             if (selectedRows.some(rowId => fieldsToPropagate.includes(rowId))) {
-                ['Scenario 2', 'Scenario 3'].forEach(scenario => {
-                    setEditableFields(prevEditableFields => {
-                        const newEditableFields = { ...prevEditableFields };
-                        selectedRows.forEach(rowId => {
-                            updates.forEach(({ field, value }) => {
-                                const year = parseInt(field);
-                                if (!newEditableFields[year]) {
-                                    newEditableFields[year] = {};
-                                }
-                                newEditableFields[year][rowId] = value;
-                            });
-                        });
-                        return newEditableFields;
-                    });
-
-                    // Save the updated scenario
-                    saveVersion(scenario);
-                });
+                await propagateUpdatesToScenarios(updatedData, fieldsToPropagate);
             }
 
             // Clear selection after update
