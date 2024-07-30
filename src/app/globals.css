@@ -30,6 +30,9 @@ html, body {
 }
 
 .ss-spouse-row {
+    background-color: #f0f0f0; /* Light gray color */
+    pointer-events: none; /* Disable interaction */
+    opacity: 0.6; /* Make it look disabled */
     border-bottom: 1px solid black; /* Apply black border to the bottom */
 }
 

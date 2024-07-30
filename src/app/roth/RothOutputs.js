@@ -20,6 +20,7 @@ import TaxBarChart from "@/app/components/TaxBarChart";
 import CustomColumnMenu from "@/app/components/CustomColumnMenu";
 import CustomToolbar from "@/app/components/CustomToolbar";
 import CustomPagination from "@/app/components/CustomPagination";
+import {Bar} from "react-chartjs-2";
 
 const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
@@ -114,10 +115,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     Object.keys(updatedData).forEach(year => {
                         if (updatedRow.year === parseInt(year)) {
                             fieldsToUpdate.forEach(field => {
-                                console.log(`Updating field ${field} for year ${year} in ${scenarioName}`);
-                                console.log(`Current value in updatedRow[${field}]:`, updatedRow[field]);
-                                console.log(`New value from updatedData[${year}][${field}]:`, updatedData[year][field]);
-
                                 // Check if the value exists in updatedData
                                 if (updatedData[year] && updatedData[year][field] !== undefined) {
                                     updatedRow[field] = updatedData[year][field];
@@ -125,7 +122,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                                     console.warn(`Value for ${field} in year ${year} is undefined in updatedData.`);
                                 }
 
-                                console.log(`Updated row after setting ${field}:`, updatedRow);
                             });
                         }
                     });
@@ -142,8 +138,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                 const { error } = await supabaseClient.from('roth').upsert(scenarioData, { onConflict: ['user_id', 'version_name', 'year'] });
                 if (error) {
                     console.error(`Error updating ${scenarioName}:`, error);
-                } else {
-                    console.log(`${scenarioName} successfully updated.`);
                 }
             };
 
@@ -170,7 +164,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                 }
             });
 
-            console.log('Updated Data Prepared for Propagation:', updatedData);
 
             // Update Scenario 1
             setEditableFields(prevEditableFields => {
@@ -233,8 +226,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             return;
         }
 
-        console.log('Loading version:', version.name);
-
         const { data, error } = await supabaseClient
             .from('roth')
             .select('*')
@@ -278,9 +269,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                 };
             });
 
-            // Log the loaded data
-            console.log('Loaded editable fields:', loadedEditableFields);
-            console.log('Loaded inputs1:', loadedInputs1);
 
             // Initialize missing years or fields in editableFields
             const currentYear = new Date().getFullYear();
@@ -352,7 +340,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         if (error) {
             console.error('saveVersion: Error saving data to Supabase:', error);
         } else {
-            console.log('Data successfully saved to Supabase.', dataToSave);
             await fetchSavedVersions();
         }
     };
@@ -848,8 +835,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         const editableRowIds = ['rothSpouse1', 'rothSpouse2', 'salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
         if (params.row.id === 'ssSpouse2') {
             return 'ss-spouse-row';
-        } else if (params.row.id === 'totalIncome') {
-            return 'total-income-row';
         } else if (editableRowIds.includes(params.row.id)) {
             return 'editable-row';
         } else {
@@ -917,8 +902,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     })
                 ],
                 backgroundColor: '#E2785B',
-                borderColor: 'black',
-                borderWidth: 1,
             },
             {
                 label: 'Beneficiary Lifetime Taxes',
@@ -932,8 +915,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     })
                 ],
                 backgroundColor: '#AFBCB7',
-                borderColor: 'black',
-                borderWidth: 1
             },
         ],
     };
@@ -1087,6 +1068,64 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const husbandTableData = createTableData(iraDetails.spouse1);
     const wifeTableData = createTableData(iraDetails.spouse2);
+
+    const husbandEndingValues = Object.keys(husbandTableData.endingValue.values).map(year => ({
+        year,
+        value: Math.round(parseFloat(husbandTableData.endingValue.values[year].replace(/,/g, '')))
+    }));
+
+    const wifeEndingValues = Object.keys(wifeTableData.endingValue.values).map(year => ({
+        year,
+        value: Math.round(parseFloat(wifeTableData.endingValue.values[year].replace(/,/g, '')))
+    }));
+
+    const iraChartLabels = husbandEndingValues.map(item => item.year);
+    const iraChartData = {
+        labels: iraChartLabels,
+        datasets: [
+            {
+                label: 'Your IRA',
+                data: husbandEndingValues.map(item => item.value),
+                backgroundColor: 'rgba(226, 120, 91, 1)',
+            },
+            {
+                label: 'Spouse IRA',
+                data: wifeEndingValues.map(item => item.value),
+                backgroundColor: 'rgba(172, 189, 183, 1)',
+            }
+        ]
+    };
+
+    const barChartOptions = {
+        responsive: true,
+        scales: {
+            x: {
+                stacked: true
+            },
+            y: {
+                stacked: true,
+                ticks: {
+                    callback: function (value) {
+                        return '$' + value.toLocaleString();
+                    }
+                }
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        label += '$' + context.raw.toLocaleString();
+                        return label;
+                    }
+                }
+            }
+        }
+    };
 
     return (
         <div className="max-w-5xl mx-auto">
@@ -1252,11 +1291,19 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                             <h2 className="text-lg mb-3">Ordinary Income Tax Brackets</h2>
                             <TaxBarChart data={dataForChart} />
                         </div>
+                        <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
+                            <h2 className="text-xl font-semi-bold mb-3">IRA</h2>
+                            <Bar data={iraChartData} options={barChartOptions} />
+                        </div>
+
                     </>
+
                 )}
             </div>
 
-            {/* Table for Husband*/}
+
+
+            {/* Table for Husband
 
             <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
                 <h2 className="text-xl font-semi-bold mb-3">Husbands IRA Details</h2>
@@ -1280,9 +1327,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     ))}
                     </tbody>
                 </table>
-            </div>
+            </div>*/}
 
-            {/* Table for Wife*/}
+            {/* Table for Wife
             <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
                 <h2 className="text-xl font-semi-bold mb-3">Wifes IRA Details</h2>
                 <table className="min-w-full divide-y divide-gray-200">
@@ -1305,8 +1352,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     ))}
                     </tbody>
                 </table>
-            </div>
+            </div>*/}
 
+            {/*
             <h1>Ordinary Income Tax Brackets Table</h1>
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -1336,7 +1384,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     );
                 })}
                 </tbody>
-            </table>
+            </table>*/}
 
         </div>
 

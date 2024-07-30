@@ -128,15 +128,11 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                 label: "Your Benefit",
                 data: [],
                 backgroundColor: "#E2785B",
-                borderColor: "black",
-                borderWidth: 1,
             },
             {
                 label: "Spouse Benefit",
                 data: [],
                 backgroundColor: "#AFBCB7",
-                borderColor: "black",
-                borderWidth: 1,
             },
         ],
     });
@@ -218,15 +214,11 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                     label: "Your Benefit",
                     data: husbandBenefitArray,
                     backgroundColor: "#E2785B",
-                    borderColor: "black",
-                    borderWidth: 1,
                 },
                 {
                     label: "Spouse Benefit",
                     data: wifeBenefitArray,
                     backgroundColor: "#AFBCB7",
-                    borderColor: "black",
-                    borderWidth: 1,
                 },
             ],
         });
