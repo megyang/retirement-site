@@ -1068,6 +1068,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const husbandTableData = createTableData(iraDetails.spouse1);
     const wifeTableData = createTableData(iraDetails.spouse2);
+    const maxLifeYear = Math.max(husbandLEYear, wifeLEYear);
 
     const husbandEndingValues = Object.keys(husbandTableData.endingValue.values).map(year => ({
         year,
@@ -1078,19 +1079,36 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         year,
         value: Math.round(parseFloat(wifeTableData.endingValue.values[year].replace(/,/g, '')))
     }));
+    const extendedHusbandEndingValues = [];
+    const extendedWifeEndingValues = [];
 
-    const iraChartLabels = husbandEndingValues.map(item => item.year);
+    for (let year = currentYear; year <= maxLifeYear; year++) {
+        const husbandValue = husbandEndingValues.find(item => item.year === year.toString());
+        const wifeValue = wifeEndingValues.find(item => item.year === year.toString());
+
+        extendedHusbandEndingValues.push({
+            year: year.toString(),
+            value: husbandValue ? husbandValue.value : 0
+        });
+
+        extendedWifeEndingValues.push({
+            year: year.toString(),
+            value: wifeValue ? wifeValue.value : 0
+        });
+    }
+
+    const iraChartLabels = extendedHusbandEndingValues.map(item => item.year);
     const iraChartData = {
         labels: iraChartLabels,
         datasets: [
             {
                 label: 'Your IRA',
-                data: husbandEndingValues.map(item => item.value),
+                data: extendedHusbandEndingValues.map(item => item.value),
                 backgroundColor: 'rgba(226, 120, 91, 1)',
             },
             {
                 label: 'Spouse IRA',
-                data: wifeEndingValues.map(item => item.value),
+                data: extendedWifeEndingValues.map(item => item.value),
                 backgroundColor: 'rgba(172, 189, 183, 1)',
             }
         ]
