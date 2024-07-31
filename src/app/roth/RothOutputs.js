@@ -1267,7 +1267,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                         <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
                             <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
                             <div className="mb-4 p-4 bg-gray-100 rounded">
-                                <p>Fill out the green rows first, then the orange rows.</p>
+                                <p>Fill out the yellow rows first, then the red rows.</p>
                                 <p>To use the buttons:</p>
                                 <p>Edit multiple cells at once: First click on all the cells you want to have the same value, then the button.</p>
                                 <p>Edit the row: Click on one cell in the row, then the button.</p>
