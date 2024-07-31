@@ -61,6 +61,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const [selectedVersion, setSelectedVersion] = useState("Select a scenario");
     const [triggerSave, setTriggerSave] = useState(false);
+
+    const [editableScenario1, setEditableScenario1] = useState({});
+    const [editableScenario2, setEditableScenario2] = useState({});
+    const [editableScenario3, setEditableScenario3] = useState({});
+
     const handleInputChange = (e) => {
         if (!user) {
             onOpen();
@@ -88,6 +93,63 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             }));
             setTriggerSave(true);
         }
+    };
+
+    const fetchScenarioData = async () => {
+        if (!user) return;
+
+        const { data: scenario1, error: error1 } = await supabaseClient
+            .from('roth')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('version_name', 'Scenario 1');
+
+        const { data: scenario2, error: error2 } = await supabaseClient
+            .from('roth')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('version_name', 'Scenario 2');
+
+        const { data: scenario3, error: error3 } = await supabaseClient
+            .from('roth')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('version_name', 'Scenario 3');
+
+        if (error1 || error2 || error3) {
+            console.error('Error loading scenarios:', error1 || error2 || error3);
+            return;
+        }
+
+        setEditableScenario1(transformData(scenario1));
+        setEditableScenario2(transformData(scenario2));
+        setEditableScenario3(transformData(scenario3));
+    };
+
+    useEffect(() => {
+        if (selectedVersion === 'Scenario 1') {
+            fetchScenarioData();
+        }
+    }, [editableFields, selectedVersion]);
+
+    const transformData = (data) => {
+        const transformed = {};
+        data.forEach(item => {
+            if (!transformed[item.year]) {
+                transformed[item.year] = {};
+            }
+            transformed[item.year] = {
+                rothSpouse1: item.roth_1 || 0,
+                rothSpouse2: item.roth_2 || 0,
+                salary1: item.salary1 || 0,
+                salary2: item.salary2 || 0,
+                rentalIncome: item.rental_income || 0,
+                interest: item.interest || 0,
+                capitalGains: item.capital_gains || 0,
+                pension: item.pension || 0
+            };
+        });
+        return transformed;
     };
 
     const propagateUpdatesToScenarios = async (updatedData, fieldsToUpdate) => {
@@ -200,13 +262,21 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         if(triggerSave) {
             saveVersion(selectedVersion)
             setTriggerSave(false);
+            fetchScenarioData()
         }
     },[triggerSave, selectedVersion])
 
 
 // ROTH CALCULATIONS START -----------
     const { ira1, ira2, roi } = inputs1;
-    const {iraDetails, iraDetailsZeroRoth, totals} = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE, editableFields);
+    const {iraDetails, iraDetailsZeroRoth} = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE, editableFields);
+    const iraD1 = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE, editableScenario1);
+    const iraD2 = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE, editableScenario2);
+    const iraD3 = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE, editableScenario3);
+
+    const iraDetails1 = iraD1.iraDetails
+    const iraDetails2 = iraD2.iraDetails
+    const iraDetails3 = iraD3.iraDetails
 
     staticFields = {};
     for (let year = currentYear, ageSpouse1 = inputs.husbandAge, ageSpouse2 = inputs.wifeAge;
@@ -454,9 +524,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         return startingStandardDeduction * Math.pow(1 + annualInflationRate, yearsDifference);
     };
 
-    const calculateTotalIncomeForYear = (year) => {
+    const calculateTotalIncomeForYear = (year, fields) => {
         const ssBenefits = findSsBenefitsByYear(socialSecurityBenefits, parseInt(year));
-        const editableFieldsForYear = editableFields[year] || {
+        const editableFieldsForYear = fields[year] || {
             rothSpouse1: 0,
             rothSpouse2: 0,
             salary1: 0,
@@ -486,11 +556,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         return totalIncome.toFixed(0);
     };
 
-    const calculateTaxableIncomes = (staticFields, iraDetails, findSsBenefitsByYear, calculateTotalIncomeForYear, calculateStandardDeductionForYear) => {
+    const calculateTaxableIncomes = (fields, staticFields, iraDetails, findSsBenefitsByYear, calculateTotalIncomeForYear, calculateStandardDeductionForYear) => {
         let taxableIncomes = {};
 
         Object.keys(staticFields).forEach(year => {
-            const totalIncomeForYear = calculateTotalIncomeForYear(year);
+            const totalIncomeForYear = calculateTotalIncomeForYear(year, fields);
             const standardDeductionForYear = calculateStandardDeductionForYear(parseInt(year));
 
             taxableIncomes[year] = Math.max(0, totalIncomeForYear - standardDeductionForYear);
@@ -500,12 +570,50 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     };
 
     const taxableIncomes = calculateTaxableIncomes(
+        editableFields,
         staticFields,
         iraDetails,
         findSsBenefitsByYear,
-        calculateTotalIncomeForYear,
+        (year) => calculateTotalIncomeForYear(year, editableFields),
         calculateStandardDeductionForYear
     );
+
+    const taxableIncomes1 = calculateTaxableIncomes(
+        editableScenario1,
+        staticFields,
+        iraDetails1,
+        findSsBenefitsByYear,
+        (year) => calculateTotalIncomeForYear(year, editableScenario1),
+        calculateStandardDeductionForYear
+    );
+
+    const taxableIncomes2 = calculateTaxableIncomes(
+        editableScenario2,
+        staticFields,
+        iraDetails2,
+        findSsBenefitsByYear,
+        (year) => calculateTotalIncomeForYear(year, editableScenario2),
+        calculateStandardDeductionForYear
+    );
+
+    const taxableIncomes3 = calculateTaxableIncomes(
+        editableScenario3,
+        staticFields,
+        iraDetails3,
+        findSsBenefitsByYear,
+        (year) => calculateTotalIncomeForYear(year, editableScenario3),
+        calculateStandardDeductionForYear
+    );
+
+    console.log("editableFields", editableFields);
+    console.log("editableFields1", editableScenario1);
+    console.log("editableFields2", editableScenario2);
+    console.log("editableFields3", editableScenario3);
+
+    console.log("taxableIncome", taxableIncomes);
+    console.log("taxableIncome1", taxableIncomes1);
+    console.log("taxableIncome2", taxableIncomes2);
+    console.log("taxableIncome3", taxableIncomes3);
 
     const calculateTotalLifetimeTaxPaid = (taxableIncomes, inflation, currentYear) => {
         let totalSum = 0;
@@ -525,7 +633,29 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     };
 
     const totalLifetimeTaxPaid = calculateTotalLifetimeTaxPaid(taxableIncomes, inputs1.inflation, currentYear);
+    const totalLifetimeTaxPaid1 = calculateTotalLifetimeTaxPaid(taxableIncomes1, inputs1.inflation, currentYear);
+    const totalLifetimeTaxPaid2 = calculateTotalLifetimeTaxPaid(taxableIncomes2, inputs1.inflation, currentYear);
+    const totalLifetimeTaxPaid3 = calculateTotalLifetimeTaxPaid(taxableIncomes3, inputs1.inflation, currentYear);
+
+
     const beneficiaryTaxPaid = calculateBeneficiaryTaxPaid(iraDetails, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
+    const beneficiaryTaxPaid1 = calculateBeneficiaryTaxPaid(iraDetails1, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
+    const beneficiaryTaxPaid2 = calculateBeneficiaryTaxPaid(iraDetails2, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
+    const beneficiaryTaxPaid3 = calculateBeneficiaryTaxPaid(iraDetails3, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
+    console.log("iraDetails", iraDetails);
+    console.log("iraDetails1", iraDetails1);
+    console.log("iraDetails2", iraDetails2);
+    console.log("iraDetails3", iraDetails3);
+    console.log("totallifetimetaxpaid", totalLifetimeTaxPaid);
+    console.log("totallifetimetaxpaid1", totalLifetimeTaxPaid1);
+    console.log("totallifetimetaxpaid2", totalLifetimeTaxPaid2);
+    console.log("totallifetimetaxpaid3", totalLifetimeTaxPaid3);
+
+    console.log("beneficiarytaxpaid", beneficiaryTaxPaid);
+    console.log("beneficiarytaxpaid1", beneficiaryTaxPaid1);
+    console.log("beneficiarytaxpaid2", beneficiaryTaxPaid2);
+    console.log("beneficiarytaxpaid3", beneficiaryTaxPaid3);
+
 
 
     const calculateTotalTaxesPaid = (totalLifetimeTaxPaid, beneficiaryTaxPaid) => {
@@ -653,11 +783,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             case 'ssSpouse2':
                 return findSsBenefitsByYear(socialSecurityBenefits, parseInt(year)).spouse2Benefit;
             case 'totalIncome':
-                return calculateTotalIncomeForYear(year);
+                return calculateTotalIncomeForYear(year, editableFields);
             case 'standardDeductions':
                 return calculateStandardDeductionForYear(parseInt(year)).toFixed(0);
             case 'taxableIncome':
-                return Math.max(0, calculateTotalIncomeForYear(year) - calculateStandardDeductionForYear(parseInt(year))).toFixed(0);
+                return Math.max(0, calculateTotalIncomeForYear(year, editableFields) - calculateStandardDeductionForYear(parseInt(year))).toFixed(0);
             default:
                 return 0;
         }
@@ -887,7 +1017,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const chartData = {
         labels: [
             `No Conversion`,
-            ...versionData.filter(item => item.name !== "Select a scenario").map(item => item.name)
+            'Scenario 1',
+            'Scenario 2',
+            'Scenario 3'
         ],
         datasets: [
             {
@@ -896,10 +1028,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     selectedVersion !== "Select a scenario"
                         ? totalLifetimeTaxPaidWithZeroRoth.toFixed(0).toLocaleString()
                         : 0,
-                    ...versionData.filter(item => item.name !== "Select a scenario").map(item => {
-                        const data = getChartData(item);
-                        return item.name === selectedVersion ? totalLifetimeTaxPaid.toFixed(0).toLocaleString() : parseFloat(data.lifetime_tax).toFixed(0).toLocaleString();
-                    })
+                    totalLifetimeTaxPaid1.toFixed(0).toLocaleString(),
+                    totalLifetimeTaxPaid2.toFixed(0).toLocaleString(),
+                    totalLifetimeTaxPaid3.toFixed(0).toLocaleString()
                 ],
                 backgroundColor: "#d95448",
             },
@@ -909,16 +1040,14 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     selectedVersion !== "Select a scenario"
                         ? beneficiaryTaxPaidWithZeroRoth.toFixed(0).toLocaleString()
                         : 0,
-                    ...versionData.filter(item => item.name !== "Select a scenario").map(item => {
-                        const data = getChartData(item);
-                        return item.name === selectedVersion ? beneficiaryTaxPaid.toFixed(0).toLocaleString() : parseFloat(data.beneficiary_tax).toFixed(0).toLocaleString();
-                    })
+                    beneficiaryTaxPaid1.toFixed(0).toLocaleString(),
+                    beneficiaryTaxPaid2.toFixed(0).toLocaleString(),
+                    beneficiaryTaxPaid3.toFixed(0).toLocaleString()
                 ],
                 backgroundColor: "#f2cd88",
             },
         ],
     };
-
 
     const chartOptions = {
         responsive: true,
