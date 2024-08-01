@@ -1276,7 +1276,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     return (
         <div className="w-full mx-auto p-4 flex flex-col items-stretch">
-            <div className="mb-5 text-left flex items-center space-x-2 w-full max-w-6xl">
+            <div className="mb-5 text-left flex items-center space-x-2 w-full">
                 <div className="bg-white rounded p-2 flex-grow">
                     <select
                         className="w-full bg-white border-none"
