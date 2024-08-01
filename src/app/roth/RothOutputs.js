@@ -1389,8 +1389,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                             </div>
                         </div>
                     </div>
-                    <div className="w-full mt-4 bg-white p-4 rounded max-w-6xl">
-                        <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
+                    <div className="mt-4 bg-white p-4 rounded w-full">
+                        <h2 className="text-xl font-semi-bold mb-3 w-full">Financial Plan Details</h2>
                         <div className="mb-4 p-4 bg-gray-100 rounded">
                             <p>Fill out the yellow rows first, then the red rows.</p>
                             <p>To use the buttons:</p>
@@ -1398,11 +1398,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                             <p>Edit the row: Click on one cell in the row, then the button.</p>
                             <p>To deselect all, hit the enter key.</p>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                        <div className="mx-auto max-w-6xl">
                             <DataGrid
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch"
-                                style={{ flex: 1, minHeight: 0, maxWidth: '90%' }}
+                                style={{ flex: 1, minHeight: 0, maxWidth: '100%' }}
                                 apiRef={apiRef}
                                 rows={rows}
                                 rowHeight={40}
