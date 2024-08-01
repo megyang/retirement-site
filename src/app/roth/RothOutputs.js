@@ -1304,7 +1304,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     </select>
                 </div>
             </div>
-            <div className="bg-white p-4 rounded h-auto w-full max-w-6xl">
+            <div className="bg-white p-4 rounded h-auto w-full">
                 <div className="text-lg text-left">
                     Total Taxes Paid
                 </div>
@@ -1313,7 +1313,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
             {selectedVersion !== "Select a scenario" && (
                 <>
-                    <div className="flex mt-4 w-full space-x-4 flex-wrap justify-between max-w-6xl">
+                    <div className="flex mt-4 w-full space-x-4 flex-wrap justify-between">
                         <div className="bg-white p-6 rounded flex-1 m-2 min-w-[300px] flex flex-col justify-center">
                             <h3 className="text-2xl text-center mb-4">{selectedVersion}: Total Taxes Paid</h3>
                             <div className="text-4xl font-bold text-center">
@@ -1430,11 +1430,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                         </div>
                     </div>
 
-                    <div className="mt-4 bg-white p-4 rounded max-w-6xl">
+                    <div className="mt-4 bg-white p-4 rounded max-w-full">
                         <h2 className="text-lg mb-3">Ordinary Income Tax Brackets</h2>
                         <TaxBarChart data={dataForChart} />
                     </div>
-                    <div className="mt-4 bg-white overflow-x-auto p-4 rounded max-w-6xl">
+                    <div className="mt-4 bg-white overflow-x-auto p-4 rounded max-w-full">
                         <h2 className="text-xl font-semi-bold mb-3">IRA</h2>
                         <Bar data={iraChartData} options={barChartOptions} />
                     </div>
