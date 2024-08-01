@@ -965,6 +965,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         const editableRowIds = ['rothSpouse1', 'rothSpouse2', 'salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
         if (params.row.id === 'ssSpouse2') {
             return 'ss-spouse-row';
+        } else if (params.row.id === 'standardDeductions') {
+            return 'standard-deductions-row'; // Add this line
         } else if (editableRowIds.includes(params.row.id)) {
             return 'editable-row';
         } else {
@@ -1390,46 +1392,49 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                         </div>
                     </div>
                     <div className="mt-4 bg-white p-4 rounded w-full">
-                        <h2 className="text-xl font-semi-bold mb-3 max-w-6xl">Financial Plan Details</h2>
-                        <div className="mb-4 p-4 bg-gray-100 rounded max-w-6xl mx-auto">
-                            <p>Fill out the yellow rows first, then the red rows.</p>
-                            <p>To use the buttons:</p>
-                            <p>Edit multiple cells at once: First click on all the cells you want to have the same value, then the button.</p>
-                            <p>Edit the row: Click on one cell in the row, then the button.</p>
-                            <p>To deselect all, hit the enter key.</p>
-                        </div>
-                        <div className="mx-auto max-w-6xl">
-                            <DataGrid
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Stretch"
-                                style={{ flex: 1, minHeight: 0, maxWidth: '100%' }}
-                                apiRef={apiRef}
-                                rows={rows}
-                                rowHeight={40}
-                                columns={columns}
-                                pageSize={10}
-                                rowsPerPageOptions={[10]}
-                                getRowClassName={getRowClassName}
-                                getCellClassName={getCellClassName}
-                                isCellEditable={isCellEditable}
-                                processRowUpdate={processRowUpdate}
-                                onProcessRowUpdateError={processRowUpdateError}
-                                onCellClick={handleCellClick}
-                                slots={{
-                                    toolbar: CustomToolbar,
-                                    columnMenu: CustomColumnMenu,
-                                    pagination: CustomPagination,
-                                }}
-                                slotProps={{
-                                    toolbar: {
-                                        someCustomString: 'Hello',
-                                        someCustomNumber: 42,
-                                        onMultiEdit: handleMultiEdit,
-                                        onRowEdit: handleRowEdit,
-                                    },
-                                    columnMenu: { background: 'red', counter: rows.length }
-                                }}
-                            />
+                        <div className="max-w-6xl">
+                            <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
+                            <div className="mb-4 p-4 bg-gray-100 rounded mx-auto">
+                                <p>Fill out the yellow rows first, then the red rows.</p>
+                                <p>To use the buttons:</p>
+                                <p>Edit multiple cells at once: First click on all the cells you want to have the same value, then the button.</p>
+                                <p>Edit the row: Click on one cell in the row, then the button.</p>
+                                <p>To deselect all, hit the enter key.</p>
+                            </div>
+                            <div>
+                                <DataGrid
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch"
+                                    style={{ flex: 1, minHeight: 0, maxWidth: '100%' }}
+                                    apiRef={apiRef}
+                                    rows={rows}
+                                    rowHeight={40}
+                                    columns={columns}
+                                    pageSize={10}
+                                    rowsPerPageOptions={[10]}
+                                    getRowClassName={getRowClassName}
+                                    getCellClassName={getCellClassName}
+                                    isCellEditable={isCellEditable}
+                                    processRowUpdate={processRowUpdate}
+                                    onProcessRowUpdateError={processRowUpdateError}
+                                    onCellClick={handleCellClick}
+                                    slots={{
+                                        toolbar: CustomToolbar,
+                                        columnMenu: CustomColumnMenu,
+                                        pagination: CustomPagination,
+                                    }}
+                                    slotProps={{
+                                        toolbar: {
+                                            someCustomString: 'Hello',
+                                            someCustomNumber: 42,
+                                            onMultiEdit: handleMultiEdit,
+                                            onRowEdit: handleRowEdit,
+                                        },
+                                        columnMenu: { background: 'red', counter: rows.length }
+                                    }}
+                                />
+                            </div>
+
                         </div>
                     </div>
 
