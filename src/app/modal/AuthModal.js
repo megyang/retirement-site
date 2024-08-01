@@ -9,14 +9,13 @@ import useAuthModal from "@/app/hooks/useAuthModal";
 
 const AuthModal = () => {
     const supabaseClient = useSupabaseClient();
-    const { onClose, isOpen, view } = useAuthModal();
+    const { onClose, isOpen, view, setView } = useAuthModal();
     const { session } = useSessionContext();
     useEffect(() => {
         if (session) {
             onClose();
         }
     }, [session, onClose]);
-
 
     const getTitle = () => {
         if (view === 'sign_in') {
@@ -60,7 +59,8 @@ const AuthModal = () => {
             onChange={onClose}>
             <Auth
                 providers={[]}
-                magicLink
+                magicLink={false}
+                showLinks={false}
                 supabaseClient={supabaseClient}
                 view={view}
                 appearance={{
@@ -76,6 +76,27 @@ const AuthModal = () => {
                 }}
                 localization={view === 'sign_up' || view === 'sign_in' ? localization : {}}
             />
+            <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '0.875rem', color: 'gray' }}>
+                {view === 'sign_in' ? (
+                    <p>
+                        <button
+                            onClick={() => setView('sign_up')}
+                            style={{ color: 'gray', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}
+                        >
+                            Do not have an account? Sign up
+                        </button>
+                    </p>
+                ) : (
+                    <p>
+                        <button
+                            onClick={() => setView('sign_in')}
+                            style={{ color: 'gray', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}
+                        >
+                            Already have an account? Sign in
+                        </button>
+                    </p>
+                )}
+            </div>
         </Modal>
     );
 };
