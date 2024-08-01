@@ -1400,7 +1400,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                             <DataGrid
-                                style={{ flex: 1, minHeight: 0 }}
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
+                                style={{ flex: 1, minHeight: 0, maxWidth: '90%' }}
                                 apiRef={apiRef}
                                 rows={rows}
                                 rowHeight={40}
