@@ -1390,8 +1390,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                         </div>
                     </div>
                     <div className="mt-4 bg-white p-4 rounded w-full">
-                        <h2 className="text-xl font-semi-bold mb-3 w-full">Financial Plan Details</h2>
-                        <div className="mb-4 p-4 bg-gray-100 rounded">
+                        <h2 className="text-xl font-semi-bold mb-3 max-w-6xl">Financial Plan Details</h2>
+                        <div className="mb-4 p-4 bg-gray-100 rounded max-w-6xl mx-auto">
                             <p>Fill out the yellow rows first, then the red rows.</p>
                             <p>To use the buttons:</p>
                             <p>Edit multiple cells at once: First click on all the cells you want to have the same value, then the button.</p>
