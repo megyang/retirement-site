@@ -1398,8 +1398,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                             <p>Edit the row: Click on one cell in the row, then the button.</p>
                             <p>To deselect all, hit the enter key.</p>
                         </div>
-                        <div className="items-center overflow-x-auto" style={{ height: 600 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                             <DataGrid
+                                style={{ flex: 1, minHeight: 0 }}
                                 apiRef={apiRef}
                                 rows={rows}
                                 rowHeight={40}
