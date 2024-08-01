@@ -9,14 +9,7 @@ export default function Page() {
     return (
         <main>
             <div className=" bg-[#f9f9f9]">
-                <SupabaseProvider>
-                    <UserProvider>
-                        <ModalProviders />
-                        <Header />
-                        <RothConversionCalculator />
-                    </UserProvider>
-                </SupabaseProvider>
-
+                <RothConversionCalculator />
             </div>
         </main>
     );

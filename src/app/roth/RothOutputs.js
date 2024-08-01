@@ -1275,7 +1275,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     };
 
     return (
-        <div className="max-w-5xl mx-auto">
+        <div className="w-full mx-auto p-4 flex flex-col items-stretch">
             <div className="mb-5 text-left flex items-center space-x-2 w-full">
                 <div className="bg-white rounded p-2 flex-grow">
                     <select
@@ -1305,7 +1305,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                 </div>
             </div>
 
-            <div className="flex-col">
+            <div className="flex flex-col">
                 <div className="bg-white p-4 rounded h-auto w-full">
                     <div className="text-lg text-left">
                         Total Taxes Paid
@@ -1316,14 +1316,14 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
                 {selectedVersion !== "Select a scenario" && (
                     <>
-                        <div className="flex mt-4 w-full space-x-4">
-                            <div className="bg-white p-6 rounded flex-1 w-2 flex flex-col justify-center">
+                        <div className="flex mt-4 w-full space-x-4 flex-wrap justify-between">
+                            <div className="bg-white p-6 rounded flex-1 m-2 min-w-[300px] max-w-[48%] flex flex-col justify-center">
                                 <h3 className="text-2xl text-center mb-4">{selectedVersion}: Total Taxes Paid</h3>
                                 <div className="text-4xl font-bold text-center">
                                     ${(totalTaxesPaid)}
                                 </div>
                             </div>
-                            <div className="bg-white p-6 rounded flex-1 w-2">
+                            <div className="bg-white p-6 rounded flex-1 m-2 min-w-[300px] max-w-[48%]">
                                 <h3 className="text-left text-1xl">Other Inputs</h3>
                                 <div className="flex flex-col space-y-2">
                                     <div className="flex justify-between items-center">
@@ -1393,7 +1393,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                             </div>
                         </div>
 
-                        <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
+                        <div className="w-full max-w-6xl mt-4 bg-white p-4 rounded">
                             <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
                             <div className="mb-4 p-4 bg-gray-100 rounded">
                                 <p>Fill out the yellow rows first, then the red rows.</p>
@@ -1402,7 +1402,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                                 <p>Edit the row: Click on one cell in the row, then the button.</p>
                                 <p>To deselect all, hit the enter key.</p>
                             </div>
-                            <div style={{ height: 600, width: '100%' }}>
+                            <div className="w-full overflow-x-auto" style={{ height: 600 }}>
                                 <DataGrid
                                     apiRef={apiRef}
                                     rows={rows}
@@ -1411,7 +1411,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                                     pageSize={10}
                                     rowsPerPageOptions={[10]}
                                     getRowClassName={getRowClassName}
-                                    getCellClassName={getCellClassName} // Add this line
+                                    getCellClassName={getCellClassName}
                                     isCellEditable={isCellEditable}
                                     processRowUpdate={processRowUpdate}
                                     onProcessRowUpdateError={processRowUpdateError}
@@ -1425,8 +1425,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                                         toolbar: {
                                             someCustomString: 'Hello',
                                             someCustomNumber: 42,
-                                            onMultiEdit: handleMultiEdit, // Add this handler function
-                                            onRowEdit: handleRowEdit, // Add this handler function
+                                            onMultiEdit: handleMultiEdit,
+                                            onRowEdit: handleRowEdit,
                                         },
                                         columnMenu: { background: 'red', counter: rows.length }
                                     }}
@@ -1447,94 +1447,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
                 )}
             </div>
-
-
-
-            {/* Table for Husband
-
-            <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
-                <h2 className="text-xl font-semi-bold mb-3">Husbands IRA Details</h2>
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                    <tr>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 tracking-wider">Field</th>
-                        {Object.keys(husbandTableData.startingValue.values).map(year => (
-                            <th key={year} className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">{year}</th>
-                        ))}
-                    </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                    {Object.keys(husbandTableData).map(rowKey => (
-                        <tr key={rowKey}>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">{husbandTableData[rowKey].label}</td>
-                            {Object.values(husbandTableData[rowKey].values).map((value, index) => (
-                                <td key={index} className="px-3 py-2 text-center whitespace-nowrap">{value}</td>
-                            ))}
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
-            </div>*/}
-
-            {/* Table for Wife
-            <div className="mt-4 bg-white overflow-x-auto p-4 rounded">
-                <h2 className="text-xl font-semi-bold mb-3">Wifes IRA Details</h2>
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                    <tr>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 tracking-wider">Field</th>
-                        {Object.keys(wifeTableData.startingValue.values).map(year => (
-                            <th key={year} className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">{year}</th>
-                        ))}
-                    </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                    {Object.keys(wifeTableData).map(rowKey => (
-                        <tr key={rowKey}>
-                            <td className="px-3 py-2 text-left whitespace-nowrap">{wifeTableData[rowKey].label}</td>
-                            {Object.values(wifeTableData[rowKey].values).map((value, index) => (
-                                <td key={index} className="px-3 py-2 text-center whitespace-nowrap">{value}</td>
-                            ))}
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
-            </div>*/}
-
-            {/*
-            <h1>Ordinary Income Tax Brackets Table</h1>
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                <tr>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Year</th>
-                    {bracketTitles.map((title) => (
-                        <th key={title} className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">{title}</th>
-                    ))}
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 tracking-wider">Total Income Tax</th>
-                </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                {Object.keys(taxableIncomes).map((year) => {
-                    const taxesForBrackets = calculateTaxesForBrackets(taxableIncomes[year], inputs1.inflation, currentYear, year);
-                    const totalTax = Object.values(taxesForBrackets).reduce((sum, tax) => sum + tax, 0);
-
-                    return (
-                        <tr key={year}>
-                            <td className="px-3 py-2 text-center whitespace-nowrap">{year}</td>
-                            {bracketTitles.map((title) => (
-                                <td key={`${year}-${title}`} className="px-3 py-2 text-center whitespace-nowrap">
-                                    ${taxesForBrackets[title].toFixed(0)}
-                                </td>
-                            ))}
-                            <td className="px-3 py-2 text-center whitespace-nowrap">${totalTax.toFixed(0)}</td>
-                        </tr>
-                    );
-                })}
-                </tbody>
-            </table>*/}
-
         </div>
-
     );
 
 };

@@ -45,11 +45,9 @@ const SocialSecurityCalculator = () => {
 
     return (
         <div className="mx-auto">
-            <div>
-                <MyUserContextProvider>
-                    <SocialSecurityOutput inputs={inputs} setInputs={setInputs} setSocialSecurityInputs={setSocialSecurityInputs} />
-                </MyUserContextProvider>
-            </div>
+            <MyUserContextProvider>
+                <SocialSecurityOutput inputs={inputs} setInputs={setInputs} setSocialSecurityInputs={setSocialSecurityInputs} />
+            </MyUserContextProvider>
         </div>
     );
 };
