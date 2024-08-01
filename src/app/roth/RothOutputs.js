@@ -1392,7 +1392,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                         </div>
                     </div>
                     <div className="mt-4 bg-white p-4 rounded w-full">
-                        <div className="max-w-6xl">
+                        <div className="max-w-6xl mx-auto">
                             <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
                             <div className="mb-4 p-4 bg-gray-100 rounded mx-auto">
                                 <p>Fill out the yellow rows first, then the red rows.</p>
