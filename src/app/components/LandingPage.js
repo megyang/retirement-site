@@ -30,17 +30,18 @@ const LandingPage = () => {
                     <p className="mb-4 text-md">Please create an account or log in.</p>
                     <div className="flex justify-center space-x-4 mb-10">
                         <button
-                            onClick={handleLogIn}
-                            className="px-6 py-3 text-black rounded border border-black"
-                        >
-                            Log In
-                        </button>
-                        <button
                             onClick={handleSignUp}
                             className="px-6 py-3 text-black rounded border border-black"
                         >
                             Sign Up
                         </button>
+                        <button
+                            onClick={handleLogIn}
+                            className="px-6 py-3 text-black rounded border border-black"
+                        >
+                            Log In
+                        </button>
+
                     </div>
                 </div>
             ) : (

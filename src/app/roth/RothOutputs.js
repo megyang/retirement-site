@@ -59,7 +59,10 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         { name: "Scenario 3" }
     ]);
 
-    const [selectedVersion, setSelectedVersion] = useState("Select a scenario");
+    const [selectedVersion, setSelectedVersion] = useState(() => {
+        const savedScenario = localStorage.getItem("selectedScenario");
+        return savedScenario ? savedScenario : "Scenario 1";
+    });
     const [triggerSave, setTriggerSave] = useState(false);
 
     const [editableScenario1, setEditableScenario1] = useState({});
@@ -510,10 +513,30 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     useEffect(() => {
         if (user) {
             fetchSavedVersions();
+            const lastScenario = localStorage.getItem("selectedScenario") || "Scenario 1";
+            const scenario = savedVersions.find(v => v.name === lastScenario);
+            if (scenario) {
+                loadVersion(scenario);
+            }
         }
-
     }, [user]);
 
+    useEffect(() => {
+        if (user && selectedVersion !== "Select a scenario") {
+            localStorage.setItem("selectedScenario", selectedVersion);
+            const scenario = savedVersions.find(v => v.name === selectedVersion);
+            if (scenario) {
+                loadVersion(scenario);
+            }
+        }
+    }, [selectedVersion, user]);
+
+    useEffect(() => {
+        if (!user) {
+            localStorage.removeItem("selectedScenario");
+            setSelectedVersion("Scenario 1");
+        }
+    }, [user]);
 
 /////social security benefits
     const annualInflationRate = inputs1.inflation;
@@ -1392,9 +1415,10 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                         </div>
                     </div>
                     <div className="mt-4 bg-white p-4 rounded w-full">
-                        <div className="max-w-6xl mx-auto">
+                        <div className="max-w-7xl mx-auto">
                             <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
                             <div className="mb-4 p-4 bg-gray-100 rounded mx-auto">
+                                <p>You can edit the cells individually by clicking and typing into the cell.</p>
                                 <p>Fill out the yellow rows first, then the red rows.</p>
                                 <p>To use the buttons:</p>
                                 <p>Edit multiple cells at once: First click on all the cells you want to have the same value, then the button.</p>
