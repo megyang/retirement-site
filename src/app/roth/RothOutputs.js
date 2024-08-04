@@ -52,7 +52,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     });
     const apiRef = useGridApiRef();
 
-    const [versionData, setVersionData] = useState([]);
     const [savedVersions, setSavedVersions] = useState([
         { name: "Scenario 1" },
         { name: "Scenario 2" },
@@ -498,7 +497,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             });
 
             setSavedVersions(sortedVersions.map(version => ({ name: version.name })));
-            setVersionData(sortedVersions);
         }
     };
 
@@ -620,16 +618,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         calculateStandardDeductionForYear
     );
 
-    console.log("editableFields", editableFields);
-    console.log("editableFields1", editableScenario1);
-    console.log("editableFields2", editableScenario2);
-    console.log("editableFields3", editableScenario3);
-
-    console.log("taxableIncome", taxableIncomes);
-    console.log("taxableIncome1", taxableIncomes1);
-    console.log("taxableIncome2", taxableIncomes2);
-    console.log("taxableIncome3", taxableIncomes3);
-
     const calculateTotalLifetimeTaxPaid = (taxableIncomes, inflation, currentYear) => {
         let totalSum = 0;
         Object.keys(taxableIncomes).forEach((year) => {
@@ -657,21 +645,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const beneficiaryTaxPaid1 = calculateBeneficiaryTaxPaid(iraDetails1, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
     const beneficiaryTaxPaid2 = calculateBeneficiaryTaxPaid(iraDetails2, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
     const beneficiaryTaxPaid3 = calculateBeneficiaryTaxPaid(iraDetails3, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
-    console.log("iraDetails", iraDetails);
-    console.log("iraDetails1", iraDetails1);
-    console.log("iraDetails2", iraDetails2);
-    console.log("iraDetails3", iraDetails3);
-    console.log("totallifetimetaxpaid", totalLifetimeTaxPaid);
-    console.log("totallifetimetaxpaid1", totalLifetimeTaxPaid1);
-    console.log("totallifetimetaxpaid2", totalLifetimeTaxPaid2);
-    console.log("totallifetimetaxpaid3", totalLifetimeTaxPaid3);
-
-    console.log("beneficiarytaxpaid", beneficiaryTaxPaid);
-    console.log("beneficiarytaxpaid1", beneficiaryTaxPaid1);
-    console.log("beneficiarytaxpaid2", beneficiaryTaxPaid2);
-    console.log("beneficiarytaxpaid3", beneficiaryTaxPaid3);
-
-
 
     const calculateTotalTaxesPaid = (totalLifetimeTaxPaid, beneficiaryTaxPaid) => {
         return new Decimal(totalLifetimeTaxPaid).plus(new Decimal(beneficiaryTaxPaid)).toNumber();
@@ -1005,26 +978,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         }
 
         return className.trim();
-    };
-
-
-
-
-    const getChartData = (version) => {
-        const key = `taxes_${version.name}`;
-        const localStorageData = localStorage.getItem(key);
-        if (localStorageData) {
-            const parsedData = JSON.parse(localStorageData);
-            return {
-                lifetime_tax: parsedData.totalLifetimeTaxesPaid,
-                beneficiary_tax: parsedData.beneficiaryTaxesPaid
-            };
-        } else {
-            return {
-                lifetime_tax: version.lifetime_tax,
-                beneficiary_tax: version.beneficiary_tax
-            };
-        }
     };
 
     const chartData = {
