@@ -517,7 +517,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         localStorage.setItem("selectedScenario", selectedVersion);
         const scenario = savedVersions.find(v => v.name === selectedVersion);
         if (scenario) {
-            loadVersion(scenario);i
+            loadVersion(scenario);
         }
 
     }, [selectedVersion, user]);
