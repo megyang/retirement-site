@@ -676,6 +676,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     };
 
     const totalTaxesPaid = Math.round(calculateTotalTaxesPaid(totalLifetimeTaxPaid, beneficiaryTaxPaid)).toLocaleString();
+    const totalTaxesPaid1 = Math.round(calculateTotalTaxesPaid(totalLifetimeTaxPaid1, beneficiaryTaxPaid1)).toLocaleString();
+    const totalTaxesPaid2 = Math.round(calculateTotalTaxesPaid(totalLifetimeTaxPaid2, beneficiaryTaxPaid2)).toLocaleString();
+    const totalTaxesPaid3 = Math.round(calculateTotalTaxesPaid(totalLifetimeTaxPaid3, beneficiaryTaxPaid3)).toLocaleString();
 
     useEffect(() => {
         const key = `taxes_${selectedVersion}`;
@@ -757,6 +760,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const totalLifetimeTaxPaidWithZeroRoth = calculateTotalLifetimeTaxPaidWithZeroRoth(taxableIncomesWithZeroRoth, inputs1.inflation, currentYear);
     const beneficiaryTaxPaidWithZeroRoth = calculateBeneficiaryTaxPaidWithZeroRoth(iraDetailsZeroRoth, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
 
+    const totalTaxesPaidWithZeroRoth = Math.round(calculateTotalTaxesPaid(totalLifetimeTaxPaidWithZeroRoth, beneficiaryTaxPaidWithZeroRoth)).toLocaleString();
     const transposedRows = [
         { id: 'ageSpouse1', label: 'Age (You)' },
         { id: 'ageSpouse2', label: 'Age (Spouse)' },
@@ -1041,11 +1045,40 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         plugins: {
             tooltip: {
                 callbacks: {
-                    label: function (context) {
-                        const label = context.dataset.label || '';
-                        return `${label}: $${context.raw.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+                    title: function(context) {
+                        let title = context[0].label || '';
+                        let total = '';
+
+                        // Determine the total based on the label (assuming labels match scenario names)
+                        switch (title) {
+                            case 'No Conversion':
+                                total = totalTaxesPaidWithZeroRoth;
+                                break;
+                            case 'Scenario 1':
+                                total = totalTaxesPaid1;
+                                break;
+                            case 'Scenario 2':
+                                total = totalTaxesPaid2;
+                                break;
+                            case 'Scenario 3':
+                                total = totalTaxesPaid3;
+                                break;
+                            default:
+                                total = '';
+                        }
+
+                        title += `\nTotal: $${total}`;
+                        return title;
                     },
-                },
+                    label: function (context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        label += `$${parseInt(context.raw, 10).toLocaleString()}`;
+                        return label;
+                    }
+                }
             },
             legend: {
                 position: 'bottom',
@@ -1062,7 +1095,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                 stacked: true,
                 ticks: {
                     callback: function (value) {
-                        return `$${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+                        return `$${value.toLocaleString()}`;
                     },
                 },
             },
@@ -1261,168 +1294,189 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         }
     };
 
+    const [isBarChartVisible, setIsBarChartVisible] = useState(false);
+
+    const toggleBarChartVisibility = () => {
+        setIsBarChartVisible(!isBarChartVisible);
+    };
+
+
     return (
         <div className="w-full mx-auto p-4 flex flex-col items-stretch">
             {isClient && (
                 <>
-                <div className="mb-5 text-left flex items-center space-x-2 w-full">
-                    <div className="text-left flex items-center space-x-2 w-full">
-                        {savedVersions.map((version, index) => (
-                            <button
-                                key={index}
-                                className={`p-2 rounded ${selectedVersion === version.name ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300'}`}
-                                onClick={() => {
-                                    if (!user) {
-                                        onOpen();
-                                        return;
-                                    }
-                                    setSelectedVersion(version.name);
-                                    if (typeof window !== 'undefined') {
-                                        localStorage.setItem("selectedScenario", version.name);
-                                    }
-                                    loadVersion(version);
-                                }}
-                            >
-                                {version.name}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                <div className="mb-4 bg-white p-4 rounded w-full">
-                    <div className="max-w-5xl mx-auto">
-                        <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
-                        <div className="mb-4 p-4 bg-gray-100 rounded mx-auto">
-                            <p>You can edit the cells individually by clicking and typing into the cell.</p>
-                            <p>Fill out the yellow rows first, then the red rows.</p>
-                            <p>To use the buttons:</p>
-                            <p>Edit multiple cells at once: First click on all the cells you want to have the same value, then the button.</p>
-                            <p>Edit the row: Click on one cell in the row, then the button.</p>
-                            <p>To deselect all, hit the enter key.</p>
+                    <div className="mb-5 text-left flex items-center space-x-2 w-full">
+                        <div className="text-left flex items-center space-x-2 w-full">
+                            {savedVersions.map((version, index) => (
+                                <button
+                                    key={index}
+                                    className={`p-2 rounded ${selectedVersion === version.name ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300'}`}
+                                    onClick={() => {
+                                        if (!user) {
+                                            onOpen();
+                                            return;
+                                        }
+                                        setSelectedVersion(version.name);
+                                        if (typeof window !== 'undefined') {
+                                            localStorage.setItem("selectedScenario", version.name);
+                                        }
+                                        loadVersion(version);
+                                    }}
+                                >
+                                    {version.name}
+                                </button>
+                            ))}
                         </div>
-                        <div>
-                            <DataGrid
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Stretch"
-                                style={{ flex: 1, minHeight: 0, maxWidth: '100%' }}
-                                apiRef={apiRef}
-                                rows={rows}
-                                rowHeight={40}
-                                columns={columns}
-                                pageSize={10}
-                                rowsPerPageOptions={[10]}
-                                getRowClassName={getRowClassName}
-                                getCellClassName={getCellClassName}
-                                isCellEditable={isCellEditable}
-                                processRowUpdate={processRowUpdate}
-                                onProcessRowUpdateError={processRowUpdateError}
-                                onCellClick={handleCellClick}
-                                slots={{
-                                    toolbar: CustomToolbar,
-                                    columnMenu: CustomColumnMenu,
-                                    pagination: CustomPagination,
-                                }}
-                                slotProps={{
-                                    toolbar: {
-                                        someCustomString: 'Hello',
-                                        someCustomNumber: 42,
-                                        onMultiEdit: handleMultiEdit,
-                                        onRowEdit: handleRowEdit,
-                                    },
-                                    columnMenu: { background: 'red', counter: rows.length }
-                                }}
-                            />
-                        </div>
-
                     </div>
-                </div>
-
-                <div className="bg-white p-4 rounded h-auto w-full">
-                    <div className="text-lg text-left">
-                        Total Taxes Paid
-                    </div>
-                    <BarChart chartData={chartData} chartOptions={chartOptions} />
-                </div>
-
-                    <div className="flex mt-4 w-full space-x-4 flex-wrap justify-between">
-                        <div className="bg-white p-6 rounded flex-1 m-2 min-w-[300px] flex flex-col justify-center">
-                            <h3 className="text-2xl text-center mb-4">{selectedVersion}: Total Taxes Paid</h3>
-                            <div className="text-4xl font-bold text-center">
-                                ${(totalTaxesPaid)}
+                    <div className="mb-4 bg-white p-4 rounded w-full">
+                        <div className="max-w-5xl mx-auto">
+                            <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
+                            {/*<div className="mb-4 p-4 bg-gray-100 rounded mx-auto">
+                                <p>You can edit the cells individually by clicking and typing into the cell.</p>
+                                <p>Fill out the yellow rows first, then the red rows.</p>
+                                <p>To use the buttons:</p>
+                                <p>Edit multiple cells at once: First click on all the cells you want to have the same
+                                    value, then the button.</p>
+                                <p>Edit the row: Click on one cell in the row, then the button.</p>
+                                <p>To deselect all, hit the enter key.</p>
                             </div>
-                        </div>
-                        <div className="bg-white p-6 rounded flex-1 m-2 min-w-[300px]">
-                            <h3 className="text-left text-1xl">Other Inputs</h3>
-                            <div className="flex flex-col space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <label className="flex-grow">Beneficiary Tax Rate:</label>
-                                    <div className="relative w-32">
-                                        <input
-                                            type="text"
-                                            name="beneficiary_tax_rate"
-                                            value={`${(inputs1.beneficiary_tax_rate) * 100}`}
-                                            onChange={handleInputChange}
-                                            className="w-full h-8 text-right border border-gray-300 p-2 rounded pr-6"
-                                        />
-                                        <span className="absolute right-2 top-1">%</span>
-                                    </div>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <label className="flex-grow">Your IRA:</label>
-                                    <div className="w-32 ml-4">
-                                        <input
-                                            type="text"
-                                            name="ira1"
-                                            value={`$${formatNumberWithCommas(inputs1.ira1 || '')}`}
-                                            onChange={handleInputChange}
-                                            className="w-full h-8 text-right border border-gray-300 p-2 rounded"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <label className="flex-grow">Your Spouse’s IRA:</label>
-                                    <div className="w-32 ml-4">
-                                        <input
-                                            type="text"
-                                            name="ira2"
-                                            value={`$${formatNumberWithCommas(inputs1.ira2 || '')}`}
-                                            onChange={handleInputChange}
-                                            className="w-full h-8 text-right border border-gray-300 p-2 rounded"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <label className="flex-grow">Investment Return:</label>
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            name="roi"
-                                            value={`${(inputs1.roi) * 100}`}
-                                            onChange={handleInputChange}
-                                            className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
-                                        />
-                                        <span className="absolute right-2 top-1">%</span>
-                                    </div>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <label className="flex-grow">Inflation Rate:</label>
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            name="inflation"
-                                            value={`${(inputs1.inflation) * 100}`}
-                                            onChange={handleInputChange}
-                                            className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
-                                        />
-                                        <span className="absolute right-2 top-1">%</span>
-                                    </div>
-                                </div>
+                            */}
+                            <div>
+                                <DataGrid
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch"
+                                    style={{ flex: 1, minHeight: 0, maxWidth: '100%' }}
+                                    apiRef={apiRef}
+                                    rows={rows}
+                                    rowHeight={40}
+                                    columns={columns}
+                                    pageSize={10}
+                                    rowsPerPageOptions={[10]}
+                                    getRowClassName={getRowClassName}
+                                    getCellClassName={getCellClassName}
+                                    isCellEditable={isCellEditable}
+                                    processRowUpdate={processRowUpdate}
+                                    onProcessRowUpdateError={processRowUpdateError}
+                                    onCellClick={handleCellClick}
+                                    slots={{
+                                        toolbar: CustomToolbar,
+                                        columnMenu: CustomColumnMenu,
+                                        pagination: CustomPagination,
+                                    }}
+                                    slotProps={{
+                                        toolbar: {
+                                            someCustomString: 'Hello',
+                                            someCustomNumber: 42,
+                                            onMultiEdit: handleMultiEdit,
+                                            onRowEdit: handleRowEdit,
+                                        },
+                                        columnMenu: { background: 'red', counter: rows.length }
+                                    }}
+                                />
                             </div>
                         </div>
                     </div>
+                    <div>
+                        <button onClick={toggleBarChartVisibility} className="bg-blue-500 text-white p-2 rounded mb-4">
+                            {isBarChartVisible ? 'Hide' : 'Show'} Ordinary Income Tax Brackets
 
-                    <div className="mt-4 bg-white p-4 rounded max-w-full">
-                        <h2 className="text-lg mb-3">Ordinary Income Tax Brackets</h2>
-                        <TaxBarChart data={dataForChart} />
+                        </button>
+                        {
+                            isBarChartVisible && (
+                                <div className="bg-white p-4 rounded">
+                                    <h2 className="text-xl font-semi-bold mb-3">Ordinary Income Tax Brackets</h2>
+                                    <TaxBarChart data={dataForChart} />
+                                </div>
+                            )
+                        }
+                    </div>
+
+
+                    <div className="flex w-full space-x-4 flex-wrap justify-between">
+                        <div className="flex-1 min-w-[300px] h-full">
+                            <div className="bg-white p-6 rounded m-2 h-full flex flex-col justify-between">
+                                <h3 className="text-lg mb-9">Other Inputs</h3>
+                                <div className="flex flex-col space-y-11">
+                                    <div className="flex justify-between items-center">
+                                        <label className="flex-grow">Beneficiary Tax Rate:</label>
+                                        <div className="relative w-32">
+                                            <input
+                                                type="text"
+                                                name="beneficiary_tax_rate"
+                                                value={`${(inputs1.beneficiary_tax_rate) * 100}`}
+                                                onChange={handleInputChange}
+                                                className="w-full h-8 text-right border border-gray-300 p-2 rounded pr-6"
+                                            />
+                                            <span className="absolute right-2 top-1">%</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <label className="flex-grow">Your IRA:</label>
+                                        <div className="w-32 ml-4">
+                                            <input
+                                                type="text"
+                                                name="ira1"
+                                                value={`$${formatNumberWithCommas(inputs1.ira1 || '')}`}
+                                                onChange={handleInputChange}
+                                                className="w-full h-8 text-right border border-gray-300 p-2 rounded"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <label className="flex-grow">Your Spouse’s IRA:</label>
+                                        <div className="w-32 ml-4">
+                                            <input
+                                                type="text"
+                                                name="ira2"
+                                                value={`$${formatNumberWithCommas(inputs1.ira2 || '')}`}
+                                                onChange={handleInputChange}
+                                                className="w-full h-8 text-right border border-gray-300 p-2 rounded"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <label className="flex-grow">Investment Return:</label>
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                name="roi"
+                                                value={`${(inputs1.roi) * 100}`}
+                                                onChange={handleInputChange}
+                                                className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
+                                            />
+                                            <span className="absolute right-2 top-1">%</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <label className="flex-grow">Inflation Rate:</label>
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                name="inflation"
+                                                value={`${(inputs1.inflation) * 100}`}
+                                                onChange={handleInputChange}
+                                                className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
+                                            />
+                                            <span className="absolute right-2 top-1">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex-1 min-w-[300px] flex flex-col">
+                            <div className="bg-white w-full p-6 rounded m-2">
+                                <h3 className="text-xl text-center mb-2">{selectedVersion}: Total Taxes Paid</h3>
+                                <div className="text-3xl font-bold text-center">
+                                    ${totalTaxesPaid}
+                                </div>
+                            </div>
+                            <div className="bg-white p-4 rounded h-auto w-full m-2 flex-1">
+                                <div className="text-lg text-left">
+                                    Total Taxes Paid
+                                </div>
+                                <BarChart chartData={chartData} chartOptions={chartOptions} />
+                            </div>
+                        </div>
                     </div>
                     <div className="mt-4 bg-white overflow-x-auto p-4 rounded max-w-full">
                         <h2 className="text-xl font-semi-bold mb-3">IRA</h2>
@@ -1431,7 +1485,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                 </>)}
         </div>
     );
-
 };
 
 
