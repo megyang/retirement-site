@@ -58,10 +58,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         { name: "Scenario 3" }
     ]);
 
-    const [selectedVersion, setSelectedVersion] = useState(() => {
-        const savedScenario = localStorage.getItem("selectedScenario");
-        return savedScenario ? savedScenario : "Scenario 1";
-    });
+    const [selectedVersion, setSelectedVersion] = useState("Scenario 1");
 
     const [triggerSave, setTriggerSave] = useState(false);
 
@@ -514,12 +511,18 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     }, [user]);
 
     useEffect(() => {
-        localStorage.setItem("selectedScenario", selectedVersion);
+        const savedScenario = typeof window !== 'undefined' ? localStorage.getItem("selectedScenario") : null;
+        setSelectedVersion(savedScenario ? savedScenario : "Scenario 1");
+    }, []);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem("selectedScenario", selectedVersion);
+        }
         const scenario = savedVersions.find(v => v.name === selectedVersion);
         if (scenario) {
             loadVersion(scenario);
         }
-
     }, [selectedVersion, user]);
 
     useEffect(() => {
