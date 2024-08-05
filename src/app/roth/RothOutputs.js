@@ -62,6 +62,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         const savedScenario = localStorage.getItem("selectedScenario");
         return savedScenario ? savedScenario : "Scenario 1";
     });
+
     const [triggerSave, setTriggerSave] = useState(false);
 
     const [editableScenario1, setEditableScenario1] = useState({});
@@ -516,7 +517,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         localStorage.setItem("selectedScenario", selectedVersion);
         const scenario = savedVersions.find(v => v.name === selectedVersion);
         if (scenario) {
-            loadVersion(scenario);
+            loadVersion(scenario);i
         }
 
     }, [selectedVersion, user]);
@@ -645,6 +646,15 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const beneficiaryTaxPaid1 = calculateBeneficiaryTaxPaid(iraDetails1, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
     const beneficiaryTaxPaid2 = calculateBeneficiaryTaxPaid(iraDetails2, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
     const beneficiaryTaxPaid3 = calculateBeneficiaryTaxPaid(iraDetails3, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
+
+    console.log("totalLifetimeTaxPaid", totalLifetimeTaxPaid)
+    console.log("beneficiaryTaxPaid", beneficiaryTaxPaid)
+    console.log("totalLifetimeTaxPaid1", totalLifetimeTaxPaid1)
+    console.log("beneficiaryTaxPaid1", beneficiaryTaxPaid1)
+    console.log("totalLifetimeTaxPaid2", totalLifetimeTaxPaid2)
+    console.log("beneficiaryTaxPaid2", beneficiaryTaxPaid2)
+    console.log("totalLifetimeTaxPaid3", totalLifetimeTaxPaid3)
+    console.log("beneficiaryTaxPaid3", beneficiaryTaxPaid3)
 
     const calculateTotalTaxesPaid = (totalLifetimeTaxPaid, beneficiaryTaxPaid) => {
         return new Decimal(totalLifetimeTaxPaid).plus(new Decimal(beneficiaryTaxPaid)).toNumber();
