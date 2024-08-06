@@ -152,7 +152,7 @@ const PostSignUpForm = () => {
                 {formData.socialSecurity === 'yes' && (
                     <div style={styles.formGroup}>
                         <label style={styles.label}>
-                            What's your monthly benefit?
+                            What is your monthly benefit?
                         </label>
                         <input
                             type="text"
