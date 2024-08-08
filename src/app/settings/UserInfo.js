@@ -31,7 +31,6 @@ const UserInfo = () => {
                     .eq('user_id', user.id);
 
                 if (error) {
-                    setError('Error fetching user data');
                     console.error('Error fetching user data:', error);
                 } else if (data.length > 0) {
                     setUserData(data[0]);
@@ -42,6 +41,15 @@ const UserInfo = () => {
                         filing: data[0].filing || '',
                         month: data[0].month,
                         year: data[0].year
+                    });
+                } else {
+                    setFormData({
+                        ss: false,
+                        monthly_benefit: '',
+                        married: false,
+                        filing: '',
+                        month: '',
+                        year: ''
                     });
                 }
                 setLoading(false);
@@ -78,14 +86,9 @@ const UserInfo = () => {
         return <div>Loading...</div>;
     }
 
-    if (error) {
-        return <div>{error}</div>;
-    }
-
     return (
         <div className="container mx-auto p-6 border border-gray-300 rounded-lg bg-white shadow-md">
             <h2 className="text-2xl font-bold mb-4">User Information</h2>
-            {userData ? (
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="form-group">
                         <label className="block text-lg font-medium text-gray-700">Collecting Social Security:</label>
@@ -208,9 +211,6 @@ const UserInfo = () => {
                         Save Changes
                     </button>
                 </form>
-            ) : (
-                <div>No user data found.</div>
-            )}
             <ToastContainer />
         </div>
     );
