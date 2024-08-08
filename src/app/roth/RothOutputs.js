@@ -1086,6 +1086,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             },
             legend: {
                 position: 'bottom',
+                onClick: null
             },
         },
         scales: {
@@ -1198,6 +1199,43 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     });
 
     const dataForChart = taxBracketDataByYear;
+    const taxBarChartOptions = {
+        responsive: true,
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        label += `$${parseInt(context.raw, 10).toLocaleString()}`;
+                        return label;
+                    }
+                }
+            },
+            legend: {
+                position: 'bottom',
+                onClick: null // Disable clicking on the legend to show/hide datasets
+            },
+        },
+        scales: {
+            x: {
+                stacked: true,
+                grid: {
+                    drawOnChartArea: false,
+                },
+            },
+            y: {
+                stacked: true,
+                ticks: {
+                    callback: function (value) {
+                        return `$${value.toLocaleString()}`;
+                    },
+                },
+            },
+        },
+    };
 
     const createTableData = (details) => {
         const rows = {
@@ -1294,7 +1332,12 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                         return label;
                     }
                 }
-            }
+            },
+            legend: {
+                position: 'bottom',
+                onClick: null
+            },
+
         }
     };
 
@@ -1302,6 +1345,12 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const toggleBarChartVisibility = () => {
         setIsBarChartVisible(!isBarChartVisible);
+    };
+
+    const [isIraChartVisible, setIsIraChartVisible] = useState(false);
+
+    const toggleIraChartVisibility = () => {
+        setIsIraChartVisible(!isIraChartVisible);
     };
 
 
@@ -1381,18 +1430,32 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                         </div>
                     </div>
                     <div>
-                        <button onClick={toggleBarChartVisibility} className="bg-blue-500 text-white p-2 rounded mb-4">
-                            {isBarChartVisible ? 'Hide' : 'Show'} Ordinary Income Tax Brackets
-
-                        </button>
-                        {
-                            isBarChartVisible && (
+                        <div className="mt-4 bg-white overflow-x-auto p-4 rounded max-w-full">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-xl font-semi-bold mb-3">Ordinary Income Tax Brackets</h2>
+                                <button onClick={toggleBarChartVisibility} className="text-xl">
+                                    {isBarChartVisible ? '-' : '+'}
+                                </button>
+                            </div>
+                            {isBarChartVisible && (
                                 <div className="bg-white p-4 rounded">
-                                    <h2 className="text-xl font-semi-bold mb-3">Ordinary Income Tax Brackets</h2>
-                                    <TaxBarChart data={dataForChart} />
+                                    <TaxBarChart data={dataForChart} options={taxBarChartOptions}/>
                                 </div>
-                            )
-                        }
+                            )}
+                        </div>
+
+                        <div className="mt-4 mb-4 bg-white overflow-x-auto p-4 rounded max-w-full">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-xl font-semi-bold mb-3">IRA</h2>
+                                <button onClick={toggleIraChartVisibility} className="text-xl">
+                                    {isIraChartVisible ? '-' : '+'}
+                                </button>
+                            </div>
+                            {isIraChartVisible && (
+                                <Bar data={iraChartData} options={barChartOptions} />
+                            )}
+                        </div>
+
                     </div>
 
 
@@ -1481,10 +1544,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                                 <BarChart chartData={chartData} chartOptions={chartOptions} />
                             </div>
                         </div>
-                    </div>
-                    <div className="mt-4 bg-white overflow-x-auto p-4 rounded max-w-full">
-                        <h2 className="text-xl font-semi-bold mb-3">IRA</h2>
-                        <Bar data={iraChartData} options={barChartOptions} />
                     </div>
                 </>)}
         </div>

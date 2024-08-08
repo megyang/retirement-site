@@ -2,7 +2,7 @@ import React from 'react';
 import { Bar } from 'react-chartjs-2';
 import 'chart.js/auto';
 
-const TaxBarChart = ({ data }) => {
+const TaxBarChart = ({ data, options }) => {
     const chartData = {
         labels: data.map(item => item.year),
         datasets: data[0].data.map((bracket, index) => ({
@@ -12,29 +12,6 @@ const TaxBarChart = ({ data }) => {
         })),
     };
 
-    const options = {
-        plugins: {
-            tooltip: {
-                callbacks: {
-                    label: function (context) {
-                        const item = data[context.dataIndex].data[context.datasetIndex];
-                        const filled = Math.round(item.filled).toLocaleString();
-                        const remaining = item.remaining === Infinity ? "Infinity" : Math.round(item.remaining).toLocaleString();
-                        return `${context.dataset.label}: Filled: ${filled} | Remaining: ${remaining}`;
-                    },
-                },
-            },
-        },
-        scales: {
-            x: {
-                stacked: true,
-            },
-            y: {
-                stacked: true,
-                beginAtZero: true,
-            },
-        },
-    };
 
     return <Bar data={chartData} options={options} />;
 };
