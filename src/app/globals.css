@@ -101,6 +101,43 @@ label:after {
 }
 
 
+
+
+
+
+.custom-range2 {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    background: #f2cd88;
+    outline: none;
+    opacity: 0.8;
+    transition: opacity .2s;
+    border-radius: 10px;
+}
+
+.custom-range2:hover {
+    opacity: 1;
+}
+
+.custom-range2::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #f2cd88;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.custom-range2::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #f2cd88;
+    cursor: pointer;
+}
+
+
 .MuiDataGrid-row:hover {
     background-color: inherit !important;
 }

@@ -15,7 +15,6 @@ import {
 } from "@/app/utils/calculations";
 import useAuthModal from "@/app/hooks/useAuthModal";
 import {DataGrid, useGridApiRef} from '@mui/x-data-grid';
-import debounce from 'lodash.debounce';
 import TaxBarChart from "@/app/components/TaxBarChart";
 import CustomColumnMenu from "@/app/components/CustomColumnMenu";
 import CustomToolbar from "@/app/components/CustomToolbar";
@@ -133,9 +132,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     };
 
     useEffect(() => {
-        if (selectedVersion === 'Scenario 1') {
-            fetchScenarioData();
-        }
+        fetchScenarioData();
     }, [editableFields, selectedVersion]);
 
     useEffect(() => {
@@ -634,6 +631,22 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         calculateStandardDeductionForYear
     );
 
+    console.log("taxableIncomes",taxableIncomes1);
+    console.log("editableScenario",editableScenario1);
+    console.log("iraDetails",iraDetails1);
+
+    console.log("taxableIncomes1",taxableIncomes1);
+    console.log("editableScenario1",editableScenario1);
+    console.log("iraDetails1",iraDetails1);
+
+    console.log("taxableIncomes2",taxableIncomes1);
+    console.log("editableScenario2",editableScenario1);
+    console.log("iraDetails2",iraDetails1);
+
+    console.log("taxableIncomes3",taxableIncomes1);
+    console.log("editableScenario3",editableScenario1);
+    console.log("iraDetails3",iraDetails1);
+
     const calculateTotalLifetimeTaxPaid = (taxableIncomes, inflation, currentYear) => {
         let totalSum = 0;
         Object.keys(taxableIncomes).forEach((year) => {
@@ -661,15 +674,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const beneficiaryTaxPaid1 = calculateBeneficiaryTaxPaid(iraDetails1, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
     const beneficiaryTaxPaid2 = calculateBeneficiaryTaxPaid(iraDetails2, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
     const beneficiaryTaxPaid3 = calculateBeneficiaryTaxPaid(iraDetails3, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
-
-    console.log("totalLifetimeTaxPaid", totalLifetimeTaxPaid)
-    console.log("beneficiaryTaxPaid", beneficiaryTaxPaid)
-    console.log("totalLifetimeTaxPaid1", totalLifetimeTaxPaid1)
-    console.log("beneficiaryTaxPaid1", beneficiaryTaxPaid1)
-    console.log("totalLifetimeTaxPaid2", totalLifetimeTaxPaid2)
-    console.log("beneficiaryTaxPaid2", beneficiaryTaxPaid2)
-    console.log("totalLifetimeTaxPaid3", totalLifetimeTaxPaid3)
-    console.log("beneficiaryTaxPaid3", beneficiaryTaxPaid3)
 
     const calculateTotalTaxesPaid = (totalLifetimeTaxPaid, beneficiaryTaxPaid) => {
         return new Decimal(totalLifetimeTaxPaid).plus(new Decimal(beneficiaryTaxPaid)).toNumber();

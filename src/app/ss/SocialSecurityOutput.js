@@ -3,7 +3,7 @@ import Decimal from "decimal.js";
 import BarChart from "../components/BarChart";
 import useReferenceTable from "../hooks/useReferenceTable";
 import useSocialSecurityStore from "@/app/store/useSocialSecurityStore";
-import {calculateBenefitForYear, calculateXNPV, formatNumberWithCommas} from "../utils/calculations";
+import {calculateBenefitForYear, calculateXNPV, formatNumberWithCommas, calculateInflationAdjustedBenefit} from "../utils/calculations";
 import PiaModal from "@/app/modal/PiaModal";
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
@@ -145,6 +145,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
         let lastYearHusbandBenefit = 0;
         let lastYearWifeBenefit = 0;
         let cumulativeTotal = new Decimal(0);
+        const inflationRate = 0.02; // SHOULD I ADD THIS TO THE SS INPUTS?
 
         const newTableData = Array.from({ length: yearsToCover }, (_, i) => {
             const year = currentYear + i;
@@ -160,6 +161,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                 benefitAgeOfWithdraw: benefitsBasedOnAge.husbandYearly,
                 lastYearBenefit: lastYearHusbandBenefit,
                 lastYearSpouseBenefit: lastYearWifeBenefit,
+                inflationRate,
             });
 
             const wifeBenefit = calculateBenefitForYear({
@@ -171,6 +173,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                 benefitAgeOfWithdraw: benefitsBasedOnAge.wifeYearly,
                 lastYearBenefit: lastYearWifeBenefit,
                 lastYearSpouseBenefit: lastYearHusbandBenefit,
+                inflationRate,
             });
 
             const totalBenefit = new Decimal(husbandBenefit).add(new Decimal(wifeBenefit));
@@ -191,8 +194,6 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
 
         setTableData(newTableData);
         setSocialSecurityBenefits(newTableData);
-
-
 
         // Calculate NPV
         const roi = inputs.roi / 100;
@@ -244,7 +245,6 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
     ]);
 
 
-
     const benefitChartOptions = {
         tooltips: {
             callbacks: {
@@ -288,112 +288,6 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
         <div>
             <div className="flex w-full h-auto">
                 <div className="left-column flex flex-col gap-5 mr-5 w-1/2 h-auto flex-grow">
-
-                    <div className="small-rectangle bg-white rounded-lg w-150 h-250 p-5">
-                        <h2 className="text-lg text-center mb-4">Collection Age</h2>
-                        <div className="inputs-container ">
-                            <table className="table-auto w-full">
-                                <tbody>
-                                <tr style={{height: "50px"}}>
-                                    <td>You</td>
-                                    <td>
-                                        <input
-                                            type="range"
-                                            className="w-full custom-range"
-                                            name="hSS"
-                                            min="62"
-                                            max="70"
-                                            step="1"
-                                            value={inputs.hSS}
-                                            onInput={handleChange}
-                                        />
-                                        <ul className="flex justify-between w-full px-[10px]">
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">62</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">63</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">64</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">65</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">66</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">67</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">68</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">69</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">70</span>
-                                            </li>
-                                        </ul>
-                                    </td>
-                                </tr>
-                                <tr style={{height: "50px"}}>
-                                    <td>Your Spouse</td>
-                                    <td>
-                                        <input
-                                            type="range"
-                                            className="w-full custom-range"
-                                            name="wSS"
-                                            min="62"
-                                            max="70"
-                                            step="1"
-                                            value={inputs.wSS}
-                                            onInput={handleChange}
-                                        />
-                                        <ul className="flex justify-between w-full px-[10px]">
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">62</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">63</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">64</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">65</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">66</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">67</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">68</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">69</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">70</span>
-                                            </li>
-                                        </ul>
-                                    </td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div className="rectangle small-rectangle bg-white rounded-lg w-full h-auto p-5">
-                        <h3 className="text-lg text-center">Total Social Security Collected</h3>
-                        <h1 className="text-5xl text-center font-extrabold">
-                            ${Number(totalCash.toFixed(0)).toLocaleString()}
-                        </h1>
-                    </div>
-                </div>
-                <div className="right-column flex flex-col w-1/2 h-auto flex-grow">
                     <div className="rectangle large-rectangle bg-white rounded-lg w-full h-full p-5">
                         <h2 className="text-lg mb-4 text-center">Your Information</h2>
                         <table className="table-auto w-full">
@@ -489,7 +383,117 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                             </tbody>
                         </table>
                     </div>
+
                 </div>
+                <div className="right-column flex flex-col w-1/2 h-auto flex-grow">
+                    <div className="rectangle large-rectangle bg-white rounded-lg w-full h-full p-5">
+                        <h2 className="text-lg text-center mb-4">Collection Age</h2>
+                        <div className="inputs-container ">
+                            <table className="table-auto w-full">
+                                <tbody>
+                                <tr style={{height: "100px"}}>
+                                    <td>You</td>
+                                    <td>
+                                        <input
+                                            type="range"
+                                            className="w-full custom-range"
+                                            name="hSS"
+                                            min="62"
+                                            max="70"
+                                            step="1"
+                                            value={inputs.hSS}
+                                            onInput={handleChange}
+                                        />
+                                        <ul className="flex justify-between w-full px-[10px]">
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">62</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">63</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">64</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">65</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">66</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">67</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">68</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">69</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">70</span>
+                                            </li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                                <tr style={{height: "100px"}}>
+                                    <td>Your Spouse</td>
+                                    <td>
+                                        <input
+                                            type="range"
+                                            className="w-full custom-range2"
+                                            name="wSS"
+                                            min="62"
+                                            max="70"
+                                            step="1"
+                                            value={inputs.wSS}
+                                            onInput={handleChange}
+                                        />
+                                        <ul className="flex justify-between w-full px-[10px]">
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">62</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">63</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">64</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">65</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">66</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">67</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">68</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">69</span>
+                                            </li>
+                                            <li className="flex justify-center relative">
+                                                <span className="absolute">70</span>
+                                            </li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+
+
+                </div>
+
+            </div>
+            <div className="rectangle small-rectangle bg-white rounded-lg w-full h-auto p-5 mt-4">
+                <h3 className="text-lg text-center">Total Social Security Collected</h3>
+                <h1 className="text-5xl text-center font-extrabold">
+                    ${Number(totalCash.toFixed(0)).toLocaleString()}
+                </h1>
             </div>
 
             <div className="outputs-container bg-white p-4 rounded w-full mt-4">
@@ -506,6 +510,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                     }
 
                 </div>
+
                 <div className="ss-graph">
                     <h3 className="text-lg mb-2 mt-[-12px]">Social Security Collected By Year</h3>
                     <BarChart chartData={userData} chartOptions={benefitChartOptions} />

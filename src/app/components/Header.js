@@ -4,6 +4,8 @@ import useAuthModal from "@/app/hooks/useAuthModal";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useUser } from "@/app/hooks/useUser";
 import { useRouter } from "next/navigation";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCog } from '@fortawesome/free-solid-svg-icons';
 
 const Header = () => {
     const { isOpen, onOpen, setView } = useAuthModal();
@@ -17,7 +19,11 @@ const Header = () => {
         if (error) {
             console.log(error);
         }
-    }
+    };
+
+    const handleSettings = () => {
+        router.push('/settings');
+    };
 
     return (
         <div className="fixed top-0 left-0 right-0 z-50 bg-[#8daef2] border-b border-gray-300">
@@ -32,12 +38,20 @@ const Header = () => {
                     <div className="flex items-center space-x-4">
                         {!isOpen && (
                             user ? (
-                                <button
-                                    onClick={handleLogout}
-                                    className="items-end bg-clear border border-black text-black font-medium rounded-lg px-4 py-2 transition duration-150 ease-in-out hover:bg-gray-100"
-                                >
-                                    Signout
-                                </button>
+                                <>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="items-end bg-clear border border-black text-black font-medium rounded-lg px-4 py-2 transition duration-150 ease-in-out hover:bg-gray-100"
+                                    >
+                                        Signout
+                                    </button>
+                                    <button
+                                        onClick={handleSettings}
+                                        className="items-center bg-clear text-black font-medium px-4 py-2 transition duration-150 ease-in-out hover:gray-100"
+                                    >
+                                        <FontAwesomeIcon icon={faCog} className="h-5 w-5" />
+                                    </button>
+                                </>
                             ) : (
                                 <>
                                     <button

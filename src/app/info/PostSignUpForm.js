@@ -1,7 +1,15 @@
 "use client";
 import React, { useState } from 'react';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { useUser } from "@/app/hooks/useUser";
+import { useRouter } from 'next/navigation';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const PostSignUpForm = () => {
+    const supabaseClient = useSupabaseClient();
+    const { user } = useUser();
+    const router = useRouter();
     const [formData, setFormData] = useState({
         socialSecurity: '',
         monthlyBenefit: '',
@@ -11,7 +19,7 @@ const PostSignUpForm = () => {
     });
 
     const [error, setError] = useState('');
-    const [submitted, setSubmitted] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -29,9 +37,9 @@ const PostSignUpForm = () => {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setSubmitted(true);
+        setLoading(true);
 
         const regex = /^(0[1-9]|1[0-2])\/(19[0-9]{2}|20[0-2][0-4])$/;
 
@@ -44,114 +52,102 @@ const PostSignUpForm = () => {
             !regex.test(formData.birthDate)
         ) {
             setError('Please fill out all required fields correctly.');
+            setLoading(false);
         } else {
             setError('');
-            console.log('Form submitted:', formData);
+            const [month, year] = formData.birthDate.split('/').map(Number);
+            const data = {
+                ss: formData.socialSecurity === 'yes',
+                monthly_benefit: formData.socialSecurity === 'yes' ? parseInt(formData.monthlyBenefit) : null,
+                married: formData.married === 'yes',
+                filing: formData.married === 'yes' ? (formData.filingStatus === 'jointly') : null,
+                month,
+                year,
+                user_id: user.id
+            };
+
+            const { data: existingData, error: fetchError } = await supabaseClient
+                .from('info')
+                .select('id')
+                .eq('user_id', user.id)
+                .single();
+
+            if (fetchError && fetchError.code !== 'PGRST116') {
+                console.error('Error fetching data:', fetchError);
+                setError('There was an error submitting the form.');
+                setLoading(false);
+            } else if (existingData) {
+                // Update existing entry
+                const { error: updateError } = await supabaseClient
+                    .from('info')
+                    .update(data)
+                    .eq('user_id', user.id);
+
+                if (updateError) {
+                    console.error('Error updating data:', updateError);
+                    setError('There was an error submitting the form.');
+                } else {
+                    console.log('Form updated:', formData);
+                    toast.success('Submitted successfully!');
+                    setTimeout(() => router.push('/ss'), 2000);
+                }
+                setLoading(false);
+            } else {
+                // Insert new entry
+                const { error: insertError } = await supabaseClient
+                    .from('info')
+                    .upsert([{ ...data, user_id: user.id }]);
+
+                if (insertError) {
+                    console.error('Error inserting data:', insertError);
+                    setError('There was an error submitting the form.');
+                } else {
+                    console.log('Form submitted:', formData);
+                    toast.success('Submitted successfully!');
+                    setTimeout(() => router.push('/ss'), 2000);
+                }
+                setLoading(false);
+            }
         }
     };
 
-    const styles = {
-        formContainer: {
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '100vh',
-        },
-        form: {
-            maxWidth: '600px',
-            width: '100%',
-            padding: '20px',
-            backgroundColor: '#ffffff',
-            borderRadius: '10px',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            fontFamily: 'Arial, sans-serif',
-        },
-        formGroup: {
-            marginBottom: '20px',
-        },
-        label: {
-            display: 'block',
-            marginBottom: '8px',
-            fontSize: '16px',
-            fontWeight: '600',
-            color: '#333',
-        },
-        input: {
-            display: 'block',
-            width: '100%',
-            padding: '10px',
-            marginBottom: '10px',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            fontSize: '16px',
-        },
-        radioGroup: {
-            display: 'flex',
-            gap: '20px',
-            alignItems: 'center',
-        },
-        radioLabel: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px',
-        },
-        button: {
-            display: 'block',
-            width: '100%',
-            padding: '12px',
-            backgroundColor: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            fontWeight: '600',
-            textAlign: 'center',
-        },
-        buttonHover: {
-            backgroundColor: '#45a049',
-        },
-        error: {
-            color: 'red',
-            fontSize: '14px',
-            marginTop: '5px',
-        },
-    };
-
     return (
-        <div style={styles.formContainer}>
-            <form onSubmit={handleSubmit} style={styles.form}>
-                <div style={styles.formGroup}>
-                    <label style={styles.label}>
+        <div className="container mx-auto p-6 border border-gray-300 rounded-lg bg-white shadow-md">
+            <h2 className="text-2xl font-bold mb-4">Post Sign Up Form</h2>
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="form-group">
+                    <label className="block text-lg font-medium text-gray-700">
                         Have you already started collecting social security?
                     </label>
-                    <div style={styles.radioGroup}>
-                        <label style={styles.radioLabel}>
+                    <div className="mt-2 flex space-x-4">
+                        <label className="inline-flex items-center">
                             <input
                                 type="radio"
                                 name="socialSecurity"
                                 value="yes"
                                 checked={formData.socialSecurity === 'yes'}
                                 onChange={handleChange}
-                                style={styles.input}
-                            /> Yes
+                                className="form-radio"
+                            />
+                            <span className="ml-2">Yes</span>
                         </label>
-                        <label style={styles.radioLabel}>
+                        <label className="inline-flex items-center">
                             <input
                                 type="radio"
                                 name="socialSecurity"
                                 value="no"
                                 checked={formData.socialSecurity === 'no'}
                                 onChange={handleChange}
-                                style={styles.input}
-                            /> No
+                                className="form-radio"
+                            />
+                            <span className="ml-2">No</span>
                         </label>
                     </div>
-                    {submitted && formData.socialSecurity === '' && <div style={styles.error}>This field is required.</div>}
+                    {loading && formData.socialSecurity === '' && <div className="text-red-500 text-sm mt-1">This field is required.</div>}
                 </div>
                 {formData.socialSecurity === 'yes' && (
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>
+                    <div className="form-group">
+                        <label className="block text-lg font-medium text-gray-700">
                             What is your monthly benefit?
                         </label>
                         <input
@@ -160,71 +156,75 @@ const PostSignUpForm = () => {
                             value={formData.monthlyBenefit}
                             onChange={handleChange}
                             placeholder="Enter your monthly benefit"
-                            style={styles.input}
+                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
                         />
-                        {submitted && formData.monthlyBenefit === '' && <div style={styles.error}>This field is required.</div>}
+                        {loading && formData.monthlyBenefit === '' && <div className="text-red-500 text-sm mt-1">This field is required.</div>}
                     </div>
                 )}
-                <div style={styles.formGroup}>
-                    <label style={styles.label}>
+                <div className="form-group">
+                    <label className="block text-lg font-medium text-gray-700">
                         Are you married?
                     </label>
-                    <div style={styles.radioGroup}>
-                        <label style={styles.radioLabel}>
+                    <div className="mt-2 flex space-x-4">
+                        <label className="inline-flex items-center">
                             <input
                                 type="radio"
                                 name="married"
                                 value="yes"
                                 checked={formData.married === 'yes'}
                                 onChange={handleChange}
-                                style={styles.input}
-                            /> Yes
+                                className="form-radio"
+                            />
+                            <span className="ml-2">Yes</span>
                         </label>
-                        <label style={styles.radioLabel}>
+                        <label className="inline-flex items-center">
                             <input
                                 type="radio"
                                 name="married"
                                 value="no"
                                 checked={formData.married === 'no'}
                                 onChange={handleChange}
-                                style={styles.input}
-                            /> No
+                                className="form-radio"
+                            />
+                            <span className="ml-2">No</span>
                         </label>
                     </div>
-                    {submitted && formData.married === '' && <div style={styles.error}>This field is required.</div>}
+                    {loading && formData.married === '' && <div className="text-red-500 text-sm mt-1">This field is required.</div>}
                 </div>
                 {formData.married === 'yes' && (
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>
-                            Are you filing married doubly or singly?
+                    <div className="form-group">
+                        <label className="block text-lg font-medium text-gray-700">
+                            Are you filing married jointly or single?
                         </label>
-                        <div style={styles.radioGroup}>
-                            <label style={styles.radioLabel}>
+                        <div className="mt-2 flex space-x-4">
+                            <label className="inline-flex items-center">
                                 <input
                                     type="radio"
                                     name="filingStatus"
-                                    value="doubly"
-                                    checked={formData.filingStatus === 'doubly'}
+                                    value="jointly"
+                                    checked={formData.filingStatus === 'jointly'}
                                     onChange={handleChange}
-                                    style={styles.input}
-                                /> Doubly
+                                    className="form-radio"
+                                />
+                                <span className="ml-2">Jointly</span>
                             </label>
-                            <label style={styles.radioLabel}>
+                            <label className="inline-flex items-center">
                                 <input
                                     type="radio"
                                     name="filingStatus"
-                                    value="singly"
-                                    checked={formData.filingStatus === 'singly'}
+                                    value="single"
+                                    checked={formData.filingStatus === 'single'}
                                     onChange={handleChange}
-                                    style={styles.input}
-                                /> Singly
+                                    className="form-radio"
+                                />
+                                <span className="ml-2">Single</span>
                             </label>
                         </div>
-                        {submitted && formData.filingStatus === '' && <div style={styles.error}>This field is required.</div>}
+                        {loading && formData.filingStatus === '' && <div className="text-red-500 text-sm mt-1">This field is required.</div>}
                     </div>
                 )}
-                <div style={styles.formGroup}>
-                    <label style={styles.label}>
+                <div className="form-group">
+                    <label className="block text-lg font-medium text-gray-700">
                         What month and year were you born?
                     </label>
                     <input
@@ -233,23 +233,23 @@ const PostSignUpForm = () => {
                         value={formData.birthDate}
                         onChange={handleDateChange}
                         placeholder="mm/yyyy"
-                        style={styles.input}
+                        className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
                     />
-                    {submitted && !formData.birthDate && <div style={styles.error}>This field is required.</div>}
-                    {submitted && formData.birthDate && !/^(0[1-9]|1[0-2])\/(19[0-9]{2}|20[0-2][0-4])$/.test(formData.birthDate) && (
-                        <div style={styles.error}>Invalid date. Please enter a value between 01/1900 and 12/2024.</div>
+                    {loading && !formData.birthDate && <div className="text-red-500 text-sm mt-1">This field is required.</div>}
+                    {loading && formData.birthDate && !/^(0[1-9]|1[0-2])\/(19[0-9]{2}|20[0-2][0-4])$/.test(formData.birthDate) && (
+                        <div className="text-red-500 text-sm mt-1">Invalid date. Please enter a value between 01/1900 and 12/2024.</div>
                     )}
                 </div>
-                {submitted && error && <div style={styles.error}>{error}</div>}
+                {loading && error && <div className="text-red-500 text-sm mt-1">{error}</div>}
                 <button
                     type="submit"
-                    style={styles.button}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = styles.buttonHover.backgroundColor}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = styles.button.backgroundColor}
+                    className={`mt-4 w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${loading ? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'} shadow-sm`}
+                    disabled={loading}
                 >
-                    Submit
+                    {loading ? 'Submitting...' : 'Submit'}
                 </button>
             </form>
+            <ToastContainer />
         </div>
     );
 };

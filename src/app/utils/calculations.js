@@ -43,6 +43,7 @@ export const calculateBenefitForYear = ({
                                             benefitAgeOfWithdraw,
                                             lastYearBenefit,
                                             lastYearSpouseBenefit,
+                                            inflationRate, // new parameter for inflation rate
                                         }) => {
     const ageDecimal = new Decimal(age);
     const spouseAgeDecimal = new Decimal(spouseAge);
@@ -53,15 +54,15 @@ export const calculateBenefitForYear = ({
         return new Decimal(0);
     }
     if (spouseAgeDecimal > spouseLifeExpectancyDecimal && lastYearSpouseBenefit > lastYearBenefit) {
-        return lastYearSpouseBenefit;
+        return calculateInflationAdjustedBenefit(lastYearSpouseBenefit, startAge, ageDecimal, inflationRate);
     }
     if (ageDecimal.lessThan(startAge)) {
         return new Decimal(0);
     }
     if (ageDecimal.equals(startAge)) {
-        return benefitAgeOfWithdraw;
+        return calculateInflationAdjustedBenefit(benefitAgeOfWithdraw, startAge, ageDecimal, inflationRate);
     }
-    return lastYearBenefit;
+    return calculateInflationAdjustedBenefit(lastYearBenefit, startAge, ageDecimal, inflationRate);
 };
 
 export const calculateXNPV = (rate, cashFlows, dates) => {
@@ -148,4 +149,13 @@ export const calculateTaxesForBrackets = (taxableIncome, inflationRate, currentY
     });
 
     return taxesForBrackets;
+};
+
+export const calculateInflationAdjustedBenefit = (benefit, startAge, currentAge, inflationRate) => {
+    if (currentAge < startAge) {
+        return new Decimal(0);
+    }
+    const yearsSinceStart = currentAge - startAge;
+    const inflationFactor = new Decimal(1).plus(new Decimal(inflationRate).dividedBy(100)).pow(yearsSinceStart);
+    return new Decimal(benefit).times(inflationFactor);
 };

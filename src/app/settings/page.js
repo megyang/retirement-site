@@ -1,13 +1,12 @@
-"use client"
 import React from 'react';
-import PostSignUpForm from "@/app/info/PostSignUpForm";
+import UserInfo from "@/app/settings/UserInfo";
 import {MyUserContextProvider} from "@/app/hooks/useUser";
 
 const Page = () => {
     return (
         <div>
             <MyUserContextProvider>
-                <PostSignUpForm />
+                <UserInfo />
             </MyUserContextProvider>
         </div>
     );
