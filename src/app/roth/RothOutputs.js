@@ -1384,16 +1384,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     <div className="mb-4 bg-white p-4 rounded w-full">
                         <div className="max-w-5xl mx-auto">
                             <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
-                            {/*<div className="mb-4 p-4 bg-gray-100 rounded mx-auto">
-                                <p>You can edit the cells individually by clicking and typing into the cell.</p>
-                                <p>Fill out the yellow rows first, then the red rows.</p>
-                                <p>To use the buttons:</p>
-                                <p>Edit multiple cells at once: First click on all the cells you want to have the same
-                                    value, then the button.</p>
-                                <p>Edit the row: Click on one cell in the row, then the button.</p>
-                                <p>To deselect all, hit the enter key.</p>
-                            </div>
-                            */}
                             <div>
                                 <DataGrid
                                     HorizontalAlignment="Stretch"
@@ -1459,11 +1449,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     </div>
 
 
-                    <div className="flex w-full space-x-4 flex-wrap justify-between">
-                        <div className="flex-1 min-w-[300px] h-full">
-                            <div className="bg-white p-6 rounded m-2 h-full flex flex-col justify-between">
-                                <h3 className="text-lg mb-9">Other Inputs</h3>
-                                <div className="flex flex-col space-y-11">
+                    <div className="flex w-full flex-wrap justify-between ml-[-7px]">
+                        <div className="flex-1 w-1/2 h-full">
+                            <div className="bg-white p-4 rounded m-2 h-full flex flex-col justify-between">
+                                <h3 className="text-lg mb-5">Other Inputs</h3>
+                                <div className="flex flex-col space-y-12">
                                     <div className="flex justify-between items-center">
                                         <label className="flex-grow">Beneficiary Tax Rate:</label>
                                         <div className="relative w-32">
@@ -1530,8 +1520,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                                 </div>
                             </div>
                         </div>
-                        <div className="flex-1 min-w-[300px] flex flex-col">
-                            <div className="bg-white w-full p-6 rounded m-2">
+                        <div className="w-1/2 h-full flex flex-col">
+                            <div className="bg-white w-full p-4 rounded m-2">
                                 <h3 className="text-xl text-center mb-2">{selectedVersion}: Total Taxes Paid</h3>
                                 <div className="text-3xl font-bold text-center">
                                     ${totalTaxesPaid}
