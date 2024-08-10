@@ -1,257 +1,200 @@
-"use client";
-import React, { useState } from 'react';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
-import { useUser } from "@/app/hooks/useUser";
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { useRouter } from 'next/navigation';
+import { useUser } from "@/app/hooks/useUser";
 
-const PostSignUpForm = () => {
+function PostSignUpForm() {
     const supabaseClient = useSupabaseClient();
-    const { user } = useUser();
     const router = useRouter();
-    const [formData, setFormData] = useState({
-        socialSecurity: '',
-        monthlyBenefit: '',
-        married: '',
-        filingStatus: '',
-        birthDate: ''
-    });
+    const { user } = useUser();
 
-    const [error, setError] = useState('');
+    const [ss, setSS] = useState(null);
+    const [benefit, setBenefit] = useState('');
+    const [month, setMonth] = useState('');
+    const [year, setYear] = useState('');
+    const [married, setMarried] = useState(null);
+    const [filing, setFiling] = useState(null);
+    const [spouseSS, setSpouseSS] = useState(null);
+    const [spouseBenefit, setSpouseBenefit] = useState('');
+    const [spouseMonth, setSpouseMonth] = useState('');
+    const [spouseYear, setSpouseYear] = useState('');
     const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value
-        });
+    const validateDate = (month, year) => {
+        const monthInt = parseInt(month, 10);
+        const yearInt = parseInt(year, 10);
+        const currentYear = new Date().getFullYear();
+        return (
+            monthInt >= 1 && monthInt <= 12 &&
+            yearInt >= 1900 && yearInt <= currentYear
+        );
     };
 
-    const handleDateChange = (e) => {
-        const { value } = e.target;
-        setFormData({
-            ...formData,
-            birthDate: value
-        });
-    };
+    const handleSubmit = async () => {
+        const newErrors = {};
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+        // Validate birth date
+        if (!month || !year || !validateDate(month, year)) {
+            newErrors.monthYear = "Invalid date. Please enter a value between 01/1900 and 12/" + new Date().getFullYear() + ".";
+        }
+
+        // Validate monthly benefit
+        if (ss) {
+            if (!benefit) {
+                newErrors.benefit = "This field is required.";
+            } else if (isNaN(benefit) || !Number.isInteger(parseFloat(benefit))) {
+                newErrors.benefit = "This field must be a number.";
+            }
+        }
+
+        // Validate spouse details if married
+        if (married) {
+            if (!filing) {
+                newErrors.filing = "This field is required.";
+            }
+
+            if (!spouseMonth || !spouseYear || !validateDate(spouseMonth, spouseYear)) {
+                newErrors.spouseMonthYear = "Invalid date. Please enter a value between 01/1900 and 12/" + new Date().getFullYear() + ".";
+            }
+
+            if (spouseSS && !spouseBenefit) {
+                newErrors.spouseBenefit = "This field is required.";
+            } else if (spouseSS && (isNaN(spouseBenefit) || !Number.isInteger(parseFloat(spouseBenefit)))) {
+                newErrors.spouseBenefit = "This field must be a number.";
+            }
+        }
+
+        setErrors(newErrors);
+
+        if (Object.keys(newErrors).length > 0) {
+            return;
+        }
+
         setLoading(true);
 
-        const regex = /^(0[1-9]|1[0-2])\/(19[0-9]{2}|20[0-2][0-4])$/;
+        const { error } = await supabaseClient
+            .from('info')
+            .upsert([{
+                user_id: user.id,
+                ss,
+                monthly_benefit: ss ? parseInt(benefit, 10) : null,
+                month: parseInt(month, 10),
+                year: parseInt(year, 10),
+                married,
+                filing,
+                spouse_ss: spouseSS,
+                spouse_benefit: spouseSS ? parseInt(spouseBenefit, 10) : null,
+                spouse_month: spouseMonth ? parseInt(spouseMonth, 10) : null,
+                spouse_year: spouseYear ? parseInt(spouseYear, 10) : null,
+            }], { onConflict: ['user_id'] });
 
-        if (
-            formData.socialSecurity === '' ||
-            (formData.socialSecurity === 'yes' && formData.monthlyBenefit === '') ||
-            formData.married === '' ||
-            (formData.married === 'yes' && formData.filingStatus === '') ||
-            !formData.birthDate ||
-            !regex.test(formData.birthDate)
-        ) {
-            setError('Please fill out all required fields correctly.');
-            setLoading(false);
+        setLoading(false);
+
+        if (error) {
+            toast.error('Error submitting data. Please try again.');
         } else {
-            setError('');
-            const [month, year] = formData.birthDate.split('/').map(Number);
-            const data = {
-                ss: formData.socialSecurity === 'yes',
-                monthly_benefit: formData.socialSecurity === 'yes' ? parseInt(formData.monthlyBenefit) : null,
-                married: formData.married === 'yes',
-                filing: formData.married === 'yes' ? (formData.filingStatus === 'jointly') : null,
-                month,
-                year,
-                user_id: user.id
-            };
-
-            const { data: existingData, error: fetchError } = await supabaseClient
-                .from('info')
-                .select('id')
-                .eq('user_id', user.id)
-                .single();
-
-            if (fetchError && fetchError.code !== 'PGRST116') {
-                console.error('Error fetching data:', fetchError);
-                setError('There was an error submitting the form.');
-                setLoading(false);
-            } else if (existingData) {
-                // Update existing entry
-                const { error: updateError } = await supabaseClient
-                    .from('info')
-                    .update(data)
-                    .eq('user_id', user.id);
-
-                if (updateError) {
-                    console.error('Error updating data:', updateError);
-                    setError('There was an error submitting the form.');
-                } else {
-                    console.log('Form updated:', formData);
-                    toast.success('Submitted successfully!');
-                    setTimeout(() => router.push('/ss'), 2000);
-                }
-                setLoading(false);
-            } else {
-                // Insert new entry
-                const { error: insertError } = await supabaseClient
-                    .from('info')
-                    .upsert([{ ...data, user_id: user.id }]);
-
-                if (insertError) {
-                    console.error('Error inserting data:', insertError);
-                    setError('There was an error submitting the form.');
-                } else {
-                    console.log('Form submitted:', formData);
-                    toast.success('Submitted successfully!');
-                    setTimeout(() => router.push('/ss'), 2000);
-                }
-                setLoading(false);
-            }
+            toast.success('Submitted successfully!');
+            router.push('/ss');
         }
     };
 
     return (
-        <div className="container mx-auto p-6 border border-gray-300 rounded-lg bg-white shadow-md">
-            <h2 className="text-2xl font-bold mb-4">Post Sign Up Form</h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="form-group">
-                    <label className="block text-lg font-medium text-gray-700">
-                        Have you already started collecting social security?
-                    </label>
-                    <div className="mt-2 flex space-x-4">
-                        <label className="inline-flex items-center">
-                            <input
-                                type="radio"
-                                name="socialSecurity"
-                                value="yes"
-                                checked={formData.socialSecurity === 'yes'}
-                                onChange={handleChange}
-                                className="form-radio"
-                            />
-                            <span className="ml-2">Yes</span>
-                        </label>
-                        <label className="inline-flex items-center">
-                            <input
-                                type="radio"
-                                name="socialSecurity"
-                                value="no"
-                                checked={formData.socialSecurity === 'no'}
-                                onChange={handleChange}
-                                className="form-radio"
-                            />
-                            <span className="ml-2">No</span>
-                        </label>
-                    </div>
-                    {loading && formData.socialSecurity === '' && <div className="text-red-500 text-sm mt-1">This field is required.</div>}
-                </div>
-                {formData.socialSecurity === 'yes' && (
-                    <div className="form-group">
-                        <label className="block text-lg font-medium text-gray-700">
-                            What is your monthly benefit?
-                        </label>
-                        <input
-                            type="text"
-                            name="monthlyBenefit"
-                            value={formData.monthlyBenefit}
-                            onChange={handleChange}
-                            placeholder="Enter your monthly benefit"
-                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
-                        />
-                        {loading && formData.monthlyBenefit === '' && <div className="text-red-500 text-sm mt-1">This field is required.</div>}
-                    </div>
-                )}
-                <div className="form-group">
-                    <label className="block text-lg font-medium text-gray-700">
-                        Are you married?
-                    </label>
-                    <div className="mt-2 flex space-x-4">
-                        <label className="inline-flex items-center">
-                            <input
-                                type="radio"
-                                name="married"
-                                value="yes"
-                                checked={formData.married === 'yes'}
-                                onChange={handleChange}
-                                className="form-radio"
-                            />
-                            <span className="ml-2">Yes</span>
-                        </label>
-                        <label className="inline-flex items-center">
-                            <input
-                                type="radio"
-                                name="married"
-                                value="no"
-                                checked={formData.married === 'no'}
-                                onChange={handleChange}
-                                className="form-radio"
-                            />
-                            <span className="ml-2">No</span>
-                        </label>
-                    </div>
-                    {loading && formData.married === '' && <div className="text-red-500 text-sm mt-1">This field is required.</div>}
-                </div>
-                {formData.married === 'yes' && (
-                    <div className="form-group">
-                        <label className="block text-lg font-medium text-gray-700">
-                            Are you filing married jointly or single?
-                        </label>
-                        <div className="mt-2 flex space-x-4">
-                            <label className="inline-flex items-center">
-                                <input
-                                    type="radio"
-                                    name="filingStatus"
-                                    value="jointly"
-                                    checked={formData.filingStatus === 'jointly'}
-                                    onChange={handleChange}
-                                    className="form-radio"
-                                />
-                                <span className="ml-2">Jointly</span>
-                            </label>
-                            <label className="inline-flex items-center">
-                                <input
-                                    type="radio"
-                                    name="filingStatus"
-                                    value="single"
-                                    checked={formData.filingStatus === 'single'}
-                                    onChange={handleChange}
-                                    className="form-radio"
-                                />
-                                <span className="ml-2">Single</span>
-                            </label>
-                        </div>
-                        {loading && formData.filingStatus === '' && <div className="text-red-500 text-sm mt-1">This field is required.</div>}
-                    </div>
-                )}
-                <div className="form-group">
-                    <label className="block text-lg font-medium text-gray-700">
-                        What month and year were you born?
-                    </label>
-                    <input
-                        type="text"
-                        name="birthDate"
-                        value={formData.birthDate}
-                        onChange={handleDateChange}
-                        placeholder="mm/yyyy"
-                        className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
-                    />
-                    {loading && !formData.birthDate && <div className="text-red-500 text-sm mt-1">This field is required.</div>}
-                    {loading && formData.birthDate && !/^(0[1-9]|1[0-2])\/(19[0-9]{2}|20[0-2][0-4])$/.test(formData.birthDate) && (
-                        <div className="text-red-500 text-sm mt-1">Invalid date. Please enter a value between 01/1900 and 12/2024.</div>
-                    )}
-                </div>
-                {loading && error && <div className="text-red-500 text-sm mt-1">{error}</div>}
-                <button
-                    type="submit"
-                    className={`mt-4 w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${loading ? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'} shadow-sm`}
-                    disabled={loading}
-                >
-                    {loading ? 'Submitting...' : 'Submit'}
-                </button>
-            </form>
+        <div className="max-w-3xl mx-auto p-6 ">
             <ToastContainer />
+            <h1 className="text-2xl font-semibold mb-4 text-gray-800">User Information</h1>
+
+            <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Have you already started collecting social security?</label>
+                <div className="flex space-x-4">
+                    <label className="flex items-center">
+                        <input type="radio" name="ss" value="yes" onChange={() => setSS(true)} className="mr-2" /> Yes
+                    </label>
+                    <label className="flex items-center">
+                        <input type="radio" name="ss" value="no" onChange={() => setSS(false)} className="mr-2" /> No
+                    </label>
+                </div>
+                {ss && (
+                    <div className="mt-4">
+                        <label className="block text-gray-700 mb-2">What is your monthly benefit?</label>
+                        <input type="text" value={benefit} onChange={(e) => setBenefit(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                        {errors.benefit && <div className="text-red-500 text-sm mt-1">{errors.benefit}</div>}
+                    </div>
+                )}
+            </div>
+
+            <div className="mb-4">
+                <label className="block text-gray-700 mb-2">What month and year were you born? (MM/YYYY)</label>
+                <div className="flex space-x-4">
+                    <input type="text" placeholder="MM" value={month} onChange={(e) => setMonth(e.target.value)} className="w-1/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                    <input type="text" placeholder="YYYY" value={year} onChange={(e) => setYear(e.target.value)} className="w-2/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                </div>
+                {errors.monthYear && <div className="text-red-500 text-sm mt-1">{errors.monthYear}</div>}
+            </div>
+
+            <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Are you married?</label>
+                <div className="flex space-x-4">
+                    <label className="flex items-center">
+                        <input type="radio" name="married" value="yes" onChange={() => setMarried(true)} className="mr-2" /> Yes
+                    </label>
+                    <label className="flex items-center">
+                        <input type="radio" name="married" value="no" onChange={() => setMarried(false)} className="mr-2" /> No
+                    </label>
+                </div>
+                {married && (
+                    <>
+                        <div className="mt-4">
+                            <label className="block text-gray-700 mb-2">How are you filing?</label>
+                            <div className="flex space-x-4">
+                                <label className="flex items-center">
+                                    <input type="radio" name="filing" value="jointly" onChange={() => setFiling(true)} className="mr-2" /> Jointly
+                                </label>
+                                <label className="flex items-center">
+                                    <input type="radio" name="filing" value="separately" onChange={() => setFiling(false)} className="mr-2" /> Separately
+                                </label>
+                            </div>
+                            {errors.filing && <div className="text-red-500 text-sm mt-1">{errors.filing}</div>}
+                        </div>
+
+                        <div className="mt-4">
+                            <label className="block text-gray-700 mb-2">Has your spouse already started collecting Social Security?</label>
+                            <div className="flex space-x-4">
+                                <label className="flex items-center">
+                                    <input type="radio" name="spouse_ss" value="yes" onChange={() => setSpouseSS(true)} className="mr-2" /> Yes
+                                </label>
+                                <label className="flex items-center">
+                                    <input type="radio" name="spouse_ss" value="no" onChange={() => setSpouseSS(false)} className="mr-2" /> No
+                                </label>
+                            </div>
+                            {spouseSS && (
+                                <div className="mt-4">
+                                    <label className="block text-gray-700 mb-2">What is your spouse's monthly benefit?</label>
+                                    <input type="text" value={spouseBenefit} onChange={(e) => setSpouseBenefit(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                                    {errors.spouseBenefit && <div className="text-red-500 text-sm mt-1">{errors.spouseBenefit}</div>}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-4">
+                            <label className="block text-gray-700 mb-2">What month and year was your spouse born? (MM/YYYY)</label>
+                            <div className="flex space-x-4">
+                                <input type="text" placeholder="MM" value={spouseMonth} onChange={(e) => setSpouseMonth(e.target.value)} className="w-1/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                                <input type="text" placeholder="YYYY" value={spouseYear} onChange={(e) => setSpouseYear(e.target.value)} className="w-2/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                            </div>
+                            {errors.spouseMonthYear && <div className="text-red-500 text-sm mt-1">{errors.spouseMonthYear}</div>}
+                        </div>
+                    </>
+                )}
+            </div>
+
+            <button onClick={handleSubmit} disabled={loading} className="w-full p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50">
+                {loading ? <span>Submitting...</span> : <span>Submit</span>}
+            </button>
         </div>
     );
-};
+}
 
 export default PostSignUpForm;
