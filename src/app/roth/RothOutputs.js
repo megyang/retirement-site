@@ -20,6 +20,10 @@ import CustomColumnMenu from "@/app/components/CustomColumnMenu";
 import CustomToolbar from "@/app/components/CustomToolbar";
 import CustomPagination from "@/app/components/CustomPagination";
 import {Bar} from "react-chartjs-2";
+import Chart from 'chart.js/auto';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+
+Chart.register(ChartDataLabels);
 
 const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
@@ -1054,6 +1058,31 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const chartOptions = {
         responsive: true,
         plugins: {
+            datalabels: {
+                display: function(context) {
+                    // Only display labels for the second dataset (Beneficiary Taxes)
+                    return context.datasetIndex === 1;
+                },
+                color: 'black',
+                align: 'top', // Aligns the label to the top of the bar
+                anchor: 'end', // Positions the label outside the bar
+                formatter: function(value, context) {
+                    // Map the correct total taxes paid value to each label for Beneficiary Taxes
+                    switch (context.dataIndex) {
+                        case 0:
+                            return `$${totalTaxesPaidWithZeroRoth}`;
+                        case 1:
+                            return `$${totalTaxesPaid1}`;
+                        case 2:
+                            return `$${totalTaxesPaid2}`;
+                        case 3:
+                            return `$${totalTaxesPaid3}`;
+                        default:
+                            return null;
+                    }
+                }
+            },
+
             tooltip: {
                 callbacks: {
                     title: function(context) {
@@ -1140,13 +1169,13 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const bracketTitles = ['10%', '12%', '22%', '24%', '32%', '35%', '37%'];
     const initialBrackets = [
-        { threshold: 23200, rate: 0.10, color: '#465EA6' }, // Dark Blue
-        { threshold: 94300, rate: 0.12, color: '#D95448' }, // Light Blue
-        { threshold: 201050, rate: 0.22, color: '#F2CD88' }, // Light Yellow
-        { threshold: 383900, rate: 0.24, color: '#8DAEF2' }, // Red
-        { threshold: 487450, rate: 0.32, color: '#AFBCB7' }, // Greyish Blue
-        { threshold: 731200, rate: 0.35, color: '#E2785B' }, // Light Red (or another color from your palette)
-        { threshold: Infinity, rate: 0.37, color: '#366CD9' }  // Medium Blue (or another color from your palette)
+        { threshold: 23200, rate: 0.10, color: '#B3DDF2' }, // Light Sky Blue (brighter)
+        { threshold: 94300, rate: 0.12, color: '#81C1E3' }, // Light Blue (more saturated)
+        { threshold: 201050, rate: 0.22, color: '#4E9ACF' }, // Moderate Blue (more vivid)
+        { threshold: 383900, rate: 0.24, color: '#2D7DB7' }, // Darker Blue (more contrast)
+        { threshold: 487450, rate: 0.32, color: '#1E6091' }, // Dark Blue (more distinct)
+        { threshold: 731200, rate: 0.35, color: '#1B4F72' }, // Navy Blue (high contrast)
+        { threshold: Infinity, rate: 0.37, color: '#10375C' }  // Very Dark Blue (almost black)
     ];
 
     const zeroTaxBracketDataByYear = Object.keys(taxableIncomes).map(year => {
@@ -1209,6 +1238,10 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const taxBarChartOptions = {
         responsive: true,
         plugins: {
+            datalabels: {
+                display: false // Disable datalabels for the Tax Brackets chart
+            },
+
             tooltip: {
                 callbacks: {
                     label: function (context) {
@@ -1328,6 +1361,10 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             }
         },
         plugins: {
+            datalabels: {
+                display: false // Disable datalabels for the Tax Brackets chart
+            },
+
             tooltip: {
                 callbacks: {
                     label: function (context) {
@@ -1360,6 +1397,12 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         setIsIraChartVisible(!isIraChartVisible);
     };
 
+    const [isTotalTaxesChartVisible, setIsTotalTaxesChartVisible] = useState(false);
+
+    const toggleTotalTaxesChartVisibility = () => {
+        setIsTotalTaxesChartVisible(!isTotalTaxesChartVisible);
+    };
+
 
     return (
         <div className="w-full mx-auto p-4 flex flex-col items-stretch">
@@ -1388,6 +1431,74 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                             ))}
                         </div>
                     </div>
+                    <div className="flex-container w-full flex-wrap justify-between ml-[-7px] mb-4">
+                        <div className="equal-height bg-white p-4 rounded m-2 h-full flex flex-col justify-between">
+                            <h3 className="text-lg mb-5">Other Inputs</h3>
+                            <div className="flex flex-col space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <label className="flex-grow">Beneficiary Tax Rate:</label>
+                                    <div className="relative w-32">
+                                        <input
+                                            type="text"
+                                            name="beneficiary_tax_rate"
+                                            value={`${(inputs1.beneficiary_tax_rate) * 100}`}
+                                            onChange={handleInputChange}
+                                            className="w-full h-8 text-right border border-gray-300 p-2 rounded pr-6"
+                                        />
+                                        <span className="absolute right-2 top-1">%</span>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <label className="flex-grow">Your IRA:</label>
+                                    <div className="w-32 ml-4">
+                                        <input
+                                            type="text"
+                                            name="ira1"
+                                            value={`$${formatNumberWithCommas(inputs1.ira1 || '')}`}
+                                            onChange={handleInputChange}
+                                            className="w-full h-8 text-right border border-gray-300 p-2 rounded"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <label className="flex-grow">Your Spouse’s IRA:</label>
+                                    <div className="w-32 ml-4">
+                                        <input
+                                            type="text"
+                                            name="ira2"
+                                            value={`$${formatNumberWithCommas(inputs1.ira2 || '')}`}
+                                            onChange={handleInputChange}
+                                            className="w-full h-8 text-right border border-gray-300 p-2 rounded"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <label className="flex-grow">Investment Return:</label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            name="roi"
+                                            value={`${(inputs1.roi) * 100}`}
+                                            onChange={handleInputChange}
+                                            className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
+                                        />
+                                        <span className="absolute right-2 top-1">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="equal-height bg-white w-full p-4 rounded m-2 flex flex-col justify-between">
+                            <div className="flex-1 flex flex-col justify-center">
+                                <h3 className="text-xl text-center mb-2">{selectedVersion}: Total Taxes Paid</h3>
+                                <div className="text-3xl font-bold text-center">
+                                    ${totalTaxesPaid}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
                     <div className="mb-4 bg-white p-4 rounded w-full">
                         <div className="max-w-5xl mx-auto">
                             <h2 className="text-xl font-semi-bold mb-3">Financial Plan Details</h2>
@@ -1427,9 +1538,23 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                         </div>
                     </div>
                     <div>
+                        <div className="mt-4 mb-4 bg-white overflow-x-auto p-4 rounded max-w-full">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-xl font-semi-bold mb-3">Total Taxes Paid</h2>
+                                <button onClick={toggleTotalTaxesChartVisibility} className="text-xl">
+                                    {isTotalTaxesChartVisible ? '-' : '+'}
+                                </button>
+                            </div>
+                            {isTotalTaxesChartVisible && (
+                                <div className="bg-white p-4 rounded">
+                                    <Bar data={chartData} options={chartOptions} />
+                                </div>
+                            )}
+                        </div>
+
                         <div className="mt-4 bg-white overflow-x-auto p-4 rounded max-w-full">
                             <div className="flex justify-between items-center">
-                                <h2 className="text-xl font-semi-bold mb-3">Ordinary Income Tax Brackets</h2>
+                                <h2 className="text-xl font-semi-bold mb-3">Tax Brackets</h2>
                                 <button onClick={toggleBarChartVisibility} className="text-xl">
                                     {isBarChartVisible ? '-' : '+'}
                                 </button>
@@ -1443,7 +1568,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
                         <div className="mt-4 mb-4 bg-white overflow-x-auto p-4 rounded max-w-full">
                             <div className="flex justify-between items-center">
-                                <h2 className="text-xl font-semi-bold mb-3">IRA</h2>
+                                <h2 className="text-xl font-semi-bold mb-3">IRA Balance</h2>
                                 <button onClick={toggleIraChartVisibility} className="text-xl">
                                     {isIraChartVisible ? '-' : '+'}
                                 </button>
@@ -1456,79 +1581,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     </div>
 
 
-                    <div className="flex w-full flex-wrap justify-between ml-[-7px]">
-                        <div className="flex-1 w-1/2 h-full">
-                            <div className="bg-white p-4 rounded m-2 h-full flex flex-col justify-between">
-                                <h3 className="text-lg mb-5">Other Inputs</h3>
-                                <div className="flex flex-col space-y-12">
-                                    <div className="flex justify-between items-center">
-                                        <label className="flex-grow">Beneficiary Tax Rate:</label>
-                                        <div className="relative w-32">
-                                            <input
-                                                type="text"
-                                                name="beneficiary_tax_rate"
-                                                value={`${(inputs1.beneficiary_tax_rate) * 100}`}
-                                                onChange={handleInputChange}
-                                                className="w-full h-8 text-right border border-gray-300 p-2 rounded pr-6"
-                                            />
-                                            <span className="absolute right-2 top-1">%</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <label className="flex-grow">Your IRA:</label>
-                                        <div className="w-32 ml-4">
-                                            <input
-                                                type="text"
-                                                name="ira1"
-                                                value={`$${formatNumberWithCommas(inputs1.ira1 || '')}`}
-                                                onChange={handleInputChange}
-                                                className="w-full h-8 text-right border border-gray-300 p-2 rounded"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <label className="flex-grow">Your Spouse’s IRA:</label>
-                                        <div className="w-32 ml-4">
-                                            <input
-                                                type="text"
-                                                name="ira2"
-                                                value={`$${formatNumberWithCommas(inputs1.ira2 || '')}`}
-                                                onChange={handleInputChange}
-                                                className="w-full h-8 text-right border border-gray-300 p-2 rounded"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <label className="flex-grow">Investment Return:</label>
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                name="roi"
-                                                value={`${(inputs1.roi) * 100}`}
-                                                onChange={handleInputChange}
-                                                className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
-                                            />
-                                            <span className="absolute right-2 top-1">%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="w-1/2 h-full flex flex-col">
-                            <div className="bg-white w-full p-4 rounded m-2">
-                                <h3 className="text-xl text-center mb-2">{selectedVersion}: Total Taxes Paid</h3>
-                                <div className="text-3xl font-bold text-center">
-                                    ${totalTaxesPaid}
-                                </div>
-                            </div>
-                            <div className="bg-white p-4 rounded h-auto w-full m-2 flex-1">
-                                <div className="text-lg text-left">
-                                    Total Taxes Paid
-                                </div>
-                                <BarChart chartData={chartData} chartOptions={chartOptions} />
-                            </div>
-                        </div>
-                    </div>
                 </>)}
         </div>
     );

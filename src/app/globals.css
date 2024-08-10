@@ -146,3 +146,15 @@ label:after {
 }
 
 
+.flex-container {
+    display: flex;
+    align-items: stretch; /* Stretch the children to have equal height */
+    justify-content: space-between;
+}
+
+.equal-height {
+    flex: 1; /* Ensure both containers take up equal width */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}

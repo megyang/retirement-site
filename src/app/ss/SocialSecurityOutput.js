@@ -254,6 +254,10 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
 
 
     const benefitChartOptions = {
+        datalabels: {
+            display: false // Disable datalabels for the Tax Brackets chart
+        },
+
         tooltips: {
             callbacks: {
                 label: function (tooltipItem, data) {
