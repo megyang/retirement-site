@@ -152,10 +152,16 @@ export const calculateTaxesForBrackets = (taxableIncome, inflationRate, currentY
 };
 
 export const calculateInflationAdjustedBenefit = (benefit, startAge, currentAge, inflationRate) => {
-    if (currentAge < startAge) {
+    const validBenefit = benefit !== null ? benefit : 0;
+    const validStartAge = startAge !== null ? startAge : 0;
+    const validCurrentAge = currentAge !== null ? currentAge : 0;
+    const validInflationRate = inflationRate !== null ? inflationRate : 0.02;
+
+    if (validCurrentAge < validStartAge) {
         return new Decimal(0);
     }
-    const yearsSinceStart = currentAge - startAge;
-    const inflationFactor = new Decimal(1).plus(new Decimal(inflationRate).dividedBy(100)).pow(yearsSinceStart);
-    return new Decimal(benefit).times(inflationFactor);
+
+    const yearsSinceStart = validCurrentAge - validStartAge;
+    const inflationFactor = new Decimal(1).plus(new Decimal(validInflationRate/100)).pow(yearsSinceStart);
+    return new Decimal(validBenefit).times(inflationFactor);
 };

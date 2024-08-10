@@ -151,3 +151,12 @@ label:after {
 }
 
 
+.input-box {
+    width: 50%;
+    height: 40px; /* Set your desired height */
+    padding: 8px; /* Padding for a good visual look */
+    border: 1px solid #ccc; /* Border color */
+    border-radius: 4px; /* Rounded corners */
+    text-align: right; /* Right-align text */
+    box-sizing: border-box; /* Ensure padding doesn't affect the total width */
+}

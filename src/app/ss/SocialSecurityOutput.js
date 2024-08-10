@@ -31,6 +31,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
             hSS: inputs.hSS,
             wSS: inputs.wSS,
             roi: inputs.roi,
+            inflation: inputs.inflation,
             updated_at: new Date().toISOString(),
         };
 
@@ -55,8 +56,15 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
             return;
         }
         const { name, value } = e.target;
-
-        if (name === 'hPIA' || name === 'wPIA') {
+        if (name === 'inflation') {
+            const percentageValue = parseFloat(value) / 100;
+            const newInputs = {
+                ...inputs,
+                [name]: percentageValue
+            };
+            setInputs(newInputs);
+            setSocialSecurityInputs(newInputs);
+        } else if (name === 'hPIA' || name === 'wPIA') {
             const numericValue = value.replace(/[$,]/g, '');
             if (!isNaN(numericValue) && numericValue !== '') {
                 const newInputs = {
@@ -145,7 +153,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
         let lastYearHusbandBenefit = 0;
         let lastYearWifeBenefit = 0;
         let cumulativeTotal = new Decimal(0);
-        const inflationRate = 0.02; // SHOULD I ADD THIS TO THE SS INPUTS?
+        const inflationRate = inputs.inflation;
 
         const newTableData = Array.from({ length: yearsToCover }, (_, i) => {
             const year = currentYear + i;
@@ -307,7 +315,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="husbandAge"
                                         value={inputs.husbandAge}
                                         onChange={handleChange}
-                                        className="input-box w-full text-right border border-gray-300"
+                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
                                     />
                                 </td>
                                 <td className="text-right p-5">
@@ -316,10 +324,11 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="wifeAge"
                                         value={inputs.wifeAge}
                                         onChange={handleChange}
-                                        className="input-box w-full text-right border border-gray-300"
+                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
                                     />
                                 </td>
                             </tr>
+
                             <tr>
                                 <td>Life Expectancy</td>
                                 <td className="text-right pr-4 p-5">
@@ -328,7 +337,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="hLE"
                                         value={inputs.hLE}
                                         onChange={handleChange}
-                                        className="input-box w-full text-right border border-gray-300"
+                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
                                     />
                                 </td>
                                 <td className="text-right p-5">
@@ -337,29 +346,20 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="wLE"
                                         value={inputs.wLE}
                                         onChange={handleChange}
-                                        className="input-box w-full text-right border border-gray-300"
+                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
                                     />
                                 </td>
                             </tr>
+
                             <tr>
-                                <td>
-                                    Benefit at Full Retirement Age
-                                    <span
-                                        onMouseEnter={handleMouseEnter}
-                                        onMouseLeave={handleMouseLeave}
-                                        style={{ cursor: 'pointer' }}
-                                        className="ml-1"
-                                    >
-                                    &#9432;
-                                    </span>
-                                </td>
+                                <td>Benefit at Full Retirement Age</td>
                                 <td className="text-right pr-4 p-5">
                                     <input
                                         type="text"
                                         name="hPIA"
                                         value={`$${formatNumberWithCommas(inputs.hPIA || '')}`}
                                         onChange={handleChange}
-                                        className="w-full text-right border border-gray-300"
+                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
                                     />
                                 </td>
                                 <td className="text-right p-5">
@@ -368,17 +368,29 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         name="wPIA"
                                         value={`$${formatNumberWithCommas(inputs.wPIA || '')}`}
                                         onChange={handleChange}
-                                        className="w-full text-right border border-gray-300"
+                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
                                     />
                                 </td>
                             </tr>
-                            <PiaModal
-                                isOpen={isModalOpen}
-                                onChange={setIsModalOpen}
-                                title="Benefit at Full Retirement Age"
-                                description='The monthly benefit you’d receive at full retirement age. To be as accurate as possible, look it up on <a href="https://ssa.gov/myaccount" target="_blank" rel="noopener noreferrer" style="color: blue; text-decoration: underline;">ssa.gov/myaccount</a>.'
-                                position={modalPosition}
-                            />
+
+                            <tr>
+                                <td>Inflation Rate</td>
+                                <td className="text-right p-5">
+                                    <div className="relative flex items-center border border-gray-300 rounded h-8 w-full bg-white">
+                                        <input
+                                            type="text"
+                                            name="inflation"
+                                            value={(inputs.inflation * 100).toFixed(0)}
+                                            onChange={handleChange}
+                                            className="w-full h-full text-right pr-6 border-none bg-transparent rounded"
+                                            style={{
+                                                paddingRight: '1.5rem', // Add padding to make space for the % sign
+                                            }}
+                                        />
+                                        <span className="absolute right-2">%</span>
+                                    </div>
+                                </td>
+                            </tr>
 
                             </tbody>
                         </table>

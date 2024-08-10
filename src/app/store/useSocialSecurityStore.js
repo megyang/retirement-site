@@ -12,6 +12,7 @@ const useSocialSecurityStore = create(persist((set) => ({
     hPIA: 2500,
     wPIA: 2000,
     roi: 2,
+    inflation: 2.0,
   },
   setSocialSecurityInputs: (inputs) => set({ socialSecurityInputs: inputs }),
 
