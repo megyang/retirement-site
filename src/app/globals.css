@@ -17,14 +17,6 @@ html, body {
     width: 100%;
 }
 
-.salary-row {
-    background-color: rgba(255, 217, 145, 0.8); /* #acbdb7 at 40% opacity */
-}
-
-.roth-row {
-    background-color: rgba(217, 84, 72, 0.8); /* #e2785b at 40% opacity */
-}
-
 .selected-cell {
     background-color: rgba(70, 130, 220, 0.5); /* Slightly darker blue color */
 }
@@ -44,6 +36,9 @@ html, body {
 
 .editable-row {
     background-color: white;
+}
+.editable-cell {
+    color: blue; /* This will set the text color to blue */
 }
 
 .uneditable-row {
@@ -151,12 +146,3 @@ label:after {
 }
 
 
-.input-box {
-    width: 50%;
-    height: 40px; /* Set your desired height */
-    padding: 8px; /* Padding for a good visual look */
-    border: 1px solid #ccc; /* Border color */
-    border-radius: 4px; /* Rounded corners */
-    text-align: right; /* Right-align text */
-    box-sizing: border-box; /* Ensure padding doesn't affect the total width */
-}

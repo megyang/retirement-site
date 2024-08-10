@@ -404,7 +404,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                 ira1: inputs1.ira1,
                 ira2: inputs1.ira2,
                 roi: inputs1.roi,
-                inflation: inputs1.inflation,
+                inflation: inputs.inflation,
                 lifetime_tax: totalLifetimeTaxPaid.toFixed(0),
                 beneficiary_tax: beneficiaryTaxPaid,
                 lifetime0: totalLifetimeTaxPaidWithZeroRoth.toFixed(0),
@@ -471,7 +471,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                             ira1: inputs1.ira1,
                             ira2: inputs1.ira2,
                             roi: inputs1.roi,
-                            inflation: inputs1.inflation,
+                            inflation: inputs.inflation,
                             lifetime_tax: 0,
                             beneficiary_tax: 0,
                             lifetime0: 0,
@@ -542,7 +542,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     }, [user]);
 
 /////social security benefits
-    const annualInflationRate = inputs1.inflation;
+    const annualInflationRate = inputs.inflation;
     const startingStandardDeduction = 29200;
 
     const calculateStandardDeductionForYear = (year) => {
@@ -664,10 +664,10 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         return totalEndingValue.times(new Decimal(beneficiary_tax_rate));
     };
 
-    const totalLifetimeTaxPaid = calculateTotalLifetimeTaxPaid(taxableIncomes, inputs1.inflation, currentYear);
-    const totalLifetimeTaxPaid1 = calculateTotalLifetimeTaxPaid(taxableIncomes1, inputs1.inflation, currentYear);
-    const totalLifetimeTaxPaid2 = calculateTotalLifetimeTaxPaid(taxableIncomes2, inputs1.inflation, currentYear);
-    const totalLifetimeTaxPaid3 = calculateTotalLifetimeTaxPaid(taxableIncomes3, inputs1.inflation, currentYear);
+    const totalLifetimeTaxPaid = calculateTotalLifetimeTaxPaid(taxableIncomes, inputs.inflation, currentYear);
+    const totalLifetimeTaxPaid1 = calculateTotalLifetimeTaxPaid(taxableIncomes1, inputs.inflation, currentYear);
+    const totalLifetimeTaxPaid2 = calculateTotalLifetimeTaxPaid(taxableIncomes2, inputs.inflation, currentYear);
+    const totalLifetimeTaxPaid3 = calculateTotalLifetimeTaxPaid(taxableIncomes3, inputs.inflation, currentYear);
 
 
     const beneficiaryTaxPaid = calculateBeneficiaryTaxPaid(iraDetails, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
@@ -761,7 +761,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         return totalEndingValueZeroRoth.times(new Decimal(beneficiary_tax_rate));
     };
 
-    const totalLifetimeTaxPaidWithZeroRoth = calculateTotalLifetimeTaxPaidWithZeroRoth(taxableIncomesWithZeroRoth, inputs1.inflation, currentYear);
+    const totalLifetimeTaxPaidWithZeroRoth = calculateTotalLifetimeTaxPaidWithZeroRoth(taxableIncomesWithZeroRoth, inputs.inflation, currentYear);
     const beneficiaryTaxPaidWithZeroRoth = calculateBeneficiaryTaxPaidWithZeroRoth(iraDetailsZeroRoth, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
 
     const totalTaxesPaidWithZeroRoth = Math.round(calculateTotalTaxesPaid(totalLifetimeTaxPaidWithZeroRoth, beneficiaryTaxPaidWithZeroRoth)).toLocaleString();
@@ -979,6 +979,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     };
 
     const getRowClassName = (params) => {
+
         const editableRowIds = ['rothSpouse1', 'rothSpouse2', 'salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
         if (params.row.id === 'ssSpouse2') {
             return 'ss-spouse-row';
@@ -993,24 +994,30 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const getCellClassName = (params) => {
         const scenario = selectedVersion;
+        const editableRowIds = ['rothSpouse1', 'rothSpouse2', 'salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
+
         const fieldsToDisable = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
         const isSelected = selectedCellParams.some(cell => cell.id === params.id && cell.field === params.field);
         const isUneditable = (scenario === 'Scenario 2' || scenario === 'Scenario 3') && fieldsToDisable.includes(params.row.id);
 
         let className = '';
-        if (isSelected) {
-            className += 'selected-cell ';
+
+        // Check if the row is one of the specified rows and the cell is not in the label column
+        if (editableRowIds.includes(params.row.id) && params.field !== 'label') {
+            className += 'editable-cell '; // Apply blue text to editable fields
         }
+
+        // Ensure uneditable rows get the correct class
         if (isUneditable) {
             className += 'uneditable-row ';
         }
-        if (fieldsToDisable.includes(params.row.id)) {
-            className += 'salary-row ';
-        } else if (params.row.id === 'rothSpouse1' || params.row.id === 'rothSpouse2') {
-            className += 'roth-row ';
+
+        // Apply the selected cell class for highlighting
+        if (isSelected) {
+            className += 'selected-cell ';
         }
 
-        return className.trim();
+        return className.trim(); // Return the combined classes
     };
 
     const chartData = {
@@ -1165,7 +1172,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const taxBracketDataByYear = Object.keys(taxableIncomes).map(year => {
         const taxableIncome = taxableIncomes[year];
-        const adjustedBrackets = adjustThresholdsForInflation(initialBrackets, inputs1.inflation, currentYear, year);
+        const adjustedBrackets = adjustThresholdsForInflation(initialBrackets, inputs.inflation, currentYear, year);
         const bracketData = [];
         let previousThreshold = 0;
 
@@ -1498,19 +1505,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                                                 type="text"
                                                 name="roi"
                                                 value={`${(inputs1.roi) * 100}`}
-                                                onChange={handleInputChange}
-                                                className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
-                                            />
-                                            <span className="absolute right-2 top-1">%</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <label className="flex-grow">Inflation Rate:</label>
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                name="inflation"
-                                                value={`${(inputs1.inflation) * 100}`}
                                                 onChange={handleInputChange}
                                                 className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
                                             />

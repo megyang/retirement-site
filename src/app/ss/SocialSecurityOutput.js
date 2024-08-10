@@ -403,7 +403,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                         <div className="inputs-container ">
                             <table className="table-auto w-full">
                                 <tbody>
-                                <tr style={{height: "100px"}}>
+                                <tr style={{height: "150px"}}>
                                     <td>You</td>
                                     <td>
                                         <input

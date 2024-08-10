@@ -11,7 +11,6 @@ const RothConversionCalculator = () => {
         ira1: 800000,
         ira2: 1000000,
         roi: 0.03,
-        inflation: 0.02,
         beneficiary_tax_rate: 0.24
     });
     const [staticFields, setStaticFields] = useState({});
