@@ -75,33 +75,30 @@ function PostSignUpForm() {
 
         setLoading(true);
 
-        const userInfo = {
-            ss,
-            benefit: ss ? parseInt(benefit, 10) : null,
-            month: parseInt(month, 10),
-            year: parseInt(year, 10),
-            married,
-            filing,
-            spouseSS,
-            spouseBenefit: spouseSS ? parseInt(spouseBenefit, 10) : null,
-            spouseMonth: spouseMonth ? parseInt(spouseMonth, 10) : null,
-            spouseYear: spouseYear ? parseInt(spouseYear, 10) : null,
-        };
-
         const { error } = await supabaseClient
             .from('info')
-            .upsert([{ user_id: user.id, ...userInfo }], { onConflict: ['user_id'] });
+            .upsert([{
+                user_id: user.id,
+                ss,
+                monthly_benefit: ss ? parseInt(benefit, 10) : null,
+                month: parseInt(month, 10),
+                year: parseInt(year, 10),
+                married,
+                filing,
+                spouse_ss: spouseSS,
+                spouse_benefit: spouseSS ? parseInt(spouseBenefit, 10) : null,
+                spouse_month: spouseMonth ? parseInt(spouseMonth, 10) : null,
+                spouse_year: spouseYear ? parseInt(spouseYear, 10) : null,
+            }], { onConflict: ['user_id'] });
+
+        setLoading(false);
 
         if (error) {
             toast.error('Error submitting data. Please try again.');
         } else {
-            setUserInfo(userInfo); // Save the userInfo to the local storage via Zustand store
             toast.success('Submitted successfully!');
             router.push('/ss');
         }
-
-        setLoading(false);
-
     };
 
     return (
