@@ -198,7 +198,7 @@ function UserInfo() {
                             </div>
                             {spouseSS && (
                                 <div className="mt-4">
-                                    <label className="block text-gray-700 mb-2">What is your spouse's monthly benefit?</label>
+                                    <label className="block text-gray-700 mb-2">What is your spouse&apos;s monthly benefit?</label>
                                     <input type="text" value={spouseBenefit} onChange={(e) => setSpouseBenefit(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" />
                                     {errors.spouseBenefit && <div className="text-red-500 text-sm mt-1">{errors.spouseBenefit}</div>}
                                 </div>

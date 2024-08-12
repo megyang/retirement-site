@@ -165,3 +165,16 @@ export const calculateInflationAdjustedBenefit = (benefit, startAge, currentAge,
     const inflationFactor = new Decimal(1).plus(new Decimal(validInflationRate/100)).pow(yearsSinceStart);
     return new Decimal(validBenefit).times(inflationFactor);
 };
+
+export const calculateAge = (year, month) => {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1; // getMonth is 0-indexed
+
+    let age = currentYear - year;
+    if (currentMonth < month) {
+        age--;
+    }
+
+    return age;
+};
