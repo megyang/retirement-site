@@ -4,8 +4,11 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
+import useInfoStore from "@/app/store/useInfoStore";
 
 function UserInfo() {
+    const { setInfo } = useInfoStore();
+
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
 
@@ -103,7 +106,7 @@ function UserInfo() {
 
         setLoading(true);
 
-        const { error } = await supabaseClient
+        const { data, error } = await supabaseClient
             .from('info')
             .upsert([{
                 user_id: user.id,
@@ -124,11 +127,13 @@ function UserInfo() {
         if (error) {
             toast.error('Error submitting data. Please try again.');
         } else {
-            toast.success('Settings updated successfully!');
+            setInfo(data);
+            toast.success('Submitted successfully!');
         }
     };
 
-    return (
+
+return (
         <div className="max-w-3xl mx-auto p-6">
             <ToastContainer />
             <h1 className="text-2xl font-semibold mb-4 text-gray-800">Update Your Information</h1>

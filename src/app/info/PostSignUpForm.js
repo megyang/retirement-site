@@ -1,11 +1,15 @@
-import { useState } from 'react';
+"use client"
+import {useState} from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/navigation';
 import { useUser } from "@/app/hooks/useUser";
+import useInfoStore from "@/app/store/useInfoStore";
 
 function PostSignUpForm() {
+    const { fetchInfo, setInfo, info } = useInfoStore();
+
     const supabaseClient = useSupabaseClient();
     const router = useRouter();
     const { user } = useUser();
@@ -75,7 +79,7 @@ function PostSignUpForm() {
 
         setLoading(true);
 
-        const { error } = await supabaseClient
+        const { data, error } = await supabaseClient
             .from('info')
             .upsert([{
                 user_id: user.id,
@@ -96,6 +100,7 @@ function PostSignUpForm() {
         if (error) {
             toast.error('Error submitting data. Please try again.');
         } else {
+            setInfo(data);
             toast.success('Submitted successfully!');
             router.push('/ss');
         }

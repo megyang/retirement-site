@@ -8,10 +8,22 @@ import PiaModal from "@/app/modal/PiaModal";
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
 import useAuthModal from "@/app/hooks/useAuthModal";
+import useInfoStore from "@/app/store/useInfoStore";
 
 const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) => {
+    const { info, fetchInfo } = useInfoStore();
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
+
+    useEffect(() => {
+        if (user) {
+            fetchInfo(supabaseClient, user.id);
+        }
+    }, [user]);
+
+    useEffect(() => {
+        console.log(info);  // This should print the `info` data
+    }, [info]);
     const { onOpen } = useAuthModal();
 
     useEffect(() => {
@@ -356,7 +368,17 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                             </tr>
 
                             <tr>
-                                <td>Benefit at Full Retirement Age</td>
+                                <td>
+                                    Benefit at Full Retirement Age
+                                    <span
+                                        onMouseEnter={handleMouseEnter}
+                                        onMouseLeave={handleMouseLeave}
+                                        style={{ cursor: 'pointer' }}
+                                        className="ml-1"
+                                    >
+                                    &#9432;
+                                    </span>
+                                </td>
                                 <td className="text-right pr-4 p-5">
                                     <input
                                         type="text"
@@ -376,6 +398,13 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                     />
                                 </td>
                             </tr>
+                            <PiaModal
+                                isOpen={isModalOpen}
+                                onChange={setIsModalOpen}
+                                title="Benefit at Full Retirement Age"
+                                description='The monthly benefit you’d receive at full retirement age. To be as accurate as possible, look it up on <a href="https://ssa.gov/myaccount" target="_blank" rel="noopener noreferrer" style="color: blue; text-decoration: underline;">ssa.gov/myaccount</a>.'
+                                position={modalPosition}
+                            />
 
                             <tr>
                                 <td>Inflation Rate</td>
