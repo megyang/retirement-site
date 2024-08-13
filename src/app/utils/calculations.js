@@ -43,7 +43,7 @@ export const calculateBenefitForYear = ({
                                             benefitAgeOfWithdraw,
                                             lastYearBenefit,
                                             lastYearSpouseBenefit,
-                                            inflationRate, // new parameter for inflation rate
+                                            inflationRate,
                                         }) => {
     const ageDecimal = new Decimal(age);
     const spouseAgeDecimal = new Decimal(spouseAge);
@@ -166,15 +166,15 @@ export const calculateInflationAdjustedBenefit = (benefit, startAge, currentAge,
     return new Decimal(validBenefit).times(inflationFactor);
 };
 
-export const calculateAge = (year, month) => {
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth() + 1; // getMonth is 0-indexed
+export function calculateAge(month, year) {
+    const birthDate = new Date(year, month - 1);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDifference = today.getMonth() - birthDate.getMonth();
 
-    let age = currentYear - year;
-    if (currentMonth < month) {
+    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
         age--;
     }
 
     return age;
-};
+}

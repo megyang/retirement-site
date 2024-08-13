@@ -1362,7 +1362,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         },
         plugins: {
             datalabels: {
-                display: false // Disable datalabels for the Tax Brackets chart
+                display: false
             },
 
             tooltip: {

@@ -3,28 +3,67 @@ import Decimal from "decimal.js";
 import BarChart from "../components/BarChart";
 import useReferenceTable from "../hooks/useReferenceTable";
 import useSocialSecurityStore from "@/app/store/useSocialSecurityStore";
-import {calculateBenefitForYear, calculateXNPV, formatNumberWithCommas, calculateInflationAdjustedBenefit} from "../utils/calculations";
+import {
+    calculateBenefitForYear,
+    calculateXNPV,
+    formatNumberWithCommas,
+    calculateInflationAdjustedBenefit,
+    calculateAge
+} from "../utils/calculations";
 import PiaModal from "@/app/modal/PiaModal";
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
 import useAuthModal from "@/app/hooks/useAuthModal";
 import useInfoStore from "@/app/store/useInfoStore";
+import {Bar} from "react-chartjs-2";
 
 const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) => {
     const { info, fetchInfo } = useInfoStore();
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
 
+    {/*
+        const [isClient, setIsClient] = useState(false);
+        const [loading, setLoading] = useState(true); // Add a loading state
+
+        useEffect(() => {
+            setIsClient(true);
+            if (user) {
+                async function loadData() {
+                    fetchInfo(supabaseClient, user.id);
+                    setLoading(false);  // Set loading to false after data is fetched
+                }
+
+                loadData();
+            }
+        }, [user]);
+    */}
+
     useEffect(() => {
         if (user) {
             fetchInfo(supabaseClient, user.id);
+
         }
-    }, [user]);
+    }, [user, info]);
+
+    console.log(info)
 
     useEffect(() => {
-        console.log(info);  // This should print the `info` data
+        if (info) {
+            // Calculate current age based on birth month/year
+            const currentAge = calculateAge(info.month, info.year);
+            const spouseAge = info.married ? calculateAge(info.spouse_month, info.spouse_year) : null;
+
+            // Update inputs based on info
+            setInputs({
+                ...inputs,
+                husbandAge: currentAge,
+                wifeAge: spouseAge,
+                hPIA: info.ss ? info.monthly_benefit : inputs.hPIA,
+                wPIA: info.spouse_ss ? info.spouse_benefit : inputs.wPIA,
+            });
+        }
     }, [info]);
-    const { onOpen } = useAuthModal();
 
     useEffect(() => {
         if (!user) {
@@ -229,24 +268,29 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
         const husbandBenefitArray = newTableData.map(({ husbandBenefit }) => parseInt(husbandBenefit));
         const wifeBenefitArray = newTableData.map(({ wifeBenefit }) => parseInt(wifeBenefit));
 
+        const datasets = [
+            {
+                label: "Your Benefit",
+                data: husbandBenefitArray,
+                backgroundColor: "#d95448",
+                borderColor: "#d95448",
+                borderWidth: 1,
+            }
+        ];
+
+        if (info?.married) {
+            datasets.push({
+                label: "Spouse Benefit",
+                data: wifeBenefitArray,
+                backgroundColor: "#f2cd88",
+                borderColor: "#f2cd88",
+                borderWidth: 1,
+            });
+        }
+
         setUserData({
             labels: yearArray,
-            datasets: [
-                {
-                    label: "Your Benefit",
-                    data: husbandBenefitArray,
-                    backgroundColor: "#d95448",
-                    borderColor: "#d95448",
-                    borderWidth: 1,
-                },
-                {
-                    label: "Spouse Benefit",
-                    data: wifeBenefitArray,
-                    backgroundColor: "#f2cd88",
-                    borderColor: "#f2cd88",
-                    borderWidth: 1,
-                },
-            ],
+            datasets: datasets,
         });
 
     }, [
@@ -261,15 +305,14 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
         currentYear,
         benefitsBasedOnAge.husbandYearly,
         benefitsBasedOnAge.wifeYearly,
-        setSocialSecurityBenefits
+        setSocialSecurityBenefits,
+        info
     ]);
-
 
     const benefitChartOptions = {
         datalabels: {
-            display: false // Disable datalabels for the Tax Brackets chart
+            display: false
         },
-
         tooltips: {
             callbacks: {
                 label: function (tooltipItem, data) {
@@ -308,6 +351,12 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
         },
     };
 
+    {/*
+        if (!isClient || loading) {
+            return <div>Loading...</div>;
+        }
+    */}
+
     return (
         <div>
             <div className="flex w-full h-auto">
@@ -318,31 +367,25 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                             <thead>
                             <tr>
                                 <th></th>
-                                <th className="text-center pr-4">You</th>
-                                <th className="text-center">Spouse</th>
+                                {info?.married && (
+                                    <>
+                                        <th className="text-center pr-4">You</th>
+                                        <th className="text-center">Spouse</th>
+                                    </>
+                                )}
                             </tr>
                             </thead>
                             <tbody>
                             <tr>
                                 <td>Current Age</td>
-                                <td className="text-right pr-4 p-5">
-                                    <input
-                                        type="number"
-                                        name="husbandAge"
-                                        value={inputs.husbandAge}
-                                        onChange={handleChange}
-                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
-                                    />
+                                <td className="text-right pr-6 p-5">
+                                    {inputs.husbandAge}
                                 </td>
-                                <td className="text-right p-5">
-                                    <input
-                                        type="number"
-                                        name="wifeAge"
-                                        value={inputs.wifeAge}
-                                        onChange={handleChange}
-                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
-                                    />
-                                </td>
+                                {info?.married && (
+                                    <td className="text-right pr-6 p-5">
+                                        {inputs.wifeAge}
+                                    </td>
+                                )}
                             </tr>
 
                             <tr>
@@ -356,15 +399,17 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         className="w-full h-8 text-right border border-gray-300 p-2 rounded"
                                     />
                                 </td>
-                                <td className="text-right p-5">
-                                    <input
-                                        type="number"
-                                        name="wLE"
-                                        value={inputs.wLE}
-                                        onChange={handleChange}
-                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
-                                    />
-                                </td>
+                                {info?.married && (
+                                    <td className="text-right p-5">
+                                        <input
+                                            type="number"
+                                            name="wLE"
+                                            value={inputs.wLE}
+                                            onChange={handleChange}
+                                            className="w-full h-8 text-right border border-gray-300 p-2 rounded"
+                                        />
+                                    </td>
+                                )}
                             </tr>
 
                             <tr>
@@ -380,23 +425,33 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                     </span>
                                 </td>
                                 <td className="text-right pr-4 p-5">
-                                    <input
-                                        type="text"
-                                        name="hPIA"
-                                        value={`$${formatNumberWithCommas(inputs.hPIA || '')}`}
-                                        onChange={handleChange}
-                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
-                                    />
+                                    {info?.ss ? (
+                                        <span>{`$${inputs.hPIA}`}</span>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            name="hPIA"
+                                            value={`$${inputs.hPIA}`}
+                                            onChange={handleChange}
+                                            className="w-full h-8 text-right border border-gray-300 p-2 rounded"
+                                        />
+                                    )}
                                 </td>
-                                <td className="text-right p-5">
-                                    <input
-                                        type="text"
-                                        name="wPIA"
-                                        value={`$${formatNumberWithCommas(inputs.wPIA || '')}`}
-                                        onChange={handleChange}
-                                        className="w-full h-8 text-right border border-gray-300 p-2 rounded"
-                                    />
-                                </td>
+                                {info?.married && (
+                                    <td className="text-right p-5">
+                                        {info?.spouse_ss ? (
+                                            <span>{`$${inputs.wPIA}`}</span>
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                name="wPIA"
+                                                value={`$${inputs.wPIA}`}
+                                                onChange={handleChange}
+                                                className="w-full h-8 text-right border border-gray-300 p-2 rounded"
+                                            />
+                                        )}
+                                    </td>
+                                )}
                             </tr>
                             <PiaModal
                                 isOpen={isModalOpen}
@@ -417,7 +472,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                             onChange={handleChange}
                                             className="w-full h-full text-right pr-6 border-none bg-transparent rounded"
                                             style={{
-                                                paddingRight: '1.5rem', // Add padding to make space for the % sign
+                                                paddingRight: '1.5rem',
                                             }}
                                         />
                                         <span className="absolute right-2">%</span>
@@ -431,13 +486,18 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
 
                 </div>
                 <div className="right-column flex flex-col w-1/2 h-auto flex-grow">
-                    <div className="rectangle large-rectangle bg-white rounded-lg w-full h-full p-5">
-                        <h2 className="text-lg text-center mb-4">Collection Age</h2>
-                        <div className="inputs-container ">
+                    <div className="rectangle large-rectangle bg-white rounded-lg w-full h-full p-5 flex flex-col justify-center">
+                        <h2 className="text-lg text-center mb-4">Collection Age</h2>                        <div className={`inputs-container ${info?.married ? "married" : ""}`}>
                             <table className="table-auto w-full">
                                 <tbody>
-                                <tr style={{height: "150px"}}>
-                                    <td>You</td>
+                                <tr
+                                    style={{
+                                        height: info?.married ? "100px" : "150px",
+                                        display: "table-row",
+                                        alignItems: info?.married ? "flex-start" : "center",
+                                    }}
+                                >
+                                    <td style={{ visibility: info?.married ? "visible" : "hidden" }}>You</td>
                                     <td>
                                         <input
                                             type="range"
@@ -448,6 +508,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                             step="1"
                                             value={inputs.hSS}
                                             onInput={handleChange}
+                                            style={{ marginTop: info?.married ? "0" : "auto", marginBottom: info?.married ? "0" : "auto" }}
                                         />
                                         <ul className="flex justify-between w-full px-[10px]">
                                             <li className="flex justify-center relative">
@@ -480,57 +541,57 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                                         </ul>
                                     </td>
                                 </tr>
-                                <tr style={{height: "100px"}}>
-                                    <td>Your Spouse</td>
-                                    <td>
-                                        <input
-                                            type="range"
-                                            className="w-full custom-range2"
-                                            name="wSS"
-                                            min="62"
-                                            max="70"
-                                            step="1"
-                                            value={inputs.wSS}
-                                            onInput={handleChange}
-                                        />
-                                        <ul className="flex justify-between w-full px-[10px]">
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">62</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">63</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">64</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">65</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">66</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">67</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">68</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">69</span>
-                                            </li>
-                                            <li className="flex justify-center relative">
-                                                <span className="absolute">70</span>
-                                            </li>
-                                        </ul>
-                                    </td>
-                                </tr>
+
+                                {info?.married && (
+                                    <tr style={{ height: "100px" }}>
+                                        <td>Your Spouse</td>
+                                        <td>
+                                            <input
+                                                type="range"
+                                                className="w-full custom-range2"
+                                                name="wSS"
+                                                min="62"
+                                                max="70"
+                                                step="1"
+                                                value={inputs.wSS}
+                                                onInput={handleChange}
+                                            />
+                                            <ul className="flex justify-between w-full px-[10px]">
+                                                <li className="flex justify-center relative">
+                                                    <span className="absolute">62</span>
+                                                </li>
+                                                <li className="flex justify-center relative">
+                                                    <span className="absolute">63</span>
+                                                </li>
+                                                <li className="flex justify-center relative">
+                                                    <span className="absolute">64</span>
+                                                </li>
+                                                <li className="flex justify-center relative">
+                                                    <span className="absolute">65</span>
+                                                </li>
+                                                <li className="flex justify-center relative">
+                                                    <span className="absolute">66</span>
+                                                </li>
+                                                <li className="flex justify-center relative">
+                                                    <span className="absolute">67</span>
+                                                </li>
+                                                <li className="flex justify-center relative">
+                                                    <span className="absolute">68</span>
+                                                </li>
+                                                <li className="flex justify-center relative">
+                                                    <span className="absolute">69</span>
+                                                </li>
+                                                <li className="flex justify-center relative">
+                                                    <span className="absolute">70</span>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                )}
                                 </tbody>
                             </table>
                         </div>
                     </div>
-
-
-
                 </div>
 
             </div>
@@ -558,7 +619,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
 
                 <div className="ss-graph">
                     <h3 className="text-lg mb-2 mt-[-12px]">Social Security Collected By Year</h3>
-                    <BarChart chartData={userData} chartOptions={benefitChartOptions} />
+                    <Bar data={userData} options={benefitChartOptions} />
                 </div>
             </div>
 
