@@ -1138,7 +1138,13 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                     callback: function (value) {
                         return `$${value.toLocaleString()}`;
                     },
+                    max: Math.max(totalLifetimeTaxPaidWithZeroRoth, totalLifetimeTaxPaid1, totalLifetimeTaxPaid2, totalLifetimeTaxPaid3) * 1.3,
+
                 },
+                padding: {
+                    top: 20,
+                },
+
             },
         },
     };

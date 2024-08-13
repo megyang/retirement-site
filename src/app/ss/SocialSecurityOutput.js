@@ -325,6 +325,10 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
             },
         },
         plugins: {
+            datalabels: {
+                display: false // Disable datalabels for the Tax Brackets chart
+            },
+
             legend: {
                 position: "bottom",
             },
@@ -338,7 +342,6 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
             },
             y: {
                 stacked: true,
-                max: 100000,
                 ticks: {
                     callback: function (value) {
                         value = value.toString();
