@@ -22,6 +22,7 @@ import CustomPagination from "@/app/components/CustomPagination";
 import {Bar} from "react-chartjs-2";
 import Chart from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+import useInfoStore from "@/app/store/useInfoStore";
 
 Chart.register(ChartDataLabels);
 
@@ -37,6 +38,13 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     const husbandLEYear = currentYear + inputs.hLE - inputs.husbandAge;
     const wifeLEYear = currentYear + inputs.wLE - inputs.wifeAge;
     const [isClient, setIsClient] = useState(false);
+    const { info, fetchInfo } = useInfoStore();
+    useEffect(() => {
+        if (user) {
+            fetchInfo(supabaseClient, user.id); // Fetch info data when user is available
+        }
+    }, [user]);
+    console.log("Info:", info);
 
     const [editableFields, setEditableFields] = useState(() => {
         const fields = {};
@@ -547,7 +555,46 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
 /////social security benefits
     const annualInflationRate = inputs.inflation;
-    const startingStandardDeduction = 29200;
+    let startingStandardDeduction;
+    let initialBrackets;
+
+    if (info?.married && info?.filing) {
+        // If married and filing jointly
+        startingStandardDeduction = 29200;
+        initialBrackets = [
+            { threshold: 23200, rate: 0.10, color: '#B3DDF2' }, // Light Sky Blue (brighter)
+            { threshold: 94300, rate: 0.12, color: '#81C1E3' }, // Light Blue (more saturated)
+            { threshold: 201050, rate: 0.22, color: '#4E9ACF' }, // Moderate Blue (more vivid)
+            { threshold: 383900, rate: 0.24, color: '#2D7DB7' }, // Darker Blue (more contrast)
+            { threshold: 487450, rate: 0.32, color: '#1E6091' }, // Dark Blue (more distinct)
+            { threshold: 731200, rate: 0.35, color: '#1B4F72' }, // Navy Blue (high contrast)
+            { threshold: Infinity, rate: 0.37, color: '#10375C' }  // Very Dark Blue (almost black)
+        ];
+    } else if (!info?.married) {
+        // If not married
+        startingStandardDeduction = 14600;
+        initialBrackets = [
+            { threshold: 11600, rate: 0.10, color: '#B3DDF2' }, // Updated to $11,600 and 10%
+            { threshold: 47150, rate: 0.12, color: '#81C1E3' }, // Updated to $47,150 and 12%
+            { threshold: 100525, rate: 0.22, color: '#4E9ACF' }, // Updated to $100,525 and 22%
+            { threshold: 191950, rate: 0.24, color: '#2D7DB7' }, // Updated to $191,950 and 24%
+            { threshold: 243725, rate: 0.32, color: '#1E6091' }, // Updated to $243,725 and 32%
+            { threshold: 609350, rate: 0.35, color: '#1B4F72' }, // Updated to $609,350 and 35%
+            { threshold: Infinity, rate: 0.37, color: '#10375C' }  // Updated to > $609,350 and 37%
+        ];
+    } else if (info?.married && !info?.filing) {
+        // If married and filing separately
+        startingStandardDeduction = 13800;
+        initialBrackets = [
+            { threshold: 11600, rate: 0.10, color: '#B3DDF2' }, // Updated to $11,600 and 10%
+            { threshold: 47150, rate: 0.12, color: '#81C1E3' }, // Updated to $47,150 and 12%
+            { threshold: 100525, rate: 0.22, color: '#4E9ACF' }, // Updated to $100,525 and 22%
+            { threshold: 191950, rate: 0.24, color: '#2D7DB7' }, // Updated to $191,950 and 24%
+            { threshold: 243725, rate: 0.32, color: '#1E6091' }, // Updated to $243,725 and 32%
+            { threshold: 365600, rate: 0.35, color: '#1B4F72' }, // Updated to $365,600 and 35%
+            { threshold: Infinity, rate: 0.37, color: '#10375C' }  // Updated to > $609,350 and 37%
+        ];
+    }
 
     const calculateStandardDeductionForYear = (year) => {
         const yearsDifference = year - currentYear;
@@ -599,6 +646,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         return taxableIncomes;
     };
 
+
     const taxableIncomes = calculateTaxableIncomes(
         editableFields,
         staticFields,
@@ -634,22 +682,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         (year) => calculateTotalIncomeForYear(year, editableScenario3),
         calculateStandardDeductionForYear
     );
-
-    console.log("taxableIncomes",taxableIncomes1);
-    console.log("editableScenario",editableScenario1);
-    console.log("iraDetails",iraDetails1);
-
-    console.log("taxableIncomes1",taxableIncomes1);
-    console.log("editableScenario1",editableScenario1);
-    console.log("iraDetails1",iraDetails1);
-
-    console.log("taxableIncomes2",taxableIncomes1);
-    console.log("editableScenario2",editableScenario1);
-    console.log("iraDetails2",iraDetails1);
-
-    console.log("taxableIncomes3",taxableIncomes1);
-    console.log("editableScenario3",editableScenario1);
-    console.log("iraDetails3",iraDetails1);
 
     const calculateTotalLifetimeTaxPaid = (taxableIncomes, inflation, currentYear) => {
         let totalSum = 0;
@@ -770,24 +802,24 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
     const totalTaxesPaidWithZeroRoth = Math.round(calculateTotalTaxesPaid(totalLifetimeTaxPaidWithZeroRoth, beneficiaryTaxPaidWithZeroRoth)).toLocaleString();
     const transposedRows = [
-        { id: 'ageSpouse1', label: 'Age (You)' },
-        { id: 'ageSpouse2', label: 'Age (Spouse)' },
-        { id: 'rothSpouse1', label: 'Roth Conversion (You)' },
-        { id: 'rothSpouse2', label: 'Roth Conversion (Spouse)' },
-        { id: 'salary1', label: 'Salary (You)' },
-        { id: 'salary2', label: 'Salary (Spouse)' },
+        { id: 'ageSpouse1', label: info?.married && info?.filing ? 'Age (You)' : 'Age' },
+        info?.married && { id: 'ageSpouse2', label: 'Age (Spouse)' },
+        { id: 'rothSpouse1', label: info?.married && info?.filing ? 'Roth Conversion (You)' : 'Roth Conversion' },
+        info?.married && { id: 'rothSpouse2', label: 'Roth Conversion (Spouse)' },
+        { id: 'salary1', label: info?.married && info?.filing ? 'Salary (You)' : 'Salary' },
+        info?.married && { id: 'salary2', label: 'Salary (Spouse)' },
         { id: 'rentalIncome', label: 'Rental Income' },
         { id: 'interest', label: 'Interest / Dividends' },
         { id: 'capitalGains', label: 'Capital Gains' },
         { id: 'pension', label: 'Pension Withdrawals' },
-        { id: 'rmdSpouse1', label: 'RMD (You)' },
-        { id: 'rmdSpouse2', label: 'RMD (Spouse)' },
-        { id: 'ssSpouse1', label: 'Social Security (You)' },
-        { id: 'ssSpouse2', label: 'Social Security (Spouse)' },
+        { id: 'rmdSpouse1', label: 'RMD' }, // RMD (You) not included as per your original logic
+        info?.married && { id: 'rmdSpouse2', label: 'RMD (Spouse)' },
+        { id: 'ssSpouse1', label: 'Social Security' }, // Social Security (You) not included as per your original logic
+        info?.married && { id: 'ssSpouse2', label: 'Social Security (Spouse)' },
         { id: 'totalIncome', label: 'Total Ordinary Income' },
         { id: 'standardDeductions', label: 'Standard Deductions' },
         { id: 'taxableIncome', label: 'Taxable Ordinary Income' }
-    ];
+    ].filter(Boolean); // Remove false entries for spouse rows if not married
 
     const getStaticFieldValue = (id, year) => {
         switch (id) {
@@ -1174,15 +1206,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
 
     const bracketTitles = ['10%', '12%', '22%', '24%', '32%', '35%', '37%'];
-    const initialBrackets = [
-        { threshold: 23200, rate: 0.10, color: '#B3DDF2' }, // Light Sky Blue (brighter)
-        { threshold: 94300, rate: 0.12, color: '#81C1E3' }, // Light Blue (more saturated)
-        { threshold: 201050, rate: 0.22, color: '#4E9ACF' }, // Moderate Blue (more vivid)
-        { threshold: 383900, rate: 0.24, color: '#2D7DB7' }, // Darker Blue (more contrast)
-        { threshold: 487450, rate: 0.32, color: '#1E6091' }, // Dark Blue (more distinct)
-        { threshold: 731200, rate: 0.35, color: '#1B4F72' }, // Navy Blue (high contrast)
-        { threshold: Infinity, rate: 0.37, color: '#10375C' }  // Very Dark Blue (almost black)
-    ];
 
     const zeroTaxBracketDataByYear = Object.keys(taxableIncomes).map(year => {
         const bracketData = bracketTitles.map((title, index) => ({
@@ -1466,18 +1489,21 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                                         />
                                     </div>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <label className="flex-grow">Your Spouse’s IRA:</label>
-                                    <div className="w-32 ml-4">
-                                        <input
-                                            type="text"
-                                            name="ira2"
-                                            value={`$${formatNumberWithCommas(inputs1.ira2 || '')}`}
-                                            onChange={handleInputChange}
-                                            className="w-full h-8 text-right border border-gray-300 p-2 rounded"
-                                        />
+                                {info?.married && (
+                                    <div className="flex justify-between items-center">
+                                        <label className="flex-grow">Your Spouse’s IRA:</label>
+                                        <div className="w-32 ml-4">
+                                            <input
+                                                type="text"
+                                                name="ira2"
+                                                value={`$${formatNumberWithCommas(inputs1.ira2 || '')}`}
+                                                onChange={handleInputChange}
+                                                className="w-full h-8 text-right border border-gray-300 p-2 rounded"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
+                                )}
+
                                 <div className="flex justify-between items-center">
                                     <label className="flex-grow">Investment Return:</label>
                                     <div className="relative">
