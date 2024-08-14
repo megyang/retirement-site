@@ -6,8 +6,6 @@ import useSocialSecurityStore from "@/app/store/useSocialSecurityStore";
 import {
     calculateBenefitForYear,
     calculateXNPV,
-    formatNumberWithCommas,
-    calculateInflationAdjustedBenefit,
     calculateAge
 } from "../utils/calculations";
 import PiaModal from "@/app/modal/PiaModal";
@@ -216,29 +214,34 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
             const husbandAge = inputs.husbandAge + i;
             const wifeAge = inputs.wifeAge + i;
 
-            const husbandBenefit = calculateBenefitForYear({
-                age: husbandAge,
-                spouseAge: wifeAge,
-                lifeExpectancy: inputs.hLE,
-                spouseLifeExpectancy: inputs.wLE,
-                startAge: inputs.hSS,
-                benefitAgeOfWithdraw: benefitsBasedOnAge.husbandYearly,
-                lastYearBenefit: lastYearHusbandBenefit,
-                lastYearSpouseBenefit: lastYearWifeBenefit,
-                inflationRate,
-            });
+            // Determine if the user has started collecting Social Security
+            const husbandBenefit = info?.ss
+                ? new Decimal(inputs.hPIA).times(12).times(new Decimal(1).plus(inflationRate).pow(i))
+                : calculateBenefitForYear({
+                    age: husbandAge,
+                    spouseAge: wifeAge,
+                    lifeExpectancy: inputs.hLE,
+                    spouseLifeExpectancy: inputs.wLE,
+                    startAge: inputs.hSS,
+                    benefitAgeOfWithdraw: benefitsBasedOnAge.husbandYearly,
+                    lastYearBenefit: lastYearHusbandBenefit,
+                    lastYearSpouseBenefit: lastYearWifeBenefit,
+                    inflationRate,
+                });
 
-            const wifeBenefit = calculateBenefitForYear({
-                age: wifeAge,
-                spouseAge: husbandAge,
-                lifeExpectancy: inputs.wLE,
-                spouseLifeExpectancy: inputs.hLE,
-                startAge: inputs.wSS,
-                benefitAgeOfWithdraw: benefitsBasedOnAge.wifeYearly,
-                lastYearBenefit: lastYearWifeBenefit,
-                lastYearSpouseBenefit: lastYearHusbandBenefit,
-                inflationRate,
-            });
+            const wifeBenefit = info?.spouse_ss
+                ? new Decimal(inputs.wPIA).times(12).times(new Decimal(1).plus(inflationRate).pow(i))
+                : calculateBenefitForYear({
+                    age: wifeAge,
+                    spouseAge: husbandAge,
+                    lifeExpectancy: inputs.wLE,
+                    spouseLifeExpectancy: inputs.hLE,
+                    startAge: inputs.wSS,
+                    benefitAgeOfWithdraw: benefitsBasedOnAge.wifeYearly,
+                    lastYearBenefit: lastYearWifeBenefit,
+                    lastYearSpouseBenefit: lastYearHusbandBenefit,
+                    inflationRate,
+                });
 
             const totalBenefit = new Decimal(husbandBenefit).add(new Decimal(wifeBenefit));
             cumulativeTotal = cumulativeTotal.add(totalBenefit);

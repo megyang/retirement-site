@@ -65,6 +65,26 @@ export const calculateBenefitForYear = ({
     return calculateInflationAdjustedBenefit(lastYearBenefit, startAge, ageDecimal, inflationRate);
 };
 
+export const calculateInflationAdjustedBenefit = (benefit, startAge, currentAge, inflationRate) => {
+    const validBenefit = benefit !== null ? benefit : 0;
+    const validStartAge = startAge !== null ? startAge : 0;
+    const validCurrentAge = currentAge !== null ? currentAge : 0;
+    const validInflationRate = inflationRate !== null ? inflationRate : 0.02;
+
+    if (validCurrentAge < validStartAge) {
+        return new Decimal(0);
+    }
+
+    const yearsSinceStart = validCurrentAge - validStartAge;
+    console.log("yearsSinceStart", yearsSinceStart)
+    console.log("validBenefit", validBenefit)
+    const inflationFactor = new Decimal(1).plus(new Decimal(validInflationRate)).pow(yearsSinceStart);
+    console.log("inflationFactor", inflationFactor)
+
+    return new Decimal(validBenefit).times(inflationFactor);
+};
+
+
 export const calculateXNPV = (rate, cashFlows, dates) => {
     let xnpv = 0.0;
     for (let i = 0; i < cashFlows.length; i++) {
@@ -151,20 +171,6 @@ export const calculateTaxesForBrackets = (taxableIncome, inflationRate, currentY
     return taxesForBrackets;
 };
 
-export const calculateInflationAdjustedBenefit = (benefit, startAge, currentAge, inflationRate) => {
-    const validBenefit = benefit !== null ? benefit : 0;
-    const validStartAge = startAge !== null ? startAge : 0;
-    const validCurrentAge = currentAge !== null ? currentAge : 0;
-    const validInflationRate = inflationRate !== null ? inflationRate : 0.02;
-
-    if (validCurrentAge < validStartAge) {
-        return new Decimal(0);
-    }
-
-    const yearsSinceStart = validCurrentAge - validStartAge;
-    const inflationFactor = new Decimal(1).plus(new Decimal(validInflationRate/100)).pow(yearsSinceStart);
-    return new Decimal(validBenefit).times(inflationFactor);
-};
 
 export function calculateAge(month, year) {
     const birthDate = new Date(year, month - 1);

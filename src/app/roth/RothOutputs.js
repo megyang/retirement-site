@@ -28,6 +28,13 @@ import useInfoStore from "@/app/store/useInfoStore";
 Chart.register(ChartDataLabels);
 
 const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs1 }) => {
+    const { info, fetchInfo } = useInfoStore();
+
+    if (!info?.married || (info?.married && !info?.filing)) {
+        inputs.wLE = inputs.hLE
+        inputs.wifeAge = inputs.husbandAge
+    }
+
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
     const { socialSecurityBenefits } = useSocialSecurityStore();
@@ -39,7 +46,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
     const husbandLEYear = currentYear + inputs.hLE - inputs.husbandAge;
     const wifeLEYear = currentYear + inputs.wLE - inputs.wifeAge;
     const [isClient, setIsClient] = useState(false);
-    const { info, fetchInfo } = useInfoStore();
     useEffect(() => {
         if (user) {
             fetchInfo(supabaseClient, user.id); // Fetch info data when user is available
@@ -50,20 +56,18 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
         if (info) {
             // Calculate current age and spouse age if applicable
             const currentAge = calculateAge(info.month, info.year);
-            const spouseCurrentAge = calculateAge(info.spouse_month, info.spouse_year);
+            const spouseCurrentAge = info.married ? calculateAge(info.spouse_month, info.spouse_year) : calculateAge(info.month, info.year);
 
-            let maxLifeExpectancy, yearsToCover;
+            let yearsToCover;
 
             if (!info.married || (info.married && !info.filing)) {
                 // If not married or married but not filing jointly, use hLE only
-                maxLifeExpectancy = inputs.hLE;
                 yearsToCover = inputs.hLE - currentAge + 1;
             } else if (info.married && info.filing) {
                 // If married and filing jointly, consider both hLE and wLE
                 const yearsRemainingHusband = inputs.hLE - currentAge;
                 const yearsRemainingWife = inputs.wLE - spouseCurrentAge;
                 yearsToCover = Math.max(yearsRemainingHusband, yearsRemainingWife) + 1;
-                maxLifeExpectancy = Math.max(inputs.hLE, inputs.wLE);
             }
 
             // Update staticFields to include ages from now until the latest life expectancy
@@ -74,12 +78,12 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                 updatedStaticFields[year] = {
                     year: year,
                     ageSpouse1: ageSpouse1,
-                    ageSpouse2: info.married ? ageSpouse2 : null,
+                    ageSpouse2: ageSpouse2,
                 };
             }
             setStaticFields(updatedStaticFields);
         }
-    }, [info, inputs.hLE, inputs.wLE]);
+    }, [info, inputs]);
 
     const [editableFields, setEditableFields] = useState(() => {
         const fields = {};
@@ -98,6 +102,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
         return fields;
     });
     const apiRef = useGridApiRef();
+    console.log(editableFields)
 
     const [savedVersions, setSavedVersions] = useState([
         { name: "Scenario 1" },
@@ -193,18 +198,49 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                 transformed[item.year] = {};
             }
             transformed[item.year] = {
-                rothSpouse1: item.roth_1 || 0,
-                rothSpouse2: item.roth_2 || 0,
+                rothSpouse1: item.rothSpouse1 || 0,
+                rothSpouse2: item.rothSpouse2 || 0,
                 salary1: item.salary1 || 0,
                 salary2: item.salary2 || 0,
-                rentalIncome: item.rental_income || 0,
+                rentalIncome: item.rentalIncome || 0,
                 interest: item.interest || 0,
-                capitalGains: item.capital_gains || 0,
+                capitalGains: item.capitalGains || 0,
                 pension: item.pension || 0
             };
         });
         return transformed;
     };
+    const propagateInputsToScenarios = async () => {
+        try {
+            const scenarios = ['Scenario 2', 'Scenario 3'];
+
+            for (const scenario of scenarios) {
+                await supabaseClient
+                    .from('roth')
+                    .update({
+                        ira1: inputs1.ira1,
+                        ira2: inputs1.ira2,
+                        roi: inputs1.roi,
+                        beneficiary_tax_rate: inputs1.beneficiary_tax_rate,
+                    })
+                    .eq('user_id', user.id)
+                    .eq('version_name', scenario);
+            }
+        } catch (error) {
+            console.error('Error propagating inputs to other scenarios:', error);
+        }
+    };
+    useEffect(() => {
+        if (selectedVersion === 'Scenario 1' && triggerSave) {
+            propagateInputsToScenarios();
+        }
+    }, [inputs1, selectedVersion, triggerSave]);
+
+    useEffect(() => {
+        if (selectedVersion === 'Scenario 1' && triggerSave) {
+            propagateInputsToScenarios();
+        }
+    }, [inputs1, selectedVersion, triggerSave]);
 
     const propagateUpdatesToScenarios = async (updatedData, fieldsToUpdate) => {
         try {
@@ -338,6 +374,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
     const iraDetails3 = iraD3.iraDetails
 
     staticFields = {};
+    console.log(inputs)
     for (let year = currentYear, ageSpouse1 = inputs.husbandAge, ageSpouse2 = inputs.wifeAge;
          year <= currentYear + maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge);
          year++, ageSpouse1++, ageSpouse2++) {
@@ -379,13 +416,13 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                 }
 
                 loadedEditableFields[item.year] = {
-                    rothSpouse1: item.roth_1 || 0,
-                    rothSpouse2: item.roth_2 || 0,
+                    rothSpouse1: item.rothSpouse1 || 0,
+                    rothSpouse2: item.rothSpouse2 || 0,
                     salary1: item.salary1 || 0,
                     salary2: item.salary2 || 0,
-                    rentalIncome: item.rental_income || 0,
+                    rentalIncome: item.rentalIncome || 0,
                     interest: item.interest || 0,
-                    capitalGains: item.capital_gains || 0,
+                    capitalGains: item.capitalGains || 0,
                     pension: item.pension || 0
                 };
 
@@ -425,7 +462,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
             }
 
             setEditableFields(loadedEditableFields);
-            setInputs1(loadedInputs1);
         }
     };
 
@@ -449,11 +485,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                 user_id: user.id,
                 version_name: versionName,
                 year: year,
-                rental_income: editableFields[year].rentalIncome,
-                capital_gains: editableFields[year].capitalGains,
+                rentalIncome: editableFields[year].rentalIncome,
+                capitalGains: editableFields[year].capitalGains,
                 pension: editableFields[year].pension,
-                roth_1: editableFields[year].rothSpouse1,
-                roth_2: editableFields[year].rothSpouse2,
+                rothSpouse1: editableFields[year].rothSpouse1,
+                rothSpouse2: editableFields[year].rothSpouse2,
                 salary1: editableFields[year].salary1,
                 salary2: editableFields[year].salary2,
                 interest: editableFields[year].interest,
@@ -516,11 +552,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                             user_id: user.id,
                             version_name: scenario,
                             year: year,
-                            rental_income: 0,
-                            capital_gains: 0,
+                            rentalIncome: 0,
+                            capitalGains: 0,
                             pension: 0,
-                            roth_1: 0,
-                            roth_2: 0,
+                            rothSpouse1: 0,
+                            rothSpouse2: 0,
                             salary1: 0,
                             salary2: 0,
                             interest: 0,
@@ -930,7 +966,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
             });
 
             // Fields to propagate
-            const fieldsToPropagate = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
+            const fieldsToPropagate = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains'];
             const selectedRows = Array.from(new Set(selectedCellParams.map(param => param.id))); // Convert Set to Array
             if (selectedRows.some(rowId => fieldsToPropagate.includes(rowId))) {
                 await propagateUpdatesToScenarios(updatedData, fieldsToPropagate);
@@ -1012,7 +1048,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
         };
     }, []);
 
-
+    console.log("this is static", staticFields);
     const columns = [
         { field: 'label', headerName: 'Label', width: 200, headerAlign: 'center', pinned: 'left' },
         ...Object.keys(staticFields).map((year) => ({
@@ -1518,6 +1554,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                                             value={`${(inputs1.beneficiary_tax_rate) * 100}`}
                                             onChange={handleInputChange}
                                             className="w-full h-8 text-right border border-gray-300 p-2 rounded pr-6"
+                                            disabled={selectedVersion !== 'Scenario 1'} // Disable if not Scenario 1
                                         />
                                         <span className="absolute right-2 top-1">%</span>
                                     </div>
@@ -1531,6 +1568,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                                             value={`$${formatNumberWithCommas(inputs1.ira1 || '')}`}
                                             onChange={handleInputChange}
                                             className="w-full h-8 text-right border border-gray-300 p-2 rounded"
+                                            disabled={selectedVersion !== 'Scenario 1'} // Disable if not Scenario 1
                                         />
                                     </div>
                                 </div>
@@ -1544,11 +1582,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                                                 value={`$${formatNumberWithCommas(inputs1.ira2 || '')}`}
                                                 onChange={handleInputChange}
                                                 className="w-full h-8 text-right border border-gray-300 p-2 rounded"
+                                                disabled={selectedVersion !== 'Scenario 1'} // Disable if not Scenario 1
                                             />
                                         </div>
                                     </div>
                                 )}
-
                                 <div className="flex justify-between items-center">
                                     <label className="flex-grow">Investment Return:</label>
                                     <div className="relative">
@@ -1558,6 +1596,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                                             value={`${(inputs1.roi) * 100}`}
                                             onChange={handleInputChange}
                                             className="w-32 h-8 text-right border border-gray-300 p-2 rounded pr-6"
+                                            disabled={selectedVersion !== 'Scenario 1'} // Disable if not Scenario 1
                                         />
                                         <span className="absolute right-2 top-1">%</span>
                                     </div>
