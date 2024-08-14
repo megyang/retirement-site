@@ -286,8 +286,13 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
     },[triggerSave, selectedVersion])
 
 
+
 // ROTH CALCULATIONS START -----------
+    if (!info?.married || (info?.married && !info?.filing)) {
+        inputs1.ira2 = 0;
+    }
     const { ira1, ira2, roi } = inputs1;
+
     const {iraDetails, iraDetailsZeroRoth} = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE, editableFields);
     const iraD1 = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE, editableScenario1);
     const iraD2 = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE, editableScenario2);
@@ -358,6 +363,13 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
                 };
             });
 
+            // Check marital status and adjust fields accordingly
+            if (!info?.married || (info?.married && !info?.filing)) {
+                Object.keys(loadedEditableFields).forEach(year => {
+                    loadedEditableFields[year].rothSpouse2 = 0;
+                    loadedEditableFields[year].salary2 = 0;
+                });
+            }
 
             // Initialize missing years or fields in editableFields
             const currentYear = new Date().getFullYear();
@@ -381,7 +393,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             setInputs1(loadedInputs1);
         }
     };
-
 
     const saveVersion = async (versionName) => {
         if (!user) {

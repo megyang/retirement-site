@@ -198,8 +198,13 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
     });
 
     useEffect(() => {
-        const maxLifeExpectancy = Math.max(inputs.hLE, inputs.wLE);
-        const yearsToCover = maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge) + 1;
+        const maxLifeExpectancy = info?.married
+            ? Math.max(inputs.hLE, inputs.wLE)
+            : inputs.hLE;
+
+        const yearsToCover = info?.married
+            ? maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge) + 1
+            : maxLifeExpectancy - inputs.husbandAge + 1;
 
         let lastYearHusbandBenefit = 0;
         let lastYearWifeBenefit = 0;
