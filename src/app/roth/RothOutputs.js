@@ -7,6 +7,7 @@ import useSocialSecurityStore from "@/app/store/useSocialSecurityStore";
 import BarChart from "@/app/components/BarChart";
 import useRmdCalculations from "@/app/hooks/useRmdCalculations";
 import {
+    calculateAge,
     calculateTaxesForBrackets,
     calculateXNPV,
     findRmdByYear,
@@ -26,7 +27,7 @@ import useInfoStore from "@/app/store/useInfoStore";
 
 Chart.register(ChartDataLabels);
 
-const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
+const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs1 }) => {
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
     const { socialSecurityBenefits } = useSocialSecurityStore();
@@ -44,7 +45,41 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             fetchInfo(supabaseClient, user.id); // Fetch info data when user is available
         }
     }, [user]);
-    console.log("Info:", info);
+
+    useEffect(() => {
+        if (info) {
+            // Calculate current age and spouse age if applicable
+            const currentAge = calculateAge(info.month, info.year);
+            const spouseCurrentAge = calculateAge(info.spouse_month, info.spouse_year);
+
+            let maxLifeExpectancy, yearsToCover;
+
+            if (!info.married || (info.married && !info.filing)) {
+                // If not married or married but not filing jointly, use hLE only
+                maxLifeExpectancy = inputs.hLE;
+                yearsToCover = inputs.hLE - currentAge + 1;
+            } else if (info.married && info.filing) {
+                // If married and filing jointly, consider both hLE and wLE
+                const yearsRemainingHusband = inputs.hLE - currentAge;
+                const yearsRemainingWife = inputs.wLE - spouseCurrentAge;
+                yearsToCover = Math.max(yearsRemainingHusband, yearsRemainingWife) + 1;
+                maxLifeExpectancy = Math.max(inputs.hLE, inputs.wLE);
+            }
+
+            // Update staticFields to include ages from now until the latest life expectancy
+            const updatedStaticFields = {};
+            for (let year = currentYear, ageSpouse1 = currentAge, ageSpouse2 = spouseCurrentAge;
+                 year <= currentYear + yearsToCover - 1;
+                 year++, ageSpouse1++, ageSpouse2++) {
+                updatedStaticFields[year] = {
+                    year: year,
+                    ageSpouse1: ageSpouse1,
+                    ageSpouse2: info.married ? ageSpouse2 : null,
+                };
+            }
+            setStaticFields(updatedStaticFields);
+        }
+    }, [info, inputs.hLE, inputs.wLE]);
 
     const [editableFields, setEditableFields] = useState(() => {
         const fields = {};
@@ -979,7 +1014,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
 
 
     const columns = [
-        { field: 'label', headerName: 'Label', width: 200, headerAlign: 'center', pinned: 'left' },  // Pin the 'Label' column and set width to 250px
+        { field: 'label', headerName: 'Label', width: 200, headerAlign: 'center', pinned: 'left' },
         ...Object.keys(staticFields).map((year) => ({
             field: year.toString(),
             headerName: year.toString(),
@@ -1004,7 +1039,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
             },
         }))
     ];
-
 
     const rows = transposedRows.map(row => {
         const newRow = { id: row.id, label: row.label };
@@ -1279,7 +1313,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setInputs1 }) => {
         responsive: true,
         plugins: {
             datalabels: {
-                display: false // Disable datalabels for the Tax Brackets chart
+                display: false
             },
 
             tooltip: {
