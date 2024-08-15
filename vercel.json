@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/app/:path*",
-      "destination": "https://savewellfinance.com/app/:path*"
+      "source": "/calculators/(.*)",
+      "destination": "/$1"
     }
   ]
 }
