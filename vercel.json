@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/calculators/(.*)",
-      "destination": "/$1"
+      "source": "/calculators/:path*",
+      "destination": "/:path*"
     }
   ]
 }
