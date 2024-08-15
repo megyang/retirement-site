@@ -29,22 +29,24 @@ Chart.register(ChartDataLabels);
 
 const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs1 }) => {
     const { info, fetchInfo } = useInfoStore();
-
+    let wLE = inputs.wLE
+    const hLE = inputs.hLE
+    let wifeAge = inputs.wifeAge
+    const husbandAge = inputs.husbandAge
     if (!info?.married || (info?.married && !info?.filing)) {
-        inputs.wLE = inputs.hLE
-        inputs.wifeAge = inputs.husbandAge
+        wLE = inputs.hLE
+        wifeAge = inputs.husbandAge
     }
-
     const supabaseClient = useSupabaseClient();
     const { user } = useUser();
     const { socialSecurityBenefits } = useSocialSecurityStore();
     const { onOpen } = useAuthModal();
     const currentYear = new Date().getFullYear();
-    const maxLifeExpectancy = Math.max(inputs.hLE, inputs.wLE);
-    const age1 = inputs.husbandAge;
-    const age2 = inputs.wifeAge;
-    const husbandLEYear = currentYear + inputs.hLE - inputs.husbandAge;
-    const wifeLEYear = currentYear + inputs.wLE - inputs.wifeAge;
+    const maxLifeExpectancy = Math.max(hLE, wLE);
+    const age1 = husbandAge;
+    const age2 = wifeAge;
+    const husbandLEYear = currentYear + hLE - husbandAge;
+    const wifeLEYear = currentYear + wLE - wifeAge;
     const [isClient, setIsClient] = useState(false);
     useEffect(() => {
         if (user) {
@@ -62,11 +64,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
 
             if (!info.married || (info.married && !info.filing)) {
                 // If not married or married but not filing jointly, use hLE only
-                yearsToCover = inputs.hLE - currentAge + 1;
+                yearsToCover = hLE - currentAge + 1;
             } else if (info.married && info.filing) {
                 // If married and filing jointly, consider both hLE and wLE
-                const yearsRemainingHusband = inputs.hLE - currentAge;
-                const yearsRemainingWife = inputs.wLE - spouseCurrentAge;
+                const yearsRemainingHusband = hLE - currentAge;
+                const yearsRemainingWife = wLE - spouseCurrentAge;
                 yearsToCover = Math.max(yearsRemainingHusband, yearsRemainingWife) + 1;
             }
 
@@ -364,10 +366,10 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
     }
     const { ira1, ira2, roi } = inputs1;
 
-    const {iraDetails, iraDetailsZeroRoth} = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE, editableFields);
-    const iraD1 = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE, editableScenario1);
-    const iraD2 = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE, editableScenario2);
-    const iraD3 = useRmdCalculations(age1, age2, ira1, ira2, roi, inputs.hLE, inputs.wLE, editableScenario3);
+    const {iraDetails, iraDetailsZeroRoth} = useRmdCalculations(age1, age2, ira1, ira2, roi, hLE, wLE, editableFields);
+    const iraD1 = useRmdCalculations(age1, age2, ira1, ira2, roi, hLE, wLE, editableScenario1);
+    const iraD2 = useRmdCalculations(age1, age2, ira1, ira2, roi, hLE, wLE, editableScenario2);
+    const iraD3 = useRmdCalculations(age1, age2, ira1, ira2, roi, hLE, wLE, editableScenario3);
 
     const iraDetails1 = iraD1.iraDetails
     const iraDetails2 = iraD2.iraDetails
@@ -375,8 +377,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
 
     staticFields = {};
     console.log(inputs)
-    for (let year = currentYear, ageSpouse1 = inputs.husbandAge, ageSpouse2 = inputs.wifeAge;
-         year <= currentYear + maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge);
+    for (let year = currentYear, ageSpouse1 = inputs.husbandAge, ageSpouse2 = wifeAge;
+         year <= currentYear + maxLifeExpectancy - Math.min(inputs.husbandAge, wifeAge);
          year++, ageSpouse1++, ageSpouse2++) {
         staticFields[year] = {
             year: year,
@@ -411,8 +413,18 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
 
             data.forEach(item => {
                 if (!loadedEditableFields[item.year]) {
-                    loadedEditableFields[item.year] = {};
+                    loadedEditableFields[item.year] = {
+                        rothSpouse1: 0,
+                        rothSpouse2: 0,
+                        salary1: 0,
+                        salary2: 0,
+                        rentalIncome: 0,
+                        interest: 0,
+                        capitalGains: 0,
+                        pension: 0
+                    };
                 }
+
 
                 loadedEditableFields[item.year] = {
                     rothSpouse1: item.rothSpouse1 || 0,
@@ -435,14 +447,14 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
 
             // Initialize missing years or fields in editableFields
             const currentYear = new Date().getFullYear();
-            const maxLifeExpectancy = Math.max(inputs.hLE, inputs.wLE);
-            for (let year = currentYear; year <= currentYear + (maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge)); year++) {
+            const maxLifeExpectancy = Math.max(hLE, wLE);
+            for (let year = currentYear; year <= currentYear + (maxLifeExpectancy - Math.min(inputs.husbandAge, wifeAge)); year++) {
                 if (!loadedEditableFields[year]) {
                     loadedEditableFields[year] = {
                         rothSpouse1: 0,
-                        rothSpouse2: (info?.married && info?.filing) ? 0 : 0,
+                        rothSpouse2: 0,
                         salary1: 0,
-                        salary2: (info?.married && info?.filing) ? 0 : 0,
+                        salary2: 0,
                         rentalIncome: 0,
                         interest: 0,
                         capitalGains: 0,
@@ -539,7 +551,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                 if (!uniqueVersions.some(version => version.name === scenario)) {
                     // Initialize default scenario
                     const dataToSave = [];
-                    for (let year = currentYear; year <= currentYear + (maxLifeExpectancy - Math.min(inputs.husbandAge, inputs.wifeAge)); year++) {
+                    for (let year = currentYear; year <= currentYear + (maxLifeExpectancy - Math.min(inputs.husbandAge, wifeAge)); year++) {
                         dataToSave.push({
                             user_id: user.id,
                             version_name: scenario,
@@ -1074,7 +1086,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
             if (row.id.startsWith('age') || row.id.startsWith('rmd') || row.id.startsWith('ss') || row.id === 'totalIncome' || row.id === 'standardDeductions' || row.id === 'taxableIncome') {
                 newRow[year] = getStaticFieldValue(row.id, year);
             } else {
-                newRow[year] = editableFields[year][row.id] || 0;
+                newRow[year] = editableFields[year]?.[row.id] || 0; // Use optional chaining
             }
         });
         return newRow;
@@ -1268,13 +1280,13 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
         setNpvLifetimeTax(npvLifetimeTaxValue);
 
         // For Beneficiary Tax Paid NPV
-        const futureYear = currentYear + Math.max(inputs.hLE - age1, inputs.wLE - age2);
+        const futureYear = currentYear + Math.max(hLE - age1, wLE - age2);
         const cashFlowBeneficiaryTax = new Decimal(beneficiaryTaxPaid);
         const dateBeneficiaryTax = new Date(futureYear, 0, 1);
         const npvBeneficiaryTaxValue = calculateXNPV(inputs.roi / 100, [cashFlowBeneficiaryTax], [dateBeneficiaryTax]);
         setNpvBeneficiaryTax(npvBeneficiaryTaxValue);
 
-    }, [inputs.roi, taxableIncomes, beneficiaryTaxPaid, inputs1, currentYear, age1, inputs.hLE, age2, inputs.wLE]);
+    }, [inputs.roi, taxableIncomes, beneficiaryTaxPaid, inputs1, currentYear, age1, hLE, age2, wLE]);
 
 
     const bracketTitles = ['10%', '12%', '22%', '24%', '32%', '35%', '37%'];
