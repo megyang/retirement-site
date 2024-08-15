@@ -877,19 +877,19 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
     const totalTaxesPaidWithZeroRoth = Math.round(calculateTotalTaxesPaid(totalLifetimeTaxPaidWithZeroRoth, beneficiaryTaxPaidWithZeroRoth)).toLocaleString();
     const transposedRows = [
         { id: 'ageSpouse1', label: info?.married && info?.filing ? 'Age (You)' : 'Age' },
-        info?.married && { id: 'ageSpouse2', label: 'Age (Spouse)' },
+        (info?.married && info?.filing) && { id: 'ageSpouse2', label: 'Age (Spouse)' },
         { id: 'rothSpouse1', label: info?.married && info?.filing ? 'Roth Conversion (You)' : 'Roth Conversion' },
-        info?.married && { id: 'rothSpouse2', label: 'Roth Conversion (Spouse)' },
+        (info?.married && info?.filing) && { id: 'rothSpouse2', label: 'Roth Conversion (Spouse)' },
         { id: 'salary1', label: info?.married && info?.filing ? 'Salary (You)' : 'Salary' },
-        info?.married && { id: 'salary2', label: 'Salary (Spouse)' },
+        (info?.married && info?.filing) && { id: 'salary2', label: 'Salary (Spouse)' },
         { id: 'rentalIncome', label: 'Rental Income' },
         { id: 'interest', label: 'Interest / Dividends' },
         { id: 'capitalGains', label: 'Capital Gains' },
         { id: 'pension', label: 'Pension Withdrawals' },
         { id: 'rmdSpouse1', label: 'RMD' }, // RMD (You) not included as per your original logic
-        info?.married && { id: 'rmdSpouse2', label: 'RMD (Spouse)' },
+        (info?.married && info?.filing) && { id: 'rmdSpouse2', label: 'RMD (Spouse)' },
         { id: 'ssSpouse1', label: 'Social Security' }, // Social Security (You) not included as per your original logic
-        info?.married && { id: 'ssSpouse2', label: 'Social Security (Spouse)' },
+        (info?.married && info?.filing) && { id: 'ssSpouse2', label: 'Social Security (Spouse)' },
         { id: 'totalIncome', label: 'Total Ordinary Income' },
         { id: 'standardDeductions', label: 'Standard Deductions' },
         { id: 'taxableIncome', label: 'Taxable Ordinary Income' }
@@ -1080,7 +1080,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
         return newRow;
     });
 
-    const editableRowIds = ['rothSpouse1', 'rothSpouse2', 'salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
     const isCellEditable = (params) => {
         const scenario = selectedVersion;
         const fieldsToDisable = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
@@ -1564,7 +1563,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                                         />
                                     </div>
                                 </div>
-                                {info?.married && (
+                                {(info?.married && info?.filing) && (
                                     <div className="flex justify-between items-center">
                                         <label className="flex-grow">Your Spouse’s IRA:</label>
                                         <div className="w-32 ml-4">
