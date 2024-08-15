@@ -78,7 +78,7 @@ export const calculateInflationAdjustedBenefit = (benefit, startAge, currentAge,
     const yearsSinceStart = validCurrentAge - validStartAge;
     console.log("yearsSinceStart", yearsSinceStart)
     console.log("validBenefit", validBenefit)
-    const inflationFactor = new Decimal(1).plus(new Decimal(validInflationRate)).pow(yearsSinceStart);
+    const inflationFactor = new Decimal(1).plus(new Decimal(validInflationRate));
     console.log("inflationFactor", inflationFactor)
 
     return new Decimal(validBenefit).times(inflationFactor);

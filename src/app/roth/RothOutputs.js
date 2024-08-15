@@ -403,11 +403,10 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
         } else {
             const loadedEditableFields = {};
             let loadedInputs1 = {
-                ira1: 0,
-                ira2: 0,
-                roi: 0,
-                inflation: 0,
-                beneficiary_tax_rate: 0
+                ira1: 800000,
+                ira2: 1000000,
+                roi: 0.03,
+                beneficiary_tax_rate: 0.24
             };
 
             data.forEach(item => {
@@ -417,9 +416,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
 
                 loadedEditableFields[item.year] = {
                     rothSpouse1: item.rothSpouse1 || 0,
-                    rothSpouse2: item.rothSpouse2 || 0,
+                    rothSpouse2: (info?.married && info?.filing) ? (item.rothSpouse2 || 0) : 0,
                     salary1: item.salary1 || 0,
-                    salary2: item.salary2 || 0,
+                    salary2: (info?.married && info?.filing) ? (item.salary2 || 0) : 0,
                     rentalIncome: item.rentalIncome || 0,
                     interest: item.interest || 0,
                     capitalGains: item.capitalGains || 0,
@@ -430,18 +429,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                     ira1: item.ira1 || 0,
                     ira2: item.ira2 || 0,
                     roi: item.roi || 0,
-                    inflation: item.inflation || 0,
                     beneficiary_tax_rate: item.beneficiary_tax_rate || 0
                 };
             });
-
-            // Check marital status and adjust fields accordingly
-            if (!info?.married || (info?.married && !info?.filing)) {
-                Object.keys(loadedEditableFields).forEach(year => {
-                    loadedEditableFields[year].rothSpouse2 = 0;
-                    loadedEditableFields[year].salary2 = 0;
-                });
-            }
 
             // Initialize missing years or fields in editableFields
             const currentYear = new Date().getFullYear();
@@ -450,9 +440,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                 if (!loadedEditableFields[year]) {
                     loadedEditableFields[year] = {
                         rothSpouse1: 0,
-                        rothSpouse2: 0,
+                        rothSpouse2: (info?.married && info?.filing) ? 0 : 0,
                         salary1: 0,
-                        salary2: 0,
+                        salary2: (info?.married && info?.filing) ? 0 : 0,
                         rentalIncome: 0,
                         interest: 0,
                         capitalGains: 0,
@@ -462,8 +452,10 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
             }
 
             setEditableFields(loadedEditableFields);
+            setInputs1(loadedInputs1);
         }
     };
+
 
     const saveVersion = async (versionName) => {
         if (!user) {

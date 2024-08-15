@@ -83,7 +83,7 @@ function UserInfo() {
 
         // Validate spouse details if married
         if (married) {
-            if (!filing) {
+            if (filing === null || filing === undefined) {
                 newErrors.filing = "This field is required.";
             }
 

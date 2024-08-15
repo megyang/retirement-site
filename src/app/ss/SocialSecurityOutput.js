@@ -106,7 +106,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
         }
         const { name, value } = e.target;
         if (name === 'inflation') {
-            const percentageValue = parseFloat(value) / 100;
+            const percentageValue = value === '' || isNaN(parseFloat(value)) ? 0 : parseFloat(value) / 100;
             const newInputs = {
                 ...inputs,
                 [name]: percentageValue
