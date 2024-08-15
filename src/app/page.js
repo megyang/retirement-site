@@ -10,7 +10,13 @@ export default function Page() {
     return (
         <main>
             <MyUserContextProvider>
-                <LandingPage />
+                <div style={{ width: '100%', height: '100vh', overflow: 'hidden' }}>
+                    <iframe
+                        src="https://likely-reflect-583404.framer.app/"
+                        style={{ width: '100%', height: '100vh', border: 'none' }}
+                        title="Framer Landing Page"
+                    />
+                </div>
             </MyUserContextProvider>
         </main>
     );
