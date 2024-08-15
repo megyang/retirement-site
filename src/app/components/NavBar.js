@@ -31,13 +31,6 @@ const NavBar = () => {
                             </div>
                         </Link>
                     </li>
-                    <li>
-                        <Link href="/tutorials" passHref>
-                            <div className={`block px-4 py-2 ${pathname === '/roth' ? 'font-bold' : ''}`}>
-                                Tutorials
-                            </div>
-                        </Link>
-                    </li>
 
                 </ul>
             </nav>

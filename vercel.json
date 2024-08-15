@@ -4,5 +4,12 @@
       "source": "/calculators/:path*",
       "destination": "/:path*"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "https://savewellfinance.framer.website/",
+      "permanent": true
+    }
   ]
 }
