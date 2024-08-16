@@ -1359,22 +1359,24 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
             tooltip: {
                 callbacks: {
                     label: function(context) {
-                        const datasetIndex = context.datasetIndex; // Index of the dataset (e.g., 0 for '10%', 1 for '12%', etc.)
-                        const dataIndex = context.dataIndex; // Index of the data point within the dataset
+                        const datasetIndex = context.datasetIndex;
+                        const dataIndex = context.dataIndex;
 
-                        // Access the correct data for the year and the specific tax bracket
-                        const yearData = dataForChart[dataIndex]; // Corresponds to the specific year
-                        const bracketData = yearData.data[datasetIndex]; // Corresponds to the specific tax bracket
+                        const yearData = dataForChart[dataIndex];
+                        const bracketData = yearData.data[datasetIndex];
 
-                        // Create the tooltip label
-                        let label = `${bracketData.label}: Filled: $${parseInt(bracketData.filled, 10).toLocaleString()}, Remaining: $${parseInt(bracketData.remaining, 10).toLocaleString()}`;
-                        return label;
+                        // Return an array of strings for multiline tooltip
+                        return [
+                            `${bracketData.label}`,
+                            `Filled: $${parseInt(bracketData.filled, 10).toLocaleString()}`,
+                            `Remaining: $${parseInt(bracketData.remaining, 10).toLocaleString()}`
+                        ];
                     }
                 }
             },
             legend: {
                 position: 'bottom',
-                onClick: null // Disable clicking on the legend to show/hide datasets
+                onClick: null
             },
         },
         scales: {
@@ -1394,7 +1396,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
             },
         },
     };
-
     const createTableData = (details) => {
         const rows = {
             startingValue: { label: 'Starting Value', values: {} },
