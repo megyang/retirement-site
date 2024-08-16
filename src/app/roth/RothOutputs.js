@@ -1348,21 +1348,26 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
     });
 
     const dataForChart = taxBracketDataByYear;
+    console.log(dataForChart);
+
     const taxBarChartOptions = {
         responsive: true,
         plugins: {
             datalabels: {
                 display: false
             },
-
             tooltip: {
                 callbacks: {
-                    label: function (context) {
-                        let label = context.dataset.label || '';
-                        if (label) {
-                            label += ': ';
-                        }
-                        label += `$${parseInt(context.raw, 10).toLocaleString()}`;
+                    label: function(context) {
+                        const datasetIndex = context.datasetIndex; // Index of the dataset (e.g., 0 for '10%', 1 for '12%', etc.)
+                        const dataIndex = context.dataIndex; // Index of the data point within the dataset
+
+                        // Access the correct data for the year and the specific tax bracket
+                        const yearData = dataForChart[dataIndex]; // Corresponds to the specific year
+                        const bracketData = yearData.data[datasetIndex]; // Corresponds to the specific tax bracket
+
+                        // Create the tooltip label
+                        let label = `${bracketData.label}: Filled: $${parseInt(bracketData.filled, 10).toLocaleString()}, Remaining: $${parseInt(bracketData.remaining, 10).toLocaleString()}`;
                         return label;
                     }
                 }
@@ -1382,7 +1387,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
             y: {
                 stacked: true,
                 ticks: {
-                    callback: function (value) {
+                    callback: function(value) {
                         return `$${value.toLocaleString()}`;
                     },
                 },
