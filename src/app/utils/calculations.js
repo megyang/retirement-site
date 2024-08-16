@@ -130,16 +130,43 @@ export const calculateTaxableIncomes = (staticFields, iraDetails, findSsBenefits
 };
 
 
-export const calculateTaxesForBrackets = (taxableIncome, inflationRate, currentYear, taxYear) => {
-    const brackets = [
-        { threshold: 23200, rate: 0.10 },
-        { threshold: 94300, rate: 0.12 },
-        { threshold: 201050, rate: 0.22 },
-        { threshold: 383900, rate: 0.24 },
-        { threshold: 487450, rate: 0.32 },
-        { threshold: 731200, rate: 0.35 },
-        { threshold: Infinity, rate: 0.37 }
-    ];
+export const calculateTaxesForBrackets = (taxableIncome, inflationRate, currentYear, taxYear, married, filing) => {
+    let brackets;
+
+    if (married && filing) {
+        // Married and filing jointly
+        brackets = [
+            { threshold: 23200, rate: 0.10 },
+            { threshold: 94300, rate: 0.12 },
+            { threshold: 201050, rate: 0.22 },
+            { threshold: 383900, rate: 0.24 },
+            { threshold: 487450, rate: 0.32 },
+            { threshold: 731200, rate: 0.35 },
+            { threshold: Infinity, rate: 0.37 }
+        ];
+    } else if (!married) {
+        // Not married
+        brackets = [
+            { threshold: 11600, rate: 0.10 },
+            { threshold: 47150, rate: 0.12 },
+            { threshold: 100525, rate: 0.22 },
+            { threshold: 191950, rate: 0.24 },
+            { threshold: 243725, rate: 0.32 },
+            { threshold: 609350, rate: 0.35 },
+            { threshold: Infinity, rate: 0.37 }
+        ];
+    } else if (married && !filing) {
+        // Married and filing separately
+        brackets = [
+            { threshold: 11600, rate: 0.10 },
+            { threshold: 47150, rate: 0.12 },
+            { threshold: 100525, rate: 0.22 },
+            { threshold: 191950, rate: 0.24 },
+            { threshold: 243725, rate: 0.32 },
+            { threshold: 365600, rate: 0.35 },
+            { threshold: Infinity, rate: 0.37 }
+        ];
+    }
 
     let taxesForBrackets = {
         '10%': 0,

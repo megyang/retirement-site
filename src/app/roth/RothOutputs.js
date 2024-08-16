@@ -772,7 +772,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
     const calculateTotalLifetimeTaxPaid = (taxableIncomes, inflation, currentYear) => {
         let totalSum = 0;
         Object.keys(taxableIncomes).forEach((year) => {
-            const taxesForBrackets = calculateTaxesForBrackets(Math.max(0, taxableIncomes[year]), inflation, currentYear, year);
+            const taxesForBrackets = calculateTaxesForBrackets(Math.max(0, taxableIncomes[year]), inflation, currentYear, year, info?.married, info?.filing);
             const totalTax = Object.values(taxesForBrackets).reduce((sum, tax) => sum + tax, 0);
             totalSum += totalTax;
         });
