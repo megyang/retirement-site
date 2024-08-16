@@ -24,9 +24,11 @@ const useReferenceTable = (inputs) => {
 
                 const hBenefit = new Decimal(hPIA || 0).times(percentageOfPIA).times(inflationFactor).dividedBy(100);
                 const wBenefit = new Decimal(wPIA || 0).times(spousePIA).times(inflationFactor).dividedBy(100);
-
                 const husbandMonthly = Decimal.max(hBenefit, wBenefit);
-                const wifeMonthly = Decimal.max(hBenefit, wBenefit);
+
+                const hBenefit1 = new Decimal(hPIA || 0).times(spousePIA).times(inflationFactor).dividedBy(100);
+                const wBenefit1 = new Decimal(wPIA || 0).times(percentageOfPIA).times(inflationFactor).dividedBy(100);
+                const wifeMonthly = Decimal.max(hBenefit1, wBenefit1);
 
                 newData.push({
                     age,

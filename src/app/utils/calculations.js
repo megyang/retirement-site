@@ -34,6 +34,7 @@ export const getSpouse = (age) => {
     return referenceTable[age] || new Decimal(50.0);
 };
 
+
 export const calculateBenefitForYear = ({
                                             age,
                                             spouseAge,
@@ -44,7 +45,6 @@ export const calculateBenefitForYear = ({
                                             lastYearBenefit,
                                             lastYearSpouseBenefit,
                                             inflationRate,
-                                            isUser,  // New parameter to differentiate between the user and the spouse
                                         }) => {
     const ageDecimal = new Decimal(age);
     const spouseAgeDecimal = new Decimal(spouseAge);
@@ -54,21 +54,15 @@ export const calculateBenefitForYear = ({
     if (ageDecimal > lifeExpectancyDecimal) {
         return new Decimal(0);
     }
-
-    // Handle the scenario where the spouse dies first
-    if (spouseAgeDecimal > spouseLifeExpectancyDecimal) {
-        return calculateInflationAdjustedBenefit(Decimal.max(lastYearBenefit, lastYearSpouseBenefit), startAge, ageDecimal, inflationRate);
+    if (spouseAgeDecimal > spouseLifeExpectancyDecimal && lastYearSpouseBenefit > lastYearBenefit) {
+        return calculateInflationAdjustedBenefit(lastYearSpouseBenefit, startAge, ageDecimal, inflationRate);
     }
-
-    // Handle the scenario where the user dies first
-    if (ageDecimal > lifeExpectancyDecimal && isUser) {
-        return calculateInflationAdjustedBenefit(Decimal.max(lastYearBenefit, lastYearSpouseBenefit), startAge, spouseAgeDecimal, inflationRate);
+    if (ageDecimal.lessThan(startAge)) {
+        return new Decimal(0);
     }
-
     if (ageDecimal.equals(startAge)) {
         return calculateInflationAdjustedBenefit(benefitAgeOfWithdraw, startAge, ageDecimal, inflationRate);
     }
-
     return calculateInflationAdjustedBenefit(lastYearBenefit, startAge, ageDecimal, inflationRate);
 };
 
@@ -82,10 +76,14 @@ export const calculateInflationAdjustedBenefit = (benefit, startAge, currentAge,
         return new Decimal(0);
     }
 
+    const yearsSinceStart = validCurrentAge - validStartAge;
+    console.log("yearsSinceStart", yearsSinceStart)
+    console.log("validBenefit", validBenefit)
     const inflationFactor = new Decimal(1).plus(new Decimal(validInflationRate));
+    console.log("inflationFactor", inflationFactor)
+
     return new Decimal(validBenefit).times(inflationFactor);
 };
-
 
 export const calculateXNPV = (rate, cashFlows, dates) => {
     let xnpv = 0.0;

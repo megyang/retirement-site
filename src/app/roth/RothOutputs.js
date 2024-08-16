@@ -1365,7 +1365,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                         const yearData = dataForChart[dataIndex];
                         const bracketData = yearData.data[datasetIndex];
 
-                        // Return an array of strings for multiline tooltip
                         return [
                             `${bracketData.label}`,
                             `Filled: $${parseInt(bracketData.filled, 10).toLocaleString()}`,
