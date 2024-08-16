@@ -170,7 +170,7 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
     }, [closeModalTimeout]);
 
     // Reference table
-    const { refTable, benefitsBasedOnAge } = useReferenceTable(inputs);
+    const { benefitsBasedOnAge } = useReferenceTable(inputs);
     const { setSocialSecurityBenefits } = useSocialSecurityStore();
 
     // Social security benefits
@@ -214,10 +214,11 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
             const husbandAge = inputs.husbandAge + i;
             const wifeAge = inputs.wifeAge + i;
 
-            // Determine if the user has started collecting Social Security
-            const husbandBenefit = info?.ss
-                ? new Decimal(inputs.hPIA).times(12).times(new Decimal(1).plus(inflationRate).pow(i))
-                : calculateBenefitForYear({
+            const husbandAlive = husbandAge <= inputs.hLE;
+            const wifeAlive = wifeAge <= inputs.wLE;
+
+            const husbandBenefit = husbandAlive
+                ? calculateBenefitForYear({
                     age: husbandAge,
                     spouseAge: wifeAge,
                     lifeExpectancy: inputs.hLE,
@@ -227,11 +228,12 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                     lastYearBenefit: lastYearHusbandBenefit,
                     lastYearSpouseBenefit: lastYearWifeBenefit,
                     inflationRate,
-                });
+                    isUser: true, // Indicate that this is the user's benefit
+                })
+                : new Decimal(0);
 
-            const wifeBenefit = info?.spouse_ss
-                ? new Decimal(inputs.wPIA).times(12).times(new Decimal(1).plus(inflationRate).pow(i))
-                : calculateBenefitForYear({
+            const wifeBenefit = wifeAlive
+                ? calculateBenefitForYear({
                     age: wifeAge,
                     spouseAge: husbandAge,
                     lifeExpectancy: inputs.wLE,
@@ -241,9 +243,11 @@ const SocialSecurityOutput = ({ inputs, setInputs, setSocialSecurityInputs }) =>
                     lastYearBenefit: lastYearWifeBenefit,
                     lastYearSpouseBenefit: lastYearHusbandBenefit,
                     inflationRate,
-                });
+                    isUser: false, // Indicate that this is the spouse's benefit
+                })
+                : new Decimal(0);
 
-            const totalBenefit = new Decimal(husbandBenefit).add(new Decimal(wifeBenefit));
+            const totalBenefit = Decimal.max(husbandBenefit, wifeBenefit);
             cumulativeTotal = cumulativeTotal.add(totalBenefit);
 
             lastYearHusbandBenefit = husbandBenefit;
