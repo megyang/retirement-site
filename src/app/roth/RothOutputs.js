@@ -104,7 +104,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
         return fields;
     });
     const apiRef = useGridApiRef();
-    console.log(editableFields)
 
     const [savedVersions, setSavedVersions] = useState([
         { name: "Scenario 1" },
@@ -183,10 +182,13 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
         setEditableScenario1(transformData(scenario1));
         setEditableScenario2(transformData(scenario2));
         setEditableScenario3(transformData(scenario3));
+        console.log(selectedVersion, taxableIncomes1, taxableIncomes2, taxableIncomes3)
     };
+
 
     useEffect(() => {
         fetchScenarioData();
+
     }, [editableFields, selectedVersion]);
 
     useEffect(() => {
@@ -376,7 +378,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
     const iraDetails3 = iraD3.iraDetails
 
     staticFields = {};
-    console.log(inputs)
     for (let year = currentYear, ageSpouse1 = inputs.husbandAge, ageSpouse2 = wifeAge;
          year <= currentYear + maxLifeExpectancy - Math.min(inputs.husbandAge, wifeAge);
          year++, ageSpouse1++, ageSpouse2++) {
@@ -582,7 +583,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                     if (error) {
                         console.error(`Error initializing ${scenario}:`, error);
                     } else {
-                        console.log(`${scenario} initialized with default values.`);
                         uniqueVersions.push({
                             name: scenario,
                             lifetime_tax: 0,
@@ -1052,7 +1052,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
         };
     }, []);
 
-    console.log("this is static", staticFields);
     const columns = [
         { field: 'label', headerName: 'Label', width: 200, headerAlign: 'center', pinned: 'left' },
         ...Object.keys(staticFields).map((year) => ({
@@ -1348,7 +1347,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
     });
 
     const dataForChart = taxBracketDataByYear;
-    console.log(dataForChart);
 
     const taxBarChartOptions = {
         responsive: true,
