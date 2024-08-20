@@ -31,6 +31,20 @@ const NavBar = () => {
                             </div>
                         </Link>
                     </li>
+                    <li>
+                        <Link href="/tutorials" passHref>
+                            <div className={`block px-4 py-2 ${pathname === '/tutorials' ? 'font-bold' : ''}`}>
+                                Tutorials
+                            </div>
+                        </Link>
+                    </li>
+                    <li>
+                        <Link href="/privacy" passHref>
+                            <div className={`block px-4 py-2 ${pathname === '/privacy' ? 'font-bold' : ''}`}>
+                                Security and Privacy
+                            </div>
+                        </Link>
+                    </li>
 
                 </ul>
             </nav>

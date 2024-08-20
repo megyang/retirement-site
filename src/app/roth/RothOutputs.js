@@ -4,7 +4,6 @@ import Decimal from 'decimal.js';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useUser } from "@/app/hooks/useUser";
 import useSocialSecurityStore from "@/app/store/useSocialSecurityStore";
-import BarChart from "@/app/components/BarChart";
 import useRmdCalculations from "@/app/hooks/useRmdCalculations";
 import {
     calculateAge,
@@ -26,6 +25,9 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
 import useInfoStore from "@/app/store/useInfoStore";
 
 Chart.register(ChartDataLabels);
+let previousEditableScenario1 = null;
+let previousIraDetails1 = null;
+let previousStaticFields = null;
 
 const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs1 }) => {
     const { info, fetchInfo } = useInfoStore();
@@ -48,31 +50,28 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
     const husbandLEYear = currentYear + hLE - husbandAge;
     const wifeLEYear = currentYear + wLE - wifeAge;
     const [isClient, setIsClient] = useState(false);
+
     useEffect(() => {
         if (user) {
-            fetchInfo(supabaseClient, user.id); // Fetch info data when user is available
+            fetchInfo(supabaseClient, user.id);
         }
     }, [user]);
 
     useEffect(() => {
         if (info) {
-            // Calculate current age and spouse age if applicable
             const currentAge = calculateAge(info.month, info.year);
             const spouseCurrentAge = info.married ? calculateAge(info.spouse_month, info.spouse_year) : calculateAge(info.month, info.year);
 
             let yearsToCover;
 
             if (!info.married || (info.married && !info.filing)) {
-                // If not married or married but not filing jointly, use hLE only
                 yearsToCover = hLE - currentAge + 1;
             } else if (info.married && info.filing) {
-                // If married and filing jointly, consider both hLE and wLE
                 const yearsRemainingHusband = hLE - currentAge;
                 const yearsRemainingWife = wLE - spouseCurrentAge;
                 yearsToCover = Math.max(yearsRemainingHusband, yearsRemainingWife) + 1;
             }
 
-            // Update staticFields to include ages from now until the latest life expectancy
             const updatedStaticFields = {};
             for (let year = currentYear, ageSpouse1 = currentAge, ageSpouse2 = spouseCurrentAge;
                  year <= currentYear + yearsToCover - 1;
@@ -130,10 +129,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
             return;
         }
         const { name, value } = e.target;
-        let numericValue = value.replace(/[$,%]/g, ''); // Remove dollar sign, commas, and percentage sign
+        let numericValue = value.replace(/[$,%]/g, '');
 
         if (!isNaN(numericValue) && numericValue !== '') {
-            // Convert to a percentage if the input field is a percentage field
             if (['beneficiary_tax_rate', 'roi', 'inflation'].includes(name)) {
                 numericValue = parseFloat(numericValue) / 100;
             } else {
@@ -182,7 +180,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
         setEditableScenario1(transformData(scenario1));
         setEditableScenario2(transformData(scenario2));
         setEditableScenario3(transformData(scenario3));
-        console.log(selectedVersion, taxableIncomes1, taxableIncomes2, taxableIncomes3)
+
     };
 
 
@@ -265,13 +263,12 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                 return;
             }
 
-            const updateScenarioData = (scenarioData, scenarioName) => {
+            const updateScenarioData = (scenarioData) => {
                 const updatedRows = scenarioData.map(row => {
                     const updatedRow = { ...row };
                     Object.keys(updatedData).forEach(year => {
                         if (updatedRow.year === parseInt(year)) {
                             fieldsToUpdate.forEach(field => {
-                                // Check if the value exists in updatedData
                                 if (updatedData[year] && updatedData[year][field] !== undefined) {
                                     updatedRow[field] = updatedData[year][field];
                                 } else {
@@ -309,10 +306,9 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
 
     const processRowUpdate = async (newRow, oldRow) => {
         try {
-            const fieldName = newRow.id; // This is the field name like 'capitalGains', 'rothSpouse1', etc.
+            const fieldName = newRow.id;
             const updatedData = {};
 
-            // Ensure all values in newRow are converted to appropriate types
             Object.keys(newRow).forEach(year => {
                 if (year !== 'id' && newRow[year] !== oldRow[year]) {
                     updatedData[year] = updatedData[year] || {};
@@ -321,7 +317,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
             });
 
 
-            // Update Scenario 1
             setEditableFields(prevEditableFields => {
                 const newEditableFields = { ...prevEditableFields };
                 Object.keys(updatedData).forEach(year => {
@@ -333,13 +328,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                 return newEditableFields;
             });
 
-            // Fields to propagate
             const fieldsToPropagate = ['salary1', 'salary2', 'rentalIncome', 'interest', 'capitalGains', 'pension'];
             if (fieldsToPropagate.includes(fieldName)) {
                 await propagateUpdatesToScenarios(updatedData, [fieldName]);
             }
 
-            // Trigger recalculations and save for Scenario 1
             setTriggerSave(true);
             return { ...newRow, ...updatedData };
         } catch (error) {
@@ -388,7 +381,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
         };
     }
 
-    // save and load
     const loadVersion = async (version) => {
         if (!user) {
             console.error('User is not logged in');
@@ -476,7 +468,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
             return;
         }
 
-        // Clone editableFields and set roth1 and roth2 to zero for all years
         const editableFieldsWithZeroRoth = JSON.parse(JSON.stringify(editableFields));
         Object.keys(editableFieldsWithZeroRoth).forEach(year => {
             editableFieldsWithZeroRoth[year].rothSpouse1 = 0;
@@ -547,10 +538,8 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                     };
                 });
 
-            // Initialize default scenarios if they don't exist
             for (const scenario of defaultScenarios) {
                 if (!uniqueVersions.some(version => version.name === scenario)) {
-                    // Initialize default scenario
                     const dataToSave = [];
                     for (let year = currentYear; year <= currentYear + (maxLifeExpectancy - Math.min(inputs.husbandAge, wifeAge)); year++) {
                         dataToSave.push({
@@ -594,7 +583,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                 }
             }
 
-            // Sort the versions alphabetically
             const sortedVersions = uniqueVersions.sort((a, b) => {
                 return a.name.localeCompare(b.name);
             });
@@ -751,6 +739,22 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
         calculateStandardDeductionForYear
     );
 
+    useEffect(() => {
+        const isEditableScenario1Equal = JSON.stringify(editableScenario1) === previousEditableScenario1;
+        const isIraDetails1Equal = JSON.stringify(iraDetails1) === previousIraDetails1;
+        const isStaticFieldsEqual = JSON.stringify(staticFields) === previousStaticFields;
+
+        console.log('editableScenario1 equal:', isEditableScenario1Equal);
+        console.log('iraDetails1 equal:', isIraDetails1Equal);
+        console.log('staticFields equal:', isStaticFieldsEqual);
+
+        // Update the previous variables with the current ones for the next comparison
+        previousEditableScenario1 = JSON.stringify(editableScenario1);
+        previousIraDetails1 = JSON.stringify(iraDetails1);
+        previousStaticFields = JSON.stringify(staticFields);
+    }, [selectedVersion]);
+
+
     const taxableIncomes2 = calculateTaxableIncomes(
         editableScenario2,
         staticFields,
@@ -790,7 +794,6 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
     const totalLifetimeTaxPaid1 = calculateTotalLifetimeTaxPaid(taxableIncomes1, inputs.inflation, currentYear);
     const totalLifetimeTaxPaid2 = calculateTotalLifetimeTaxPaid(taxableIncomes2, inputs.inflation, currentYear);
     const totalLifetimeTaxPaid3 = calculateTotalLifetimeTaxPaid(taxableIncomes3, inputs.inflation, currentYear);
-
 
     const beneficiaryTaxPaid = calculateBeneficiaryTaxPaid(iraDetails, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
     const beneficiaryTaxPaid1 = calculateBeneficiaryTaxPaid(iraDetails1, currentYear, husbandLEYear, wifeLEYear, inputs1.beneficiary_tax_rate);
