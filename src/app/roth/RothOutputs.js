@@ -1663,7 +1663,7 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                         </div>
                     </div>
                     <div>
-                        <div className="mt-4 mb-4 bg-white overflow-x-auto p-4 rounded max-w-full">
+                        {/*<div className="mt-4 mb-4 bg-white overflow-x-auto p-4 rounded max-w-full">
                             <div className="flex justify-between items-center">
                                 <h2 className="text-xl font-semi-bold mb-3">Total Taxes Paid</h2>
                                 <button onClick={toggleTotalTaxesChartVisibility} className="text-xl">
@@ -1672,11 +1672,11 @@ const RothOutputs = ({ inputs, inputs1, staticFields, setStaticFields, setInputs
                             </div>
                             {isTotalTaxesChartVisible && (
                                 <div className="bg-white p-4 rounded">
-                                    <Bar data={chartData} options={chartOptions} />
+                                    <Bar data={chartData} options={chartOptions}/>
                                 </div>
                             )}
                         </div>
-
+                        */}
                         <div className="mt-4 bg-white overflow-x-auto p-4 rounded max-w-full">
                             <div className="flex justify-between items-center">
                                 <h2 className="text-xl font-semi-bold mb-3">Tax Brackets</h2>

@@ -56,8 +56,7 @@ const LandingPage = () => {
                         </button>
                         <button
                             onClick={() => handleNavigate('/roth')}
-                            className="px-6 py-3 text-black rounded border border-black"
-                        >
+                            className="px-6 py-3 text-black rounded border border-black">
                             Roth Conversion Calculator
                         </button>
                     </div>
@@ -84,7 +83,17 @@ const LandingPage = () => {
                 </p>
                 <p className="text-md mb-2">Sincerely,</p>
                 <p className="text-md">Nick, John, & Megan</p>
+
+                <footer className="mt-3 text-center text-sm text-gray-600">
+                    <div className="flex justify-center space-x-4">
+                        <a href="/privacy" className="hover:underline">Privacy Policy</a>
+                        <a href="/terms" className="hover:underline">Terms of Use</a>
+                    </div>
+                </footer>
+
             </div>
+
+
         </div>
     );
 };

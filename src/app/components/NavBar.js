@@ -39,9 +39,9 @@ const NavBar = () => {
                         </Link>
                     </li>
                     <li>
-                        <Link href="/privacy" passHref>
-                            <div className={`block px-4 py-2 ${pathname === '/privacy' ? 'font-bold' : ''}`}>
-                                Security and Privacy
+                        <Link href="/security" passHref>
+                            <div className={`block px-4 py-2 ${pathname === '/security' ? 'font-bold' : ''}`}>
+                                Security Policy
                             </div>
                         </Link>
                     </li>
