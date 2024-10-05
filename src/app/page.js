@@ -10,7 +10,7 @@ export default function Page() {
     return (
         <main>
             <MyUserContextProvider>
-                <div style={{ width: '100%', height: '100vh', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '100vh'}}>
                     <LandingPage />
                 </div>
             </MyUserContextProvider>

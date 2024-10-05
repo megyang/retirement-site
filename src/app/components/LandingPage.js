@@ -31,15 +31,15 @@ const LandingPage = () => {
                     <div className="flex justify-center space-x-4 mb-10">
                         <button
                             onClick={handleSignUp}
-                            className="px-6 py-3 text-black rounded border border-black"
+                            className="flex items-center px-8 py-4 bg-blue-500 text-white rounded-full shadow hover:bg-blue-600 transition-all duration-200 transform hover:scale-105"
                         >
-                            Sign Up
+                            Sign up
                         </button>
                         <button
                             onClick={handleLogIn}
-                            className="px-6 py-3 text-black rounded border border-black"
+                            className="flex items-center px-8 py-4 bg-green-500 text-white rounded-full shadow hover:bg-green-600 transition-all duration-200 transform hover:scale-105"
                         >
-                            Log In
+                            Log in
                         </button>
 
                     </div>
@@ -78,6 +78,7 @@ const LandingPage = () => {
                         title="YouTube Video Preview"
                     ></iframe>
                 </div>
+
                 <p className="mb-2 text-md">
                     Reach out to us any time at <a href="mailto:support@savewellfinance.com" className="text-blue-500 underline">support@savewellfinance.com</a>.
                 </p>
